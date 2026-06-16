@@ -99,7 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-theme-base text-theme min-h-screen flex flex-col">
+      <body className="bg-theme-base text-theme">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-sm focus:text-sm focus:font-semibold"
