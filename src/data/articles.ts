@@ -16,13 +16,13 @@ export const ARTICLES: Article[] = [
       <h2>Credibility is technical, not decorative</h2>
       <p>A polished brochure with stock photos of handshakes does not work on this audience. What works is specificity: tolerances, capacities, certifications, materials, lead times, and named examples of real work. Generic marketing fluff signals that you don't actually understand the buyer's world.</p>
       <ul>
-        <li>State capabilities in the buyer's units — CFM, lbs, UL ratings, microns, voltage.</li>
+        <li>State capabilities in the buyer's units: CFM, lbs, UL ratings, microns, voltage.</li>
         <li>Show finished work, not concept art.</li>
         <li>Make specs and certifications easy to find, not buried in a PDF.</li>
       </ul>
       <h2>Clarity beats cleverness</h2>
       <p>Technical buyers reward sites that respect their time. Clear navigation, fast pages, and an unambiguous path to a quote outperform animation and marketing language every time. Your site should answer the buyer's first three questions before they have to ask.</p>
-      <p>The goal isn't a prettier brochure. It's infrastructure that does a job — qualifying buyers and generating the right inquiries while you're on the floor.</p>
+      <p>The goal isn't a prettier brochure. It's infrastructure that does a job: qualifying buyers and generating the right inquiries while you're on the floor.</p>
     `,
   },
   {
@@ -40,7 +40,7 @@ export const ARTICLES: Article[] = [
       <ul>
         <li>Explicit, well-structured answers to real buyer questions (a strong FAQ is gold).</li>
         <li>Clean semantic HTML and structured data the model can map to entities.</li>
-        <li>Specifications stated as plain, extractable text — not locked inside images or PDFs.</li>
+        <li>Specifications stated as plain, extractable text: not locked inside images or PDFs.</li>
         <li>Consistent naming of products, capabilities, and the problems you solve.</li>
       </ul>
       <h2>Why technical businesses win here</h2>
@@ -65,9 +65,9 @@ export const ARTICLES: Article[] = [
         <li>You hold the full source code and all associated data.</li>
         <li>Your hosting, domain, and analytics accounts stay in your name.</li>
         <li>No mandatory monthly retainer to keep the lights on.</li>
-        <li>Any competent developer can maintain or extend it — you're not hostage to one vendor.</li>
+        <li>Any competent developer can maintain or extend it: you're not hostage to one vendor.</li>
       </ul>
-      <p>Built on modern, well-supported tools, an owned site keeps working — and keeps its value — long after a rented one would have become a recurring line item.</p>
+      <p>Built on modern, well-supported tools, an owned site keeps working and keeps its value long after a rented one would have become a recurring line item.</p>
     `,
   },
   {
@@ -79,11 +79,11 @@ export const ARTICLES: Article[] = [
     date: "2026-04-03",
     readTime: "5 min read",
     body: `
-      <p>The difference between a four-week project and a four-month one is rarely the build. It's the brief. The more clearly the scope is defined up front, the faster — and cheaper — everything downstream becomes.</p>
+      <p>The difference between a four-week project and a four-month one is rarely the build. It's the brief. The more clearly the scope is defined up front, the faster and cheaper everything downstream becomes.</p>
       <h2>Define these first</h2>
       <ul>
         <li><strong>The buyer.</strong> Who are you trying to reach, and what do they need to see to trust you?</li>
-        <li><strong>The job.</strong> What should the site <em>do</em> — generate quotes, present a catalog, support hiring?</li>
+        <li><strong>The job.</strong> What should the site <em>do</em>: generate quotes, present a catalog, support hiring?</li>
         <li><strong>The proof.</strong> Which projects, specs, and credentials make the case for you?</li>
         <li><strong>The scope.</strong> How many pages, and which functional tools (catalog, quote form, careers)?</li>
       </ul>
@@ -100,13 +100,13 @@ export const ARTICLES: Article[] = [
     date: "2026-03-15",
     readTime: "8 min read",
     body: `
-      <p>Eagle Engineering & Supply Co. has been engineering industrial systems since 1969 — electrical control design, proprietary material handling equipment, authorized power distribution, and industrial technology. The depth was real. The website wasn't carrying it.</p>
+      <p>Eagle Engineering & Supply Co. has been engineering industrial systems since 1969: electrical control design, proprietary material handling equipment, authorized power distribution, and industrial technology. The depth was real. The website wasn't carrying it.</p>
       <h2>The challenge</h2>
-      <p>Five decades of capability spread across four distinct divisions, plus trademarked proprietary equipment and authorized distribution lines — none of it legible to a first-time buyer. The site had to serve specifiers, procurement, and plant managers across very different sectors without becoming a maze.</p>
+      <p>Five decades of capability spread across four distinct divisions, plus trademarked proprietary equipment and authorized distribution lines: none of it legible to a first-time buyer. The site had to serve specifiers, procurement, and plant managers across very different sectors without becoming a maze.</p>
       <h2>The approach</h2>
       <ul>
         <li>A full-screen mega menu that lets buyers self-select by service, by industry, or by reading the technical insights.</li>
-        <li>A blueprint-grade visual system — monospace spec tags, technical cards, light/dark theming — that reads as engineering, not marketing.</li>
+        <li>A blueprint-grade visual system with monospace spec tags, technical cards, and light/dark theming that reads as engineering, not marketing.</li>
         <li>Division and product pages structured around specs, applications, and credible proof.</li>
         <li>A quote path on every page, plus a careers system with resume upload.</li>
       </ul>

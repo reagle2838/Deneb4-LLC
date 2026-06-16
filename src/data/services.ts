@@ -92,5 +92,5 @@ export const OWNERSHIP_POINTS: string[] = [
   "You own the full source code and all associated data.",
   "No recurring licensing fees and no mandatory monthly retainers.",
   "Your hosting, domain, and analytics accounts stay in your name.",
-  "Fixed-scope, fixed-price delivery — quoted before work begins.",
+  "Fixed-scope, fixed-price delivery: quoted before work begins.",
 ];

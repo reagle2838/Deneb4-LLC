@@ -18,7 +18,7 @@ export const INDUSTRIES: Industry[] = [
     slug: "automation-controls",
     label: "Automation & Controls",
     spec: "SCADA / PLC",
-    blurb: "Controls integrators and automation shops — PLC, SCADA, HMI, and panel work explained for procurement.",
+    blurb: "Controls integrators and automation shops: PLC, SCADA, HMI, and panel work explained for procurement.",
   },
   {
     slug: "fabrication-metalworking",

@@ -4,11 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Wordmark from "@/components/ui/Wordmark";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { PACKAGES, FUNCTIONAL_TOOLS } from "@/data/services";
 import { INDUSTRIES } from "@/data/industries";
-import { ARTICLES, articlesByDate } from "@/data/articles";
 import { EXPLORE_LINKS } from "@/data/nav";
+import type { Article } from "@/types";
 
 type OpenMenu = "services" | "industries" | "articles" | null;
 
@@ -98,7 +97,7 @@ function PanelCTAs({ onClose }: { onClose: () => void }) {
 
 // ── Component ─────────────────────────────────────────────────────────
 
-export default function Navbar() {
+export default function Navbar({ articles }: { articles: Article[] }) {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [activeService, setActiveService] = useState("professional");
@@ -178,7 +177,7 @@ export default function Navbar() {
     ? INDUSTRIES.filter((i) => i.label.toLowerCase().includes(industrySearch.toLowerCase()) || i.blurb.toLowerCase().includes(industrySearch.toLowerCase()))
     : INDUSTRIES;
 
-  const sorted = articlesByDate();
+  const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
   const aq = articleSearch.trim().toLowerCase();
   const filteredArticles = aq.length >= 2
     ? sorted.filter((a) => a.title.toLowerCase().includes(aq) || a.subtitle.toLowerCase().includes(aq) || a.topic.toLowerCase().includes(aq))
@@ -359,7 +358,7 @@ export default function Navbar() {
                 Built for businesses that make things →
               </Link>
               <p className="text-base leading-relaxed max-w-2xl mt-2" style={{ color: "var(--text-muted)" }}>
-                Deneb4 builds for technically sophisticated, quote-driven companies. Industry literacy is the difference — no learning curve, no generic fluff.
+                Deneb4 builds for technically sophisticated, quote-driven companies. Industry literacy is the difference: no learning curve, no generic fluff.
               </p>
             </div>
             {filteredIndustries.length === 0 ? (
@@ -374,9 +373,8 @@ export default function Navbar() {
                     style={{ borderTop: "1px solid var(--border-accent)" }}
                     onClick={closeMenu}
                   >
-                    <div className="flex items-center justify-between">
+                    <div>
                       <span className="text-sm font-semibold" style={{ color: "var(--text-heading)" }}>{ind.label}</span>
-                      <span className="font-spec text-[9px] tracking-widest" style={{ color: "var(--accent-light)" }}>{ind.spec}</span>
                     </div>
                     <span className="text-xs leading-relaxed mt-1" style={{ color: "var(--text-muted)" }}>{ind.blurb}</span>
                   </Link>
@@ -432,9 +430,9 @@ export default function Navbar() {
             <div className="w-64 flex-shrink-0 overflow-y-auto py-10 px-8" style={{ borderLeft: "1px solid var(--border-accent)" }}>
               <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: "var(--text-faint)" }}>Latest</p>
               <div style={{ borderTop: "1px solid var(--border-accent)" }}>
-                {([latestArticle, latestCaseStudy].filter(Boolean) as typeof ARTICLES).map((a) => (
+                {([latestArticle, latestCaseStudy].filter(Boolean) as Article[]).map((a) => (
                   <Link key={a.slug} href={`/articles/${a.slug}`} className="flex flex-col gap-1.5 py-4 transition-colors no-underline" style={{ borderBottom: "1px solid var(--border-accent)" }} onClick={closeMenu}>
-                    <span className="font-spec text-[10px] px-1.5 py-0.5 rounded-sm self-start" style={{ background: "var(--bg-raised)", border: "1px solid var(--border-accent)", color: "var(--accent-light)" }}>{a.type}</span>
+                    <span className="font-spec text-[10px] self-start" style={{ color: "var(--accent-light)" }}>{a.type}</span>
                     <p className="text-xs font-semibold leading-snug" style={{ color: "var(--text-heading)" }}>{a.title}</p>
                     <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{a.subtitle.length > 90 ? a.subtitle.slice(0, 90) + "…" : a.subtitle}</p>
                   </Link>
@@ -477,15 +475,14 @@ export default function Navbar() {
               </li>
             </ul>
 
-            {/* Right: theme + CTA */}
+            {/* Right: CTA */}
             <div className="hidden lg:flex items-center gap-3 ml-auto flex-shrink-0">
-              <ThemeToggle />
+              <Link href="/login" className="text-sm font-medium" style={{ color: "var(--text-muted)" }} onClick={closeMenu}>Client Login</Link>
               <Link href="/start" className="btn-primary text-sm" onClick={closeMenu}>Start a Project</Link>
             </div>
 
-            {/* Mobile: theme + hamburger */}
+            {/* Mobile: hamburger */}
             <div className="lg:hidden flex items-center gap-2 ml-auto">
-              <ThemeToggle />
               <button className="p-2 rounded-sm" style={{ color: "var(--text-muted)" }} onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={mobileOpen}>
                 {mobileOpen ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -551,7 +548,7 @@ export default function Navbar() {
 
               <div className="pt-3 pb-4 flex gap-3">
                 <Link href="/start" className="btn-primary flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Start a Project</Link>
-                <a href="mailto:hello@deneb4.com" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Email Us</a>
+                <Link href="/login" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Client Login</Link>
               </div>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SiteShell from "@/components/layout/SiteShell";
-import { ThemeProvider } from "@/context/ThemeContext";
 
 const SITE_URL = "https://deneb4.com";
 
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
     default: "Deneb4 | Websites Built for Technical Businesses",
   },
   description:
-    "Deneb4 designs and builds websites for industrial, engineering, and manufacturing businesses. Fixed-scope, fixed-price builds you own outright — no agency overhead, no monthly lock-in. Built on Next.js.",
+    "Deneb4 designs and builds websites for industrial, engineering, and manufacturing businesses. Fixed-scope, fixed-price builds you own outright: no agency overhead, no monthly lock-in. Built on Next.js.",
   keywords: [
     "web design for manufacturers",
     "industrial website design",
@@ -49,12 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        {/* FOUC prevention: applied before React hydrates. Default = light. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('deneb4-theme');if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}`,
-          }}
-        />
         {/* Structured data — ProfessionalService entity */}
         <script
           type="application/ld+json"
@@ -114,9 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
-        <ThemeProvider>
-          <SiteShell>{children}</SiteShell>
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

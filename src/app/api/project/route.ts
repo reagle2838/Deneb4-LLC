@@ -27,16 +27,16 @@ export async function POST(req: Request) {
 
     const toolList = Array.isArray(tools) ? tools.join(", ") : esc(tools);
     const html = `
-      <h2>New project brief — deneb4.com</h2>
+      <h2>New project brief: deneb4.com</h2>
       <p><strong>Name:</strong> ${esc(name)}</p>
       <p><strong>Email:</strong> ${esc(email)}</p>
-      <p><strong>Business:</strong> ${esc(business) || "—"}</p>
-      <p><strong>Industry:</strong> ${esc(industry) || "—"}</p>
-      <p><strong>Current site:</strong> ${esc(currentSite) || "—"}</p>
-      <p><strong>Package interest:</strong> ${esc(packageInterest) || "—"}</p>
-      <p><strong>Tools wanted:</strong> ${toolList || "—"}</p>
-      <p><strong>Budget:</strong> ${esc(budget) || "—"}</p>
-      <p><strong>Timeline:</strong> ${esc(timeline) || "—"}</p>
+      <p><strong>Business:</strong> ${esc(business) || "(none)"}</p>
+      <p><strong>Industry:</strong> ${esc(industry) || "(none)"}</p>
+      <p><strong>Current site:</strong> ${esc(currentSite) || "(none)"}</p>
+      <p><strong>Package interest:</strong> ${esc(packageInterest) || "(none)"}</p>
+      <p><strong>Tools wanted:</strong> ${toolList || "(none)"}</p>
+      <p><strong>Budget:</strong> ${esc(budget) || "(none)"}</p>
+      <p><strong>Timeline:</strong> ${esc(timeline) || "(none)"}</p>
       <p><strong>Details:</strong></p>
       <p>${esc(details).replace(/\n/g, "<br>")}</p>
     `;

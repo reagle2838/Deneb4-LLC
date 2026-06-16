@@ -3,7 +3,7 @@ import type { Faq } from "@/components/ui/FaqAccordion";
 export const FAQS: Faq[] = [
   {
     q: "How does pricing work?",
-    a: "Projects are priced by scope, not by the hour. You get an upfront, fixed quote before any work begins. Anything outside that scope is discussed and quoted separately — no surprise invoices.",
+    a: "Projects are priced by scope, not by the hour. You get an upfront, fixed quote before any work begins. Anything outside that scope is discussed and quoted separately: no surprise invoices.",
   },
   {
     q: "How long does a project take?",
@@ -27,11 +27,11 @@ export const FAQS: Faq[] = [
   },
   {
     q: "Do you work with businesses outside the US?",
-    a: "Yes. Work is fully remote with no geographic restrictions — communication is digital and asynchronous-friendly.",
+    a: "Yes. Work is fully remote with no geographic restrictions: communication is digital and asynchronous-friendly.",
   },
   {
     q: "What if I'm unsure which package to choose?",
-    a: "Submit the project brief describing what you need, and you'll get a personalized recommendation. Most clients don't know their exact scope at first — that's normal, and part of what discovery is for.",
+    a: "Submit the project brief describing what you need, and you'll get a personalized recommendation. Most clients don't know their exact scope at first. That's normal, and part of what discovery is for.",
   },
   {
     q: "Will I own the website?",

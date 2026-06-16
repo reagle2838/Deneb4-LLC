@@ -22,11 +22,11 @@ export async function POST(req: Request) {
     }
 
     const html = `
-      <h2>New inquiry — deneb4.com</h2>
+      <h2>New inquiry: deneb4.com</h2>
       <p><strong>Name:</strong> ${esc(name)}</p>
       <p><strong>Email:</strong> ${esc(email)}</p>
-      <p><strong>Company:</strong> ${esc(company) || "—"}</p>
-      <p><strong>About:</strong> ${esc(topic) || "—"}</p>
+      <p><strong>Company:</strong> ${esc(company) || "(none)"}</p>
+      <p><strong>About:</strong> ${esc(topic) || "(none)"}</p>
       <p><strong>Message:</strong></p>
       <p>${esc(message).replace(/\n/g, "<br>")}</p>
     `;

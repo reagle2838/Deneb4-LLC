@@ -11,9 +11,9 @@ function LinkedInIcon() {
 }
 
 const SERVICES = [
-  { label: "Foundation — $4,500", href: "/services#packages" },
-  { label: "Professional — $6,000", href: "/services#packages" },
-  { label: "Enterprise — $8,000", href: "/services#packages" },
+  { label: "Foundation ($4,500)", href: "/services#packages" },
+  { label: "Professional ($6,000)", href: "/services#packages" },
+  { label: "Enterprise ($8,000)", href: "/services#packages" },
   { label: "Functional Tools", href: "/services#tools" },
 ];
 
@@ -116,9 +116,11 @@ export default function Footer() {
           <p className="text-xs font-spec" style={{ color: "var(--text-faint)" }}>
             © {new Date().getFullYear()} Deneb4 LLC. All rights reserved.
           </p>
-          <p className="text-xs font-spec" style={{ color: "var(--text-faint)" }}>
-            Built with Next.js · You own the code.
-          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="text-xs font-spec transition-colors" style={{ color: "var(--text-faint)" }}>Privacy Policy</Link>
+            <Link href="/terms" className="text-xs font-spec transition-colors" style={{ color: "var(--text-faint)" }}>Terms of Service</Link>
+            <p className="text-xs font-spec" style={{ color: "var(--text-faint)" }}>Built with Next.js</p>
+          </div>
         </div>
       </div>
     </footer>

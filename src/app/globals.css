@@ -12,11 +12,11 @@
   --accent-dark:   #00546f;
   --accent-darker: #003e55;
 
-  --bg-base:    #f0f3f8;
+  --bg-base:    #f2f5f9;
   --bg-surface: #ffffff;
-  --bg-raised:  #e5e9f2;
-  --bg-navbar:  rgba(255, 255, 255, 0.80);
-  --bg-alt:     #dde4ee;
+  --bg-raised:  #e8ecf3;
+  --bg-navbar:  rgba(255, 255, 255, 0.85);
+  --bg-alt:     #f4f7fb;
 
   --text-primary: #18222e;
   --text-muted:   #4e606f;
