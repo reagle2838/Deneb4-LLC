@@ -19,6 +19,22 @@ npm run build      # production build + type/lint check
 npm start          # serve the production build
 ```
 
+### Troubleshooting: `UNABLE_TO_VERIFY_LEAF_SIGNATURE` on `npm install`
+
+If `npm install` (or `npm run dev`) hangs or fails with `unable to verify the first
+certificate`, your network/machine is running TLS inspection (corporate firewall/VPN or
+antivirus HTTPS scanning) with a custom root certificate that Node doesn't trust by default.
+
+Fix — tell Node to trust the Windows certificate store (Node 18.18+/20+):
+
+```bash
+# one-off, current terminal:
+$env:NODE_OPTIONS="--use-system-ca"; npm install
+
+# persist for all future terminals (run once):
+setx NODE_OPTIONS "--use-system-ca"
+```
+
 ## Forms & email
 
 The Contact (`/contact`) and Start-a-Project (`/start`) forms POST to Next.js API routes
