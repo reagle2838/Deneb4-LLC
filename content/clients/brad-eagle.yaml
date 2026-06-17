@@ -1,0 +1,21 @@
+name: Brad Eagle
+email: bdeagle@eaglecompanies.com
+projectName: Eagle Engineering & Supply Co.
+active: true
+passwordHash: 4b774e379d7ef975246c3d1c6be46fa0:c11e7bc6d8ffacb304b7f352aa08f5934f563b3ac5c4d5267a94da3ebdfe7c9753144b315d5b692fee26c341b9903e072e28ba8e809fbc6d164af6cfb3df34d9
+stage: ""
+updates: []
+files: []
+revisions: []
+invoices:
+  - description: Invoice
+    amount: $2.00
+    status: pending
+    dueDate: "2026-06-30"
+    invoiceUrl: https://link.waveapps.com/pkskjw-7ctgau
+staging:
+  url: https://www.eaglecompanies.com/
+  username: ""
+  password: ""
+  status: ready
+  notes: ""

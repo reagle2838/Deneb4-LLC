@@ -65,6 +65,8 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
+  const [deleteText, setDeleteText] = useState('');
 
   function selectClient(slug: string) {
     if (selected === slug) {
@@ -170,10 +172,15 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
     }
   }
 
-  async function handleDelete(slug: string, name: string) {
-    if (!window.confirm(`Delete ${name}? This removes their portal access and all portal content. This cannot be undone.`)) {
-      return;
-    }
+  function openDelete(slug: string, name: string) {
+    setDeleteTarget({ slug, name });
+    setDeleteText('');
+    setError('');
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { slug } = deleteTarget;
     setBusy(true);
     setError('');
     try {
@@ -189,6 +196,8 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
           setSelected(null);
           setDraft(null);
         }
+        setDeleteTarget(null);
+        setDeleteText('');
       } else {
         setError(data.error ?? 'Failed to delete.');
       }
@@ -255,8 +264,51 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
     }
   }
 
+  const deleteReady = deleteTarget != null && deleteText.trim() === deleteTarget.name;
+
   return (
     <div className="space-y-5">
+      {/* Two-step delete confirmation */}
+      {deleteTarget && (
+        <div
+          onClick={() => !busy && setDeleteTarget(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} className="card p-6 w-full max-w-md">
+            <h2 className="font-bold mb-1" style={{ color: 'var(--text-heading)' }}>Delete {deleteTarget.name}?</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+              This permanently removes their portal access and all portal content (updates, files, revisions, invoices). This cannot be undone.
+            </p>
+            <label className="block text-xs font-spec font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>
+              Type <span style={{ color: 'var(--text-heading)' }}>{deleteTarget.name}</span> to confirm
+            </label>
+            <input
+              autoFocus
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              className="w-full px-3 py-2 rounded-sm text-sm outline-none mb-4"
+              style={{ border: '1px solid var(--border-accent)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+            />
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setDeleteTarget(null)} disabled={busy} className="btn-outline text-sm">Cancel</button>
+              <button
+                onClick={confirmDelete}
+                disabled={!deleteReady || busy}
+                className="text-sm px-4 py-2 rounded-sm font-semibold"
+                style={{
+                  background: deleteReady ? '#e40014' : 'var(--bg-raised)',
+                  color: deleteReady ? '#fff' : 'var(--text-faint)',
+                  cursor: deleteReady && !busy ? 'pointer' : 'not-allowed',
+                  border: 'none',
+                }}
+              >
+                {busy ? 'Deleting...' : 'Delete client'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add client */}
       <div className="flex justify-end">
         <button onClick={() => { setAddOpen((v) => !v); setError(''); }} className="btn-primary text-sm">
@@ -484,7 +536,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                 <button onClick={handleSave} disabled={busy} className="btn-primary text-sm">
                   {busy ? 'Saving...' : savedFlash ? 'Saved ✓' : 'Save portal'}
                 </button>
-                <button onClick={() => handleDelete(c.slug, c.name)} disabled={busy} className="btn-outline text-xs" style={{ color: '#e40014', borderColor: '#e40014' }}>
+                <button onClick={() => openDelete(c.slug, c.name)} disabled={busy} className="btn-outline text-xs" style={{ color: '#e40014', borderColor: '#e40014' }}>
                   Delete client
                 </button>
               </div>
