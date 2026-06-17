@@ -2,32 +2,62 @@
 
 import { useEffect, useState } from 'react';
 
-const NAV_BUTTON_ID = 'cms-client-manager-nav';
+const CARD_ID = 'cms-client-manager-card';
+
+function onDashboard(): boolean {
+  return /\/keystatic\/?$/.test(window.location.pathname);
+}
+
+// Set the first meaningful text node to `text`, clear the rest. Keeps any
+// icon/structure intact so the clone matches the other cards exactly.
+function relabel(node: HTMLElement, text: string) {
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+  let done = false;
+  for (const n of textNodes) {
+    if (n.textContent && n.textContent.trim()) {
+      if (!done) {
+        n.textContent = text;
+        done = true;
+      } else {
+        n.textContent = '';
+      }
+    }
+  }
+  if (!done) node.textContent = text;
+}
 
 export default function KeystaticClientManager() {
   const [open, setOpen] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
 
-  // Inject a "Client Manager" button into the Keystatic sidebar nav.
   useEffect(() => {
     function inject() {
-      if (document.getElementById(NAV_BUTTON_ID)) return;
-      const navLink = document.querySelector(
-        'a[href*="/keystatic/collection"], a[href*="/keystatic/singleton"], a[href$="/keystatic"]'
-      );
-      const nav = navLink?.closest('nav') ?? navLink?.parentElement;
-      if (!nav) return;
+      if (!onDashboard()) return;
+      if (document.getElementById(CARD_ID)) return;
 
-      const btn = document.createElement('button');
-      btn.id = NAV_BUTTON_ID;
-      btn.type = 'button';
-      btn.textContent = 'Client Manager';
-      btn.style.cssText =
-        'display:block;width:calc(100% - 16px);text-align:left;padding:8px 12px;margin:8px;border-radius:6px;background:#006b8f;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;';
-      btn.addEventListener('click', () =>
-        window.dispatchEvent(new CustomEvent('open-client-manager'))
-      );
-      nav.appendChild(btn);
+      // Dashboard cards are links to collections/singletons that live in the
+      // main content area (not the sidebar <nav>).
+      const cards = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>(
+          'a[href*="/keystatic/collection"], a[href*="/keystatic/singleton"]'
+        )
+      ).filter((a) => !a.closest('nav'));
+
+      const template = cards[0];
+      if (!template) return;
+
+      const clone = template.cloneNode(true) as HTMLAnchorElement;
+      clone.id = CARD_ID;
+      clone.setAttribute('href', '#');
+      relabel(clone, 'Client Manager');
+      clone.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('open-client-manager'));
+      });
+
+      template.parentElement?.appendChild(clone);
     }
 
     inject();
@@ -37,10 +67,8 @@ export default function KeystaticClientManager() {
     const onOpen = () => setOpen(true);
     window.addEventListener('open-client-manager', onOpen);
 
-    // If the sidebar markup ever changes and injection fails, show a
-    // fixed fallback button so this is never inaccessible.
     const t = setTimeout(() => {
-      if (!document.getElementById(NAV_BUTTON_ID)) setShowFallback(true);
+      if (onDashboard() && !document.getElementById(CARD_ID)) setShowFallback(true);
     }, 2500);
 
     return () => {
@@ -50,7 +78,6 @@ export default function KeystaticClientManager() {
     };
   }, []);
 
-  // Close on Escape.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false);
