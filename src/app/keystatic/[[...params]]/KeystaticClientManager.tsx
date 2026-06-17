@@ -8,24 +8,30 @@ function onDashboard(): boolean {
   return /\/keystatic\/?$/.test(window.location.pathname);
 }
 
-// Set the first meaningful text node to `text`, clear the rest. Keeps any
+// Relabel a cloned card: the title is the longest text node (e.g.
+// "Articles & Insights"); set it to `text` and clear any other text
+// (counts, descriptions) so only one clean label remains. Keeps the
 // icon/structure intact so the clone matches the other cards exactly.
 function relabel(node: HTMLElement, text: string) {
   const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
   const textNodes: Text[] = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-  let done = false;
-  for (const n of textNodes) {
-    if (n.textContent && n.textContent.trim()) {
-      if (!done) {
-        n.textContent = text;
-        done = true;
-      } else {
-        n.textContent = '';
-      }
-    }
+  while (walker.nextNode()) {
+    const n = walker.currentNode as Text;
+    if (n.textContent && n.textContent.trim()) textNodes.push(n);
   }
-  if (!done) node.textContent = text;
+  if (textNodes.length === 0) {
+    node.textContent = text;
+    return;
+  }
+  textNodes.sort((a, b) => (b.textContent ?? '').trim().length - (a.textContent ?? '').trim().length);
+  textNodes[0].textContent = text;
+  for (let i = 1; i < textNodes.length; i++) textNodes[i].textContent = '';
+  // Avoid a stale tooltip showing the old collection name.
+  node.removeAttribute('title');
+  node.querySelectorAll('[title],[aria-label]').forEach((el) => {
+    el.removeAttribute('title');
+    el.removeAttribute('aria-label');
+  });
 }
 
 export default function KeystaticClientManager() {

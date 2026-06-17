@@ -6,6 +6,14 @@ export default config({
   },
   ui: {
     brand: { name: 'Deneb4' },
+    // Case Studies (work) is intentionally hidden from the sidebar and
+    // dashboard. It is still editable at /keystatic/collection/work and
+    // still renders on the site. The Client Manager card on the dashboard
+    // takes its place.
+    navigation: {
+      Content: ['articles'],
+      Legal: ['privacyPolicy', 'termsOfService'],
+    },
   },
   collections: {
     work: collection({
