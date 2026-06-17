@@ -8,6 +8,24 @@ function onDashboard(): boolean {
   return /\/keystatic\/?$/.test(window.location.pathname);
 }
 
+// A leaf element whose exact text equals `text` (e.g. the "LEGAL" label).
+function leafWithText(text: string): HTMLElement | null {
+  const els = document.querySelectorAll<HTMLElement>('h1,h2,h3,h4,h5,h6,p,span,div,strong');
+  for (const el of els) {
+    if (el.textContent?.trim() === text && el.querySelectorAll('*').length === 0) return el;
+  }
+  return null;
+}
+
+function commonAncestor(a: HTMLElement, b: HTMLElement): HTMLElement | null {
+  const seen = new Set<HTMLElement>();
+  let x: HTMLElement | null = a;
+  while (x) { seen.add(x); x = x.parentElement; }
+  let y: HTMLElement | null = b;
+  while (y) { if (seen.has(y)) return y; y = y.parentElement; }
+  return null;
+}
+
 // Relabel a cloned card: the title is the longest text node (e.g.
 // "Articles & Insights"); set it to `text` and clear any other text
 // (counts, descriptions) so only one clean label remains. Keeps the
@@ -43,35 +61,47 @@ export default function KeystaticClientManager() {
       if (!onDashboard()) return;
       if (document.getElementById(CARD_ID)) return;
 
-      // The dashboard is a section of rows. Find the collection title link
-      // (in main content, not the sidebar <nav>, and not the "+ create"
-      // link), then clone its whole ROW so the new entry is its own row.
-      const titleLink = Array.from(
-        document.querySelectorAll<HTMLAnchorElement>('a[href*="/keystatic/collection"]')
-      ).find(
-        (a) => !a.closest('nav') && !(a.getAttribute('href') ?? '').includes('/create')
-      );
+      // Singleton cards (Privacy Policy / Terms) are clean cards: just a
+      // title, no "+ create" button or entry count. Use one as the template.
+      const cardTemplate = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a[href*="/keystatic/singleton"]')
+      ).find((a) => !a.closest('nav'));
+      const cardsRow = cardTemplate?.parentElement;
+      if (!cardTemplate || !cardsRow) return;
 
-      const row = titleLink?.parentElement;
-      const rowsContainer = row?.parentElement;
-      if (!row || !rowsContainer) return;
+      // Find where to drop a new section: the container holding the
+      // CONTENT and LEGAL section labels.
+      const contentLabel = leafWithText('CONTENT');
+      const legalLabel = leafWithText('LEGAL');
+      const container =
+        contentLabel && legalLabel
+          ? commonAncestor(contentLabel, legalLabel)
+          : cardsRow.parentElement;
+      if (!container) return;
 
-      const clone = row.cloneNode(true) as HTMLElement;
-      clone.id = CARD_ID;
-      // Drop the "+ create" control (button or link) from the clone.
-      clone.querySelectorAll('button').forEach((b) => b.remove());
-      clone.querySelectorAll('a').forEach((a) => {
-        if ((a.getAttribute('href') ?? '').includes('/create')) a.remove();
-        else a.setAttribute('href', '#');
-      });
-      relabel(clone, 'Client Manager');
-      clone.style.cursor = 'pointer';
-      clone.addEventListener('click', (e) => {
+      // The card: clone a clean singleton card, relabel, open the modal.
+      const card = cardTemplate.cloneNode(true) as HTMLElement;
+      card.setAttribute('href', '#');
+      relabel(card, 'Client Manager');
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('open-client-manager'));
       });
 
-      rowsContainer.appendChild(clone);
+      // A row container matching the singleton cards row (empty shallow clone).
+      const row = cardsRow.cloneNode(false) as HTMLElement;
+      row.appendChild(card);
+
+      const wrapper = document.createElement('div');
+      wrapper.id = CARD_ID;
+      if (legalLabel) {
+        const label = legalLabel.cloneNode(true) as HTMLElement;
+        label.textContent = 'CLIENT';
+        wrapper.appendChild(label);
+      }
+      wrapper.appendChild(row);
+      container.appendChild(wrapper);
     }
 
     inject();
