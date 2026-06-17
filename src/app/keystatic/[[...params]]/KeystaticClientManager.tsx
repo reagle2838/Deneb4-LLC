@@ -89,7 +89,7 @@ export default function KeystaticClientManager({
         btn = document.createElement('button');
         btn.id = NAV_ID;
         btn.type = 'button';
-        btn.textContent = 'Client Manager';
+        btn.textContent = 'Workspace';
         btn.style.cssText = [
           'display:block',
           'width:calc(100% - 24px)',
@@ -283,8 +283,8 @@ export default function KeystaticClientManager({
 
       {/* Client Manager modal */}
       {open && (
-        <ModalShell title="Client Manager" onClose={() => setOpen(false)}>
-          <iframe src="/cms-admin" title="Client Manager" style={{ flex: 1, width: '100%', border: 'none' }} />
+        <ModalShell title="Workspace" onClose={() => setOpen(false)}>
+          <iframe src="/cms-admin" title="Workspace" style={{ flex: 1, width: '100%', border: 'none' }} />
         </ModalShell>
       )}
 

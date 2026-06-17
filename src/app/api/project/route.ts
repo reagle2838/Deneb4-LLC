@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendFormEmail } from "@/lib/email";
+import { appendLead } from "@/lib/leads";
 
 function esc(v: unknown): string {
   return String(v ?? "")
@@ -40,6 +41,19 @@ export async function POST(req: Request) {
       <p><strong>Details:</strong></p>
       <p>${esc(details).replace(/\n/g, "<br>")}</p>
     `;
+
+    appendLead({
+      name: String(name),
+      email: String(email),
+      company: String(business ?? ""),
+      source: "start",
+      message: [
+        packageInterest && `Package: ${packageInterest}`,
+        budget && `Budget: ${budget}`,
+        timeline && `Timeline: ${timeline}`,
+        details && `\n${details}`,
+      ].filter(Boolean).join("\n"),
+    });
 
     const result = await sendFormEmail({ subject: `New project brief from ${esc(name)}`, html, replyTo: String(email) });
     return NextResponse.json({ ok: true, delivered: result.delivered });

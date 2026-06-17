@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendFormEmail } from "@/lib/email";
+import { appendLead } from "@/lib/leads";
 
 function esc(v: unknown): string {
   return String(v ?? "")
@@ -30,6 +31,8 @@ export async function POST(req: Request) {
       <p><strong>Message:</strong></p>
       <p>${esc(message).replace(/\n/g, "<br>")}</p>
     `;
+
+    appendLead({ name, email, company, source: "contact", message: [topic && `About: ${topic}`, message].filter(Boolean).join("\n\n") });
 
     const result = await sendFormEmail({ subject: `New inquiry from ${name}`, html, replyTo: email });
     return NextResponse.json({ ok: true, delivered: result.delivered });

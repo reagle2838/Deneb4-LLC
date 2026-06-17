@@ -2,7 +2,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/cms-auth";
 import { getAllClients } from "@/lib/clients";
-import ClientManagerUI from "./ClientManagerUI";
+import { getLeads } from "@/lib/leads";
+import { getTasks } from "@/lib/tasks";
+import { getNotes } from "@/lib/notes";
+import Workspace from "./Workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -11,19 +14,19 @@ export default async function CmsAdminPage() {
   if (!(await verifySession(token))) redirect("/cms-login");
 
   const clients = await getAllClients();
+  const leads = getLeads();
+  const tasks = getTasks();
+  const notes = getNotes();
 
   return (
     <div style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="mb-10">
-          <p className="font-spec text-xs tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>Admin</p>
-          <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-heading)" }}>Client Manager</h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Add clients, generate portal passwords, and manage everything in their portal: project updates, shared files, revisions, and invoices.
-          </p>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <p className="font-spec text-xs tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>Workspace</p>
+          <h1 className="text-3xl font-bold" style={{ color: "var(--text-heading)" }}>Command Center</h1>
         </div>
 
-        <ClientManagerUI initialClients={clients} />
+        <Workspace clients={clients} leads={leads} tasks={tasks} notes={notes} />
       </div>
     </div>
   );
