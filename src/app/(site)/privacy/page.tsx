@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createReader } from "@keystatic/core/reader";
-import keystaticConfig from "../../../keystatic.config";
+import keystaticConfig from "../../../../keystatic.config";
 import { marked } from "marked";
 import PageHero from "@/components/ui/PageHero";
 
