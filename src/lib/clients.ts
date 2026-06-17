@@ -47,6 +47,8 @@ export const EMPTY_STAGING: ClientStaging = {
   notes: '',
 };
 
+export { BUILD_STAGES } from './stages';
+
 export interface Client {
   slug: string;
   name: string;
@@ -54,6 +56,7 @@ export interface Client {
   projectName: string;
   active: boolean;
   passwordHash: string;
+  stage: string;
   updates: ClientUpdate[];
   files: ClientFile[];
   revisions: ClientRevision[];
@@ -105,6 +108,7 @@ function parseFile(slug: string): Client | null {
     projectName: str(data.projectName),
     active: data.active === true,
     passwordHash: str(data.passwordHash),
+    stage: str(data.stage),
     updates: asArray(data.updates).map((u) => ({
       phase: str(u.phase),
       status: (str(u.status) || 'upcoming') as ClientUpdate['status'],
@@ -164,7 +168,10 @@ export async function getClientByEmail(email: string): Promise<Client | null> {
 }
 
 /** Write a full client record to disk. Creates the directory if needed. */
-export function writeClient(slug: string, client: { data: ClientData; passwordHash: string }): void {
+export function writeClient(
+  slug: string,
+  client: { data: ClientData; passwordHash: string }
+): void {
   if (!fs.existsSync(CLIENTS_DIR)) fs.mkdirSync(CLIENTS_DIR, { recursive: true });
   const { data, passwordHash } = client;
   const out = {
@@ -173,6 +180,7 @@ export function writeClient(slug: string, client: { data: ClientData; passwordHa
     projectName: data.projectName,
     active: data.active,
     passwordHash,
+    stage: data.stage,
     updates: data.updates,
     files: data.files,
     revisions: data.revisions,

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { BUILD_STAGES } from '@/lib/stages';
 import type {
   Client,
   ClientData,
@@ -35,6 +36,7 @@ function toData(c: Client): ClientData {
     email: c.email,
     projectName: c.projectName,
     active: c.active,
+    stage: c.stage,
     updates: c.updates.map((u) => ({ ...u })),
     files: c.files.map((f) => ({ ...f })),
     revisions: c.revisions.map((r) => ({ ...r })),
@@ -97,6 +99,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
           projectName: addForm.projectName.trim(),
           active: true,
           passwordHash: 'set',
+          stage: '',
           updates: [],
           files: [],
           revisions: [],
@@ -326,7 +329,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                 <code className="font-spec text-lg tracking-widest flex-1" style={{ color: 'var(--text-heading)' }}>{password.value}</code>
                 <button onClick={() => copy(password.value)} className="btn-outline text-xs flex-shrink-0">{copied ? 'Copied!' : 'Copy'}</button>
               </div>
-              <p className="text-xs mt-2" style={{ color: 'var(--text-faint)' }}>Shown once. Share it with {c.name} directly.</p>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-faint)' }}>This password is shown once. Share it with {c.name} directly.</p>
             </div>
           )}
 
@@ -350,6 +353,17 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                       onChange={(e) => setDraft({ ...draft, active: e.target.checked })} />
                     Active (can log in)
                   </label>
+                </div>
+                <div>
+                  <label className={labelClass} style={labelStyle}>Build Stage</label>
+                  <Select
+                    value={draft.stage}
+                    onChange={(v) => setDraft({ ...draft, stage: v })}
+                    options={[['', 'Not started'], ...BUILD_STAGES.map((s) => [s, s] as [string, string])]}
+                  />
+                  <p className="text-[11px] mt-1 font-spec" style={{ color: 'var(--text-faint)' }}>
+                    Fills the progress bar in the client portal.
+                  </p>
                 </div>
               </div>
 

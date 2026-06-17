@@ -2,16 +2,24 @@ name: eagle engineering & supply co
 email: bdeagle@eaglecompanies.com
 projectName: EEI Website
 active: true
-passwordHash: cd50b51063b61b0696e2df49d540704c:ba8d53f745bacaa071335718961f709c022563b8845304eb04a6f41b008886fb69ec4acc1e77c7726484080ba616404dfc7781c31d9514b25d7a7670622c6469
+passwordHash: 46654689c844d53be9c8317a08bb7ce3:29c2c9008aa071ec09d239bceb167a75267aa7b5b497e01c3620a3c96efc6d413a494a1c7cacc98d93832d2628ab48f89cde4cdd7ce1130d173274767160de96
+passwordEnc: ff9fae747f7154ef3686f27b:bdd2d2da9ab7b583c7c1a3846a0a78f7:7d722eb984f51410bbffb285
 updates:
   - phase: Phase 4
     status: pending-signoff
     notes: "Shifting focus to tech angle. Will provide staging site next week. "
     date: "2026-06-16"
 files: []
-revisions:
-  - phase: ""
-    description: ""
-    status: requested
-    date: ""
-invoices: []
+revisions: []
+invoices:
+  - description: Part 1
+    amount: $1250
+    status: pending
+    dueDate: "2026-06-26"
+    invoiceUrl: https://link.waveapps.com/pkskjw-7ctgau
+staging:
+  url: https://www.eaglecompanies.com/
+  username: ""
+  password: ""
+  status: ready
+  notes: Here ya go

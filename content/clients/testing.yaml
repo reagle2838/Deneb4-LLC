@@ -2,8 +2,19 @@ name: Testing
 email: hello.ridhie@gmail.com
 projectName: Ridhi's testing site
 active: true
-passwordHash: 0252b54844609a93f6c836a3828f5954:83a5ca14988bcb5878318a25df89976576f3a0c836c2b94869253d026ccddb5f4f2c4fe05c5b299704d5af5035e50549e962bf7e562e7d5624f8f4e016caf389
-updates: []
+passwordHash: 760c47d1bb54b660ce58b5d95499621d:0f6f08ff5334df963ef0c7242498e05b7cc73edc3f8efb7149085500804c2abb1880889f395d5e51f151b92f4fa517dc324f6de1d366ddb5297bf288d0469f02
+stage: ""
+updates:
+  - phase: "1"
+    status: complete
+    notes: ""
+    date: "2026-06-16"
 files: []
 revisions: []
 invoices: []
+staging:
+  url: ""
+  username: ""
+  password: ""
+  status: building
+  notes: ""

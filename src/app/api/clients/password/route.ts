@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         email: existing.email,
         projectName: existing.projectName,
         active: existing.active,
+        stage: existing.stage,
         updates: existing.updates,
         files: existing.files,
         revisions: existing.revisions,

@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
         email: data.email ?? existing.email,
         projectName: data.projectName ?? existing.projectName,
         active: data.active ?? existing.active,
+        stage: data.stage ?? existing.stage,
         updates: data.updates ?? [],
         files: data.files ?? [],
         revisions: data.revisions ?? [],

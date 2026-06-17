@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         email,
         projectName,
         active: true,
+        stage: '',
         updates: [],
         files: [],
         revisions: [],
