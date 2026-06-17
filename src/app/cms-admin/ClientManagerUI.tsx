@@ -9,7 +9,14 @@ import type {
   ClientFile,
   ClientRevision,
   ClientInvoice,
+  ClientStaging,
 } from '@/lib/clients';
+
+const EMPTY_STAGING: ClientStaging = { url: '', username: '', password: '', status: 'building', notes: '' };
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border-accent)',
@@ -32,6 +39,7 @@ function toData(c: Client): ClientData {
     files: c.files.map((f) => ({ ...f })),
     revisions: c.revisions.map((r) => ({ ...r })),
     invoices: c.invoices.map((i) => ({ ...i })),
+    staging: { ...(c.staging ?? EMPTY_STAGING) },
   };
 }
 
@@ -53,6 +61,8 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   function selectClient(slug: string) {
     if (selected === slug) {
@@ -91,6 +101,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
           files: [],
           revisions: [],
           invoices: [],
+          staging: { ...EMPTY_STAGING },
         };
         setClients((prev) => [...prev, newClient]);
         setPassword({ slug: data.slug, value: data.password });
@@ -213,6 +224,34 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
     );
   }
 
+  function setStaging(patch: Partial<ClientStaging>) {
+    setDraft((d) => (d ? { ...d, staging: { ...d.staging, ...patch } } : d));
+  }
+
+  async function uploadFiles(fileList: FileList | File[]) {
+    if (!selected) return;
+    setUploading(true);
+    setError('');
+    try {
+      for (const file of Array.from(fileList)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('slug', selected);
+        const res = await fetch('/api/clients/upload', { method: 'POST', body: fd });
+        const data = (await res.json()) as { url?: string; name?: string; error?: string };
+        if (data.url) {
+          addRow('files', { name: data.name ?? file.name, url: data.url, description: '', date: today() });
+        } else {
+          setError(data.error ?? 'Upload failed.');
+        }
+      }
+    } catch {
+      setError('Upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Add client */}
@@ -314,6 +353,35 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                 </div>
               </div>
 
+              {/* Staging Site */}
+              <div>
+                <h3 className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: 'var(--text-muted)' }}>Staging Site</h3>
+                <div className="p-3 rounded-sm space-y-3" style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Field label="Staging URL" full>
+                      <input className={inputClass} style={inputStyle} value={draft.staging.url} placeholder="https://staging.client.com"
+                        onChange={(e) => setStaging({ url: e.target.value })} />
+                    </Field>
+                    <Field label="Username">
+                      <input className={inputClass} style={inputStyle} value={draft.staging.username}
+                        onChange={(e) => setStaging({ username: e.target.value })} />
+                    </Field>
+                    <Field label="Password / Access">
+                      <input className={inputClass} style={inputStyle} value={draft.staging.password}
+                        onChange={(e) => setStaging({ password: e.target.value })} />
+                    </Field>
+                    <Field label="Status">
+                      <Select value={draft.staging.status} onChange={(v) => setStaging({ status: v as ClientStaging['status'] })}
+                        options={[['building', 'Building'], ['ready', 'Ready for Review'], ['live', 'Live'], ['down', 'Down for Updates']]} />
+                    </Field>
+                    <Field label="Notes" full>
+                      <input className={inputClass} style={inputStyle} value={draft.staging.notes} placeholder="Homepage and About are live; product pages coming Friday."
+                        onChange={(e) => setStaging({ notes: e.target.value })} />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+
               {/* Project Updates */}
               <Section title="Project Updates" onAdd={() => addRow('updates', blank.update())}>
                 {draft.updates.map((u, i) => (
@@ -331,6 +399,32 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
 
               {/* Shared Files */}
               <Section title="Shared Files" onAdd={() => addRow('files', blank.file())}>
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); }}
+                  className="rounded-sm p-6 text-center transition-colors"
+                  style={{
+                    border: `2px dashed ${dragOver ? 'var(--accent-light)' : 'var(--border-accent)'}`,
+                    background: dragOver ? 'var(--bg-raised)' : 'var(--bg-surface)',
+                  }}
+                >
+                  <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                    {uploading ? 'Uploading...' : 'Drag and drop files here'}
+                  </p>
+                  <label className="btn-outline text-xs cursor-pointer">
+                    or browse
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = ''; }}
+                    />
+                  </label>
+                  <p className="text-[11px] mt-2 font-spec" style={{ color: 'var(--text-faint)' }}>
+                    Uploaded files are stored on the server. You can also add a Drive/Dropbox link with “+ Add”.
+                  </p>
+                </div>
                 {draft.files.map((f, i) => (
                   <Row key={i} onRemove={() => removeRow('files', i)}>
                     <Field label="File Name"><input className={inputClass} style={inputStyle} value={f.name} onChange={(e) => updateRow('files', i, { name: e.target.value })} /></Field>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
-import { slugify, clientExists, writeClient } from '@/lib/clients';
+import { slugify, clientExists, writeClient, EMPTY_STAGING } from '@/lib/clients';
 import { generateClientPassword, hashPassword } from '@/lib/portal-auth';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         files: [],
         revisions: [],
         invoices: [],
+        staging: EMPTY_STAGING,
       },
     });
 

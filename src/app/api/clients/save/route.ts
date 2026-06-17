@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
         files: data.files ?? [],
         revisions: data.revisions ?? [],
         invoices: data.invoices ?? [],
+        staging: data.staging ?? existing.staging,
       },
     });
 

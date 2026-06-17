@@ -31,6 +31,22 @@ export interface ClientInvoice {
   invoiceUrl?: string;
 }
 
+export interface ClientStaging {
+  url: string;
+  username: string;
+  password: string;
+  status: 'building' | 'ready' | 'live' | 'down';
+  notes: string;
+}
+
+export const EMPTY_STAGING: ClientStaging = {
+  url: '',
+  username: '',
+  password: '',
+  status: 'building',
+  notes: '',
+};
+
 export interface Client {
   slug: string;
   name: string;
@@ -42,6 +58,7 @@ export interface Client {
   files: ClientFile[];
   revisions: ClientRevision[];
   invoices: ClientInvoice[];
+  staging: ClientStaging;
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -113,6 +130,18 @@ function parseFile(slug: string): Client | null {
       dueDate: str(i.dueDate),
       ...(str(i.invoiceUrl) ? { invoiceUrl: str(i.invoiceUrl) } : {}),
     })),
+    staging: parseStaging(data.staging),
+  };
+}
+
+function parseStaging(v: unknown): ClientStaging {
+  const s = (v && typeof v === 'object' ? v : {}) as RawClient;
+  return {
+    url: str(s.url),
+    username: str(s.username),
+    password: str(s.password),
+    status: (str(s.status) || 'building') as ClientStaging['status'],
+    notes: str(s.notes),
   };
 }
 
@@ -148,6 +177,7 @@ export function writeClient(slug: string, client: { data: ClientData; passwordHa
     files: data.files,
     revisions: data.revisions,
     invoices: data.invoices,
+    staging: data.staging ?? EMPTY_STAGING,
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }

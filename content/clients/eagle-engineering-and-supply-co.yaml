@@ -2,7 +2,16 @@ name: eagle engineering & supply co
 email: bdeagle@eaglecompanies.com
 projectName: EEI Website
 active: true
-updates: []
+passwordHash: cd50b51063b61b0696e2df49d540704c:ba8d53f745bacaa071335718961f709c022563b8845304eb04a6f41b008886fb69ec4acc1e77c7726484080ba616404dfc7781c31d9514b25d7a7670622c6469
+updates:
+  - phase: Phase 4
+    status: pending-signoff
+    notes: "Shifting focus to tech angle. Will provide staging site next week. "
+    date: "2026-06-16"
 files: []
-revisions: []
+revisions:
+  - phase: ""
+    description: ""
+    status: requested
+    date: ""
 invoices: []

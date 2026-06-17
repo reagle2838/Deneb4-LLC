@@ -31,3 +31,7 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+# uploaded client files (kept on the server, not in git)
+/public/uploads/*
+!/public/uploads/.gitkeep

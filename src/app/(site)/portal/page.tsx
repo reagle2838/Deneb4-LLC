@@ -22,6 +22,10 @@ function StatusPill({ status }: { status: string }) {
     pending:          { label: 'Pending',            color: 'var(--text-faint)' },
     paid:             { label: 'Paid',               color: '#16a34a' },
     overdue:          { label: 'Overdue',            color: '#e40014' },
+    building:         { label: 'Building',            color: 'var(--text-faint)' },
+    ready:            { label: 'Ready for Review',    color: 'var(--accent-light)' },
+    live:             { label: 'Live',                color: '#16a34a' },
+    down:             { label: 'Down for Updates',    color: '#d97706' },
   };
   const s = map[status] ?? { label: status, color: 'var(--text-faint)' };
   return (
@@ -61,6 +65,45 @@ export default async function PortalPage() {
         </div>
 
         <div className="space-y-8">
+
+          {/* Staging Site */}
+          {(client.staging.url || client.staging.username || client.staging.notes) && (
+            <div className="card overflow-hidden">
+              <div className="px-7 py-5 flex items-start justify-between gap-4" style={{ borderBottom: "1px solid var(--border-accent)" }}>
+                <div>
+                  <h2 className="font-semibold" style={{ color: "var(--text-heading)" }}>Staging Site</h2>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-faint)" }}>Preview your site as we build it.</p>
+                </div>
+                <StatusPill status={client.staging.status} />
+              </div>
+              <div className="px-7 py-5 space-y-4">
+                {client.staging.url && (
+                  <a href={client.staging.url} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm">
+                    Open staging site →
+                  </a>
+                )}
+                {(client.staging.username || client.staging.password) && (
+                  <div className="flex flex-wrap gap-x-10 gap-y-2">
+                    {client.staging.username && (
+                      <div>
+                        <p className="text-[10px] font-spec font-semibold tracking-widest uppercase mb-0.5" style={{ color: "var(--text-faint)" }}>Username</p>
+                        <p className="font-spec text-sm" style={{ color: "var(--text-heading)" }}>{client.staging.username}</p>
+                      </div>
+                    )}
+                    {client.staging.password && (
+                      <div>
+                        <p className="text-[10px] font-spec font-semibold tracking-widest uppercase mb-0.5" style={{ color: "var(--text-faint)" }}>Password</p>
+                        <p className="font-spec text-sm" style={{ color: "var(--text-heading)" }}>{client.staging.password}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {client.staging.notes && (
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{client.staging.notes}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Project Updates */}
           <div className="card overflow-hidden">
