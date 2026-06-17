@@ -11,8 +11,7 @@ export default config({
     // still renders on the site. The Client Manager card on the dashboard
     // takes its place.
     navigation: {
-      Content: ['articles'],
-      Legal: ['privacyPolicy', 'termsOfService'],
+      'Content Management': ['articles', 'privacyPolicy', 'termsOfService'],
     },
   },
   collections: {

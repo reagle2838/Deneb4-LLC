@@ -8,3 +8,6 @@ links:
   - label: Claude
     url: https://claude.ai/project/019e98b7-2433-7711-a3e9-561695bdb282
     icon: 💬
+  - label: Email
+    url: https://mail.hostinger.com/mailboxes/INBOX
+    icon: 📝

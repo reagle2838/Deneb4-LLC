@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { QuickLink } from '@/lib/quick-links';
 
-const NAV_ID = 'cms-client-manager-nav';
-const COUNTER_ID = 'cms-active-client-counter';
+const NAV_ID = 'cms-workspace-nav';
+const NAV_LABEL_ID = 'cms-biz-label';
+const ZONE_ID = 'cms-biz-zone';
 
 function onDashboard(): boolean {
   return /\/keystatic\/?$/.test(window.location.pathname);
@@ -37,53 +38,53 @@ export default function KeystaticClientManager({
 }) {
   const [open, setOpen] = useState(false);
   const [qlOpen, setQlOpen] = useState(false);
-  const [qlMenu, setQlMenu] = useState(false);
-  const [isDash, setIsDash] = useState(false);
   const [links, setLinks] = useState<QuickLink[]>(quickLinks);
   const [draft, setDraft] = useState<QuickLink[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [iconPicker, setIconPicker] = useState<number | null>(null);
+
+  const linksRef = useRef<QuickLink[]>(quickLinks);
   const activeRef = useRef(activeClients);
+  linksRef.current = links;
   activeRef.current = activeClients;
 
-  // Inject the sidebar CTA + active-client counter into the dashboard, and
-  // track whether we're on the dashboard (for the quick-links widget).
-  useEffect(() => {
-    function injectCounter() {
-      if (!onDashboard()) {
-        document.getElementById(COUNTER_ID)?.remove();
-        return;
-      }
-      if (document.getElementById(COUNTER_ID)) return;
-      const heading = dashboardHeading();
-      if (!heading || !heading.parentElement) return;
+  function openEditor() {
+    const cur = linksRef.current;
+    setDraft(cur.length ? cur.map((l) => ({ ...l })) : [{ label: '', url: '', icon: '🔗' }]);
+    setError('');
+    setIconPicker(null);
+    setQlOpen(true);
+  }
 
-      const box = document.createElement('div');
-      box.id = COUNTER_ID;
-      box.style.cssText = [
-        'display:inline-flex',
-        'align-items:center',
-        'gap:12px',
-        'background:#ffffff',
-        'border:1px solid rgba(15,23,42,0.12)',
-        'border-radius:8px',
-        'padding:12px 20px',
-        'margin:16px 0 4px',
-      ].join(';');
-      const n = activeRef.current;
-      const label = n === 1 ? 'ACTIVE CLIENT' : 'ACTIVE CLIENTS';
-      box.innerHTML =
-        `<span style="font-size:28px;font-weight:700;line-height:1;color:#006b8f">${n}</span>` +
-        `<span style="font-size:12px;font-weight:600;letter-spacing:0.08em;color:#64748b">${label}</span>`;
-      heading.parentElement.insertBefore(box, heading.nextSibling);
+  // Inject the Business Operations sidebar group + dashboard zone, re-running
+  // on an interval so they survive Keystatic re-renders.
+  useEffect(() => {
+    function card(): HTMLDivElement {
+      const d = document.createElement('div');
+      d.style.cssText = 'background:#fff;border:1px solid rgba(15,23,42,0.12);border-radius:8px;';
+      return d;
     }
 
-    function injectSidebarCta() {
+    function sectionLabel(text: string): HTMLParagraphElement {
+      const p = document.createElement('p');
+      p.textContent = text;
+      p.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;margin:0 0 10px;';
+      return p;
+    }
+
+    function injectSidebarGroup() {
       const dash = document.querySelector<HTMLAnchorElement>('a[href$="/keystatic"]');
       const nav = dash?.closest('nav');
       if (!nav || !dash) return;
 
+      let label = document.getElementById(NAV_LABEL_ID);
+      if (!label) {
+        label = document.createElement('div');
+        label.id = NAV_LABEL_ID;
+        label.textContent = 'Business Operations';
+        label.style.cssText = 'padding:16px 12px 4px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;';
+      }
       let btn = document.getElementById(NAV_ID) as HTMLButtonElement | null;
       if (!btn) {
         btn = document.createElement('button');
@@ -91,42 +92,126 @@ export default function KeystaticClientManager({
         btn.type = 'button';
         btn.textContent = 'Workspace';
         btn.style.cssText = [
-          'display:block',
-          'width:calc(100% - 24px)',
-          'margin:6px 12px',
-          'padding:9px 12px',
-          'border-radius:6px',
-          'background:#006b8f',
-          'color:#ffffff',
-          'font-size:14px',
-          'font-weight:600',
-          'text-align:left',
-          'border:none',
-          'cursor:pointer',
+          'display:block', 'width:calc(100% - 24px)', 'margin:0 12px 6px', 'padding:9px 12px',
+          'border-radius:6px', 'background:#006b8f', 'color:#ffffff', 'font-size:14px',
+          'font-weight:600', 'text-align:left', 'border:none', 'cursor:pointer',
         ].join(';');
         btn.addEventListener('mouseenter', () => { if (btn) btn.style.background = '#00546f'; });
         btn.addEventListener('mouseleave', () => { if (btn) btn.style.background = '#006b8f'; });
-        btn.addEventListener('click', () => setOpen(true));
+        btn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-workspace')));
       }
-      const dashItem = Array.from(nav.children).find((c) => c.contains(dash)) ?? dash;
-      if (btn.previousElementSibling !== dashItem) {
-        nav.insertBefore(btn, dashItem.nextSibling);
+      // Place label + button at the end of the sidebar nav.
+      if (label.parentElement !== nav || nav.lastElementChild !== btn) {
+        nav.appendChild(label);
+        nav.appendChild(btn);
       }
     }
 
+    function injectZone() {
+      if (!onDashboard()) {
+        document.getElementById(ZONE_ID)?.remove();
+        return;
+      }
+      const heading = dashboardHeading();
+      if (!heading || !heading.parentElement) return;
+
+      const cur = linksRef.current;
+      const n = activeRef.current;
+      const sig = JSON.stringify({ cur, n });
+      let zone = document.getElementById(ZONE_ID) as HTMLDivElement | null;
+      if (zone && zone.dataset.sig === sig && zone.isConnected) return;
+
+      if (!zone) {
+        zone = document.createElement('div');
+        zone.id = ZONE_ID;
+        zone.style.cssText = 'margin-top:36px;';
+      }
+      zone.dataset.sig = sig;
+      zone.innerHTML = '';
+      zone.appendChild(sectionLabel('Business Operations'));
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;';
+
+      // Workspace launcher
+      const ws = document.createElement('button');
+      ws.type = 'button';
+      ws.style.cssText =
+        'background:#fff;border:1px solid rgba(15,23,42,0.12);border-radius:8px;padding:16px 20px;cursor:pointer;text-align:left;min-width:200px;';
+      ws.innerHTML =
+        '<p style="margin:0;font-size:15px;font-weight:600;color:#0f172a">Open Workspace →</p>' +
+        '<p style="margin:4px 0 0;font-size:12px;color:#64748b">Clients · Leads · Tasks · Notes</p>';
+      ws.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-workspace')));
+      row.appendChild(ws);
+
+      // Active clients counter
+      const counter = card();
+      counter.style.cssText += 'padding:16px 20px;display:flex;flex-direction:column;justify-content:center;min-width:130px;';
+      counter.innerHTML =
+        `<span style="font-size:28px;font-weight:700;line-height:1;color:#006b8f">${n}</span>` +
+        `<span style="font-size:11px;font-weight:600;letter-spacing:0.08em;color:#64748b;margin-top:4px">${n === 1 ? 'ACTIVE CLIENT' : 'ACTIVE CLIENTS'}</span>`;
+      row.appendChild(counter);
+
+      // Quick links
+      const ql = card();
+      ql.style.cssText += 'padding:14px 16px;flex:1;min-width:240px;';
+      const qlHead = document.createElement('div');
+      qlHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+      qlHead.innerHTML = '<span style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:#64748b">QUICK LINKS</span>';
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.textContent = cur.length ? 'Edit' : '+ Add';
+      editBtn.style.cssText = 'font-size:12px;font-weight:600;color:#006b8f;background:none;border:none;cursor:pointer;';
+      editBtn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('open-quick-links')));
+      qlHead.appendChild(editBtn);
+      ql.appendChild(qlHead);
+
+      const chips = document.createElement('div');
+      chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto;';
+      if (cur.length === 0) {
+        const empty = document.createElement('span');
+        empty.textContent = 'No quick links yet.';
+        empty.style.cssText = 'font-size:13px;color:#94a3b8;';
+        chips.appendChild(empty);
+      } else {
+        for (const l of cur) {
+          const a = document.createElement('a');
+          a.href = normHref(l.url);
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.innerHTML = `<span style="margin-right:6px">${l.icon || '🔗'}</span>${l.label || l.url}`;
+          a.style.cssText =
+            'display:inline-flex;align-items:center;font-size:13px;padding:5px 10px;border:1px solid rgba(15,23,42,0.12);border-radius:6px;background:#fff;color:#18222e;text-decoration:none;';
+          chips.appendChild(a);
+        }
+      }
+      ql.appendChild(chips);
+      row.appendChild(ql);
+
+      zone.appendChild(row);
+      heading.parentElement.appendChild(zone);
+    }
+
     function tick() {
-      setIsDash(onDashboard());
-      injectCounter();
-      injectSidebarCta();
+      injectSidebarGroup();
+      injectZone();
     }
 
     tick();
     const interval = window.setInterval(tick, 300);
+    const onWs = () => setOpen(true);
+    const onQl = () => openEditor();
+    window.addEventListener('open-workspace', onWs);
+    window.addEventListener('open-quick-links', onQl);
     return () => {
       window.clearInterval(interval);
       document.getElementById(NAV_ID)?.remove();
-      document.getElementById(COUNTER_ID)?.remove();
+      document.getElementById(NAV_LABEL_ID)?.remove();
+      document.getElementById(ZONE_ID)?.remove();
+      window.removeEventListener('open-workspace', onWs);
+      window.removeEventListener('open-quick-links', onQl);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -134,20 +219,11 @@ export default function KeystaticClientManager({
       if (e.key === 'Escape') {
         setOpen(false);
         setQlOpen(false);
-        setQlMenu(false);
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-
-  function openEditor() {
-    setDraft(links.length ? links.map((l) => ({ ...l })) : [{ label: '', url: '', icon: '🔗' }]);
-    setError('');
-    setIconPicker(null);
-    setQlMenu(false);
-    setQlOpen(true);
-  }
 
   async function saveQuickLinks() {
     setBusy(true);
@@ -174,114 +250,13 @@ export default function KeystaticClientManager({
   }
 
   const inputStyle: React.CSSProperties = {
-    border: '1px solid #cbd5e1',
-    background: '#fff',
-    color: '#0f172a',
-    borderRadius: '6px',
-    padding: '8px 10px',
-    fontSize: '14px',
-    outline: 'none',
+    border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a',
+    borderRadius: '6px', padding: '8px 10px', fontSize: '14px', outline: 'none',
   };
 
   return (
     <>
-      {/* Quick Links — fixed dropdown on the right */}
-      {isDash && (
-        <div style={{ position: 'fixed', top: '14px', right: '20px', zIndex: 60 }}>
-          <button
-            type="button"
-            onClick={() => setQlMenu((v) => !v)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: '#fff',
-              border: '1px solid rgba(15,23,42,0.15)',
-              borderRadius: '8px',
-              padding: '9px 14px',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: '#0f172a',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            }}
-          >
-            Quick Links
-            <span style={{ color: '#64748b', transform: qlMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
-          </button>
-
-          {qlMenu && (
-            <>
-              <div onClick={() => setQlMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 59 }} />
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  marginTop: '8px',
-                  width: '280px',
-                  background: '#fff',
-                  border: '1px solid rgba(15,23,42,0.12)',
-                  borderRadius: '10px',
-                  boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
-                  zIndex: 61,
-                  overflow: 'hidden',
-                }}
-              >
-                <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '8px' }}>
-                  {links.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: '#94a3b8', padding: '12px', textAlign: 'center' }}>No quick links yet.</p>
-                  ) : (
-                    links.map((l, i) => (
-                      <a
-                        key={i}
-                        href={normHref(l.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '9px 12px',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          color: '#0f172a',
-                          textDecoration: 'none',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <span style={{ fontSize: '16px', lineHeight: 1 }}>{l.icon || '🔗'}</span>
-                        <span>{l.label || l.url}</span>
-                      </a>
-                    ))
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={openEditor}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderTop: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    border: 'none',
-                    borderBottomLeftRadius: '10px',
-                    borderBottomRightRadius: '10px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#006b8f',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {links.length ? 'Edit links' : '+ Add quick links'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Client Manager modal */}
+      {/* Workspace modal */}
       {open && (
         <ModalShell title="Workspace" onClose={() => setOpen(false)}>
           <iframe src="/cms-admin" title="Workspace" style={{ flex: 1, width: '100%', border: 'none' }} />
@@ -307,23 +282,7 @@ export default function KeystaticClientManager({
                   {iconPicker === i && (
                     <>
                       <div onClick={() => setIconPicker(null)} style={{ position: 'fixed', inset: 0, zIndex: 1 }} />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '46px',
-                          left: 0,
-                          zIndex: 2,
-                          background: '#fff',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '8px',
-                          boxShadow: '0 10px 24px rgba(0,0,0,0.16)',
-                          padding: '8px',
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(6, 1fr)',
-                          gap: '2px',
-                          width: '232px',
-                        }}
-                      >
+                      <div style={{ position: 'absolute', top: '46px', left: 0, zIndex: 2, background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 10px 24px rgba(0,0,0,0.16)', padding: '8px', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2px', width: '232px' }}>
                         {ICON_OPTIONS.map((emoji) => (
                           <button
                             key={emoji}
@@ -370,22 +329,8 @@ export default function KeystaticClientManager({
               + Add link
             </button>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
-              <button
-                type="button"
-                onClick={() => setQlOpen(false)}
-                disabled={busy}
-                style={{ fontSize: '14px', padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveQuickLinks}
-                disabled={busy}
-                style={{ fontSize: '14px', padding: '8px 16px', border: 'none', borderRadius: '6px', background: '#006b8f', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
-              >
-                {busy ? 'Saving...' : 'Save'}
-              </button>
+              <button type="button" onClick={() => setQlOpen(false)} disabled={busy} style={{ fontSize: '14px', padding: '8px 16px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', cursor: 'pointer' }}>Cancel</button>
+              <button type="button" onClick={saveQuickLinks} disabled={busy} style={{ fontSize: '14px', padding: '8px 16px', border: 'none', borderRadius: '6px', background: '#006b8f', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{busy ? 'Saving...' : 'Save'}</button>
             </div>
           </div>
         </ModalShell>
@@ -427,14 +372,7 @@ function ModalShell({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
           <span style={{ fontWeight: 600, color: '#0f172a' }}>{title}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{ border: 'none', background: 'transparent', fontSize: '22px', lineHeight: 1, cursor: 'pointer', color: '#475569' }}
-          >
-            ×
-          </button>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ border: 'none', background: 'transparent', fontSize: '22px', lineHeight: 1, cursor: 'pointer', color: '#475569' }}>×</button>
         </div>
         {children}
       </div>
