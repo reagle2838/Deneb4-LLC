@@ -43,27 +43,35 @@ export default function KeystaticClientManager() {
       if (!onDashboard()) return;
       if (document.getElementById(CARD_ID)) return;
 
-      // Dashboard cards are links to collections/singletons that live in the
-      // main content area (not the sidebar <nav>).
-      const cards = Array.from(
-        document.querySelectorAll<HTMLAnchorElement>(
-          'a[href*="/keystatic/collection"], a[href*="/keystatic/singleton"]'
-        )
-      ).filter((a) => !a.closest('nav'));
+      // The dashboard is a section of rows. Find the collection title link
+      // (in main content, not the sidebar <nav>, and not the "+ create"
+      // link), then clone its whole ROW so the new entry is its own row.
+      const titleLink = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a[href*="/keystatic/collection"]')
+      ).find(
+        (a) => !a.closest('nav') && !(a.getAttribute('href') ?? '').includes('/create')
+      );
 
-      const template = cards[0];
-      if (!template) return;
+      const row = titleLink?.parentElement;
+      const rowsContainer = row?.parentElement;
+      if (!row || !rowsContainer) return;
 
-      const clone = template.cloneNode(true) as HTMLAnchorElement;
+      const clone = row.cloneNode(true) as HTMLElement;
       clone.id = CARD_ID;
-      clone.setAttribute('href', '#');
+      // Drop the "+ create" control (button or link) from the clone.
+      clone.querySelectorAll('button').forEach((b) => b.remove());
+      clone.querySelectorAll('a').forEach((a) => {
+        if ((a.getAttribute('href') ?? '').includes('/create')) a.remove();
+        else a.setAttribute('href', '#');
+      });
       relabel(clone, 'Client Manager');
+      clone.style.cursor = 'pointer';
       clone.addEventListener('click', (e) => {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('open-client-manager'));
       });
 
-      template.parentElement?.appendChild(clone);
+      rowsContainer.appendChild(clone);
     }
 
     inject();
