@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
         projectName: existing.projectName,
         active: existing.active,
         stage: existing.stage,
+        driveFolder: existing.driveFolder,
         updates: existing.updates,
         files: existing.files,
         revisions: existing.revisions,

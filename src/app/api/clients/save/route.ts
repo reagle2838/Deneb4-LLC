@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         projectName: data.projectName ?? existing.projectName,
         active: data.active ?? existing.active,
         stage: data.stage ?? existing.stage,
+        driveFolder: data.driveFolder ?? existing.driveFolder,
         updates: data.updates ?? [],
         files: data.files ?? [],
         revisions: data.revisions ?? [],

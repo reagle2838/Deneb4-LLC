@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         projectName,
         active: true,
         stage: '',
+        driveFolder: '',
         updates: [],
         files: [],
         revisions: [],

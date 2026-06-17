@@ -37,6 +37,7 @@ function toData(c: Client): ClientData {
     projectName: c.projectName,
     active: c.active,
     stage: c.stage,
+    driveFolder: c.driveFolder,
     updates: c.updates.map((u) => ({ ...u })),
     files: c.files.map((f) => ({ ...f })),
     revisions: c.revisions.map((r) => ({ ...r })),
@@ -102,6 +103,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
           active: true,
           passwordHash: 'set',
           stage: '',
+          driveFolder: '',
           updates: [],
           files: [],
           revisions: [],
@@ -462,6 +464,40 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                   </Row>
                 ))}
               </Section>
+
+              {/* Client upload folder (Google Drive) */}
+              <div>
+                <h3 className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: 'var(--text-muted)' }}>Client Upload Folder (Google Drive)</h3>
+                <div className="p-3 rounded-sm space-y-2" style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)' }}>
+                  <Field label="Google Drive folder link">
+                    <input
+                      className={inputClass}
+                      style={inputStyle}
+                      value={draft.driveFolder}
+                      placeholder="https://drive.google.com/drive/folders/..."
+                      onChange={(e) => setDraft({ ...draft, driveFolder: e.target.value })}
+                    />
+                  </Field>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => copy(draft.driveFolder)}
+                      disabled={!draft.driveFolder}
+                      className="btn-outline text-xs"
+                    >
+                      {copied ? 'Copied!' : 'Copy link'}
+                    </button>
+                    {draft.driveFolder && (
+                      <a href={draft.driveFolder} target="_blank" rel="noopener noreferrer" className="font-spec text-xs" style={{ color: 'var(--accent-light)' }}>
+                        Open in Drive →
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-spec" style={{ color: 'var(--text-faint)' }}>
+                    In Google Drive, share this folder with the client&apos;s email as an <strong>Editor</strong> so they can upload. The client sees an &ldquo;Upload to shared folder&rdquo; button in their portal.
+                  </p>
+                </div>
+              </div>
 
               {/* Shared Files */}
               <Section title="Shared Files" onAdd={() => addRow('files', blank.file())}>

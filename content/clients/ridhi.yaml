@@ -4,6 +4,7 @@ projectName: Deneb4.com
 active: true
 passwordHash: 1125b2bd1285c75827ed94500a13be72:476376cec0ad0589800bff29d8304f5df50b13c69ed6b586770b5596327bf96e38a68d59cf4378b4b92aad4a881ddb3fd6a56895ab9d7db78fb84b0806bfbcdd
 stage: Development
+driveFolder: https://drive.google.com/drive/folders/119_pLejrhNiLqFXc0zTxZxQOi65w6Maf?usp=drive_link
 updates: []
 files: []
 revisions:
@@ -11,7 +12,12 @@ revisions:
     description: Change navigation to mega-menu type.
     status: in-progress
     date: "2026-06-16"
-invoices: []
+invoices:
+  - description: Deposit (50%)
+    amount: "1250"
+    status: pending
+    dueDate: "2026-06-24"
+    invoiceUrl: https://link.waveapps.com/pkskjw-7ctgau
 staging:
   url: http://localhost:3001/
   username: ""

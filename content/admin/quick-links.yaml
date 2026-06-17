@@ -1,0 +1,10 @@
+links:
+  - label: Invoicing
+    url: https://next.waveapps.com/f814756b-6b81-4c8a-9df0-a3b7c9a874e0/dashboard
+    icon: 💳
+  - label: Github
+    url: https://github.com/reagle2838/Deneb4-LLC
+    icon: 🔍
+  - label: Claude
+    url: https://claude.ai/project/019e98b7-2433-7711-a3e9-561695bdb282
+    icon: 💬

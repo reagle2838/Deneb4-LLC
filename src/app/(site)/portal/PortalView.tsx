@@ -10,6 +10,7 @@ export interface PortalData {
   name: string;
   projectName: string;
   stage: string;
+  driveFolder: string;
   staging: ClientStaging;
   updates: ClientUpdate[];
   files: ClientFile[];
@@ -243,6 +244,19 @@ export default function PortalView({ client }: { client: PortalData }) {
             open={open.files}
             onToggle={() => toggle('files')}
             empty="No files shared yet."
+            prepend={
+              client.driveFolder ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>Upload your files</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Add briefs, assets, or content to our shared Google Drive folder.</p>
+                  </div>
+                  <a href={client.driveFolder} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm flex-shrink-0">
+                    Upload to shared folder →
+                  </a>
+                </div>
+              ) : undefined
+            }
           >
             {client.files.map((f, i) => (
               <div key={i} className="px-6 py-4 flex items-start justify-between gap-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
@@ -376,6 +390,7 @@ function AccordionSection({
   empty,
   children,
   sectionRef,
+  prepend,
 }: {
   title: string;
   subtitle: string;
@@ -386,6 +401,7 @@ function AccordionSection({
   empty: string;
   children: React.ReactNode;
   sectionRef: React.RefObject<HTMLDivElement | null>;
+  prepend?: React.ReactNode;
 }) {
   return (
     <div ref={sectionRef} className="card overflow-hidden scroll-mt-24">
@@ -408,13 +424,20 @@ function AccordionSection({
           ▾
         </span>
       </button>
-      {open && (count === 0 ? (
-        <div className="px-6 py-6 text-center" style={{ borderTop: '1px solid var(--border-accent)' }}>
-          <p className="text-sm" style={{ color: 'var(--text-faint)' }}>{empty}</p>
+      {open && (
+        <div>
+          {prepend && (
+            <div className="px-6 py-4" style={{ borderTop: '1px solid var(--border-accent)' }}>{prepend}</div>
+          )}
+          {count === 0 ? (
+            <div className="px-6 py-6 text-center" style={{ borderTop: '1px solid var(--border-accent)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-faint)' }}>{empty}</p>
+            </div>
+          ) : (
+            <div>{children}</div>
+          )}
         </div>
-      ) : (
-        <div>{children}</div>
-      ))}
+      )}
     </div>
   );
 }

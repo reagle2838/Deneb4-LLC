@@ -25,6 +25,7 @@ export default async function PortalPage() {
     name: client.name,
     projectName: client.projectName,
     stage: client.stage,
+    driveFolder: client.driveFolder,
     staging: client.staging,
     updates: client.updates,
     files: client.files,

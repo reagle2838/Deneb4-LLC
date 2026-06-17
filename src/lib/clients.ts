@@ -57,6 +57,7 @@ export interface Client {
   active: boolean;
   passwordHash: string;
   stage: string;
+  driveFolder: string;
   updates: ClientUpdate[];
   files: ClientFile[];
   revisions: ClientRevision[];
@@ -109,6 +110,7 @@ function parseFile(slug: string): Client | null {
     active: data.active === true,
     passwordHash: str(data.passwordHash),
     stage: str(data.stage),
+    driveFolder: str(data.driveFolder),
     updates: asArray(data.updates).map((u) => ({
       phase: str(u.phase),
       status: (str(u.status) || 'upcoming') as ClientUpdate['status'],
@@ -181,6 +183,7 @@ export function writeClient(
     active: data.active,
     passwordHash,
     stage: data.stage,
+    driveFolder: data.driveFolder,
     updates: data.updates,
     files: data.files,
     revisions: data.revisions,

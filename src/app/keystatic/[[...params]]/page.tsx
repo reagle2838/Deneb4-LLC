@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifySession } from '@/lib/cms-auth';
 import { getAllClients } from '@/lib/clients';
+import { getQuickLinks } from '@/lib/quick-links';
 import KeystaticApp from './keystatic-app';
 import KeystaticClientManager from './KeystaticClientManager';
 
@@ -14,10 +15,11 @@ export default async function KeystaticAdminPage() {
   }
   const clients = await getAllClients();
   const activeClients = clients.filter((c) => c.active).length;
+  const quickLinks = getQuickLinks();
   return (
     <>
       <KeystaticApp />
-      <KeystaticClientManager activeClients={activeClients} />
+      <KeystaticClientManager activeClients={activeClients} quickLinks={quickLinks} />
     </>
   );
 }
