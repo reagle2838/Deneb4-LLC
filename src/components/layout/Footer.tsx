@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StarGlyph } from "@/components/ui/Wordmark";
+import Image from "next/image";
 import { INDUSTRIES } from "@/data/industries";
 
 function LinkedInIcon() {
@@ -11,10 +11,10 @@ function LinkedInIcon() {
 }
 
 const SERVICES = [
-  { label: "Foundation ($4,500)", href: "/services#packages" },
-  { label: "Professional ($6,000)", href: "/services#packages" },
-  { label: "Enterprise ($8,000)", href: "/services#packages" },
-  { label: "Functional Tools", href: "/services#tools" },
+  { label: "Web Design & Development", href: "/services" },
+  { label: "Website + Content Systems", href: "/services#content-systems" },
+  { label: "Sales & Operations Systems", href: "/services#sales-ops" },
+  { label: "Sales Collateral & Print", href: "/services#collateral" },
 ];
 
 const COMPANY = [
@@ -34,11 +34,8 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="lg:col-span-1 sm:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <StarGlyph className="w-7 h-7" />
-              <span className="font-bold text-lg tracking-tight" style={{ color: "var(--text-heading)" }}>
-                DENEB<span style={{ color: "var(--accent-light)" }}>4</span>
-              </span>
+            <div className="mb-4">
+              <Image src="/logo.png" alt="Deneb4 — Web Design & Development" width={676} height={216} className="h-10 w-auto" />
             </div>
             <p className="text-xs leading-relaxed mb-4 max-w-xs" style={{ color: "var(--text-faint)" }}>
               Web design and development for industrial, engineering, and manufacturing businesses. Sharp work, no agency overhead.

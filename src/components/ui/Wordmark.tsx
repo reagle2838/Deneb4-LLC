@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 /** Four-point star glyph — a nod to the star "Deneb". */
 export function StarGlyph({ className = "w-7 h-7" }: { className?: string }) {
@@ -18,7 +19,6 @@ export function StarGlyph({ className = "w-7 h-7" }: { className?: string }) {
 
 export default function Wordmark({
   className = "",
-  showTagline = true,
   onClick,
 }: {
   className?: string;
@@ -29,20 +29,10 @@ export default function Wordmark({
     <Link
       href="/"
       onClick={onClick}
-      className={`flex items-center gap-2.5 flex-shrink-0 ${className}`}
+      className={`flex items-center flex-shrink-0 ${className}`}
       aria-label="Deneb4, Home"
     >
-      <StarGlyph className="w-7 h-7 flex-shrink-0" />
-      <span className="flex flex-col justify-center leading-none">
-        <span className="font-bold text-lg tracking-tight" style={{ color: "var(--text-heading)" }}>
-          DENEB<span style={{ color: "var(--accent-light)" }}>4</span>
-        </span>
-        {showTagline && (
-          <span className="font-spec text-[9px] tracking-[0.18em] mt-1" style={{ color: "var(--text-faint)" }}>
-            DESIGN · DEVELOPMENT
-          </span>
-        )}
-      </span>
+      <Image src="/logo.png" alt="Deneb4 — Web Design & Development" width={676} height={216} priority className="h-[72px] w-auto" />
     </Link>
   );
 }

@@ -4,10 +4,12 @@ import { useState } from 'react';
 import type { Client } from '@/lib/clients';
 import type { Lead } from '@/lib/leads';
 import type { Task } from '@/lib/tasks';
+import type { QuickLink } from '@/lib/quick-links';
 import ClientManagerUI from './ClientManagerUI';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
 import NotesTab from './NotesTab';
+import QuickLinksBar from './QuickLinksBar';
 
 type Tab = 'clients' | 'leads' | 'tasks' | 'notes';
 
@@ -16,16 +18,19 @@ export default function Workspace({
   leads,
   tasks,
   notes,
+  quickLinks,
 }: {
   clients: Client[];
   leads: Lead[];
   tasks: Task[];
   notes: string;
+  quickLinks: QuickLink[];
 }) {
   const [tab, setTab] = useState<Tab>('clients');
 
   const newLeads = leads.filter((l) => l.stage === 'new').length;
   const openTasks = tasks.filter((t) => t.status !== 'done').length;
+  const activeClients = clients.filter((c) => c.active).length;
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'clients', label: 'Clients', badge: clients.length },
@@ -38,6 +43,17 @@ export default function Workspace({
 
   return (
     <div>
+      {/* Business overview strip */}
+      <div className="flex flex-wrap items-stretch gap-3 mb-8">
+        <div className="card px-5 py-4 inline-flex flex-col justify-center" style={{ minWidth: '130px' }}>
+          <span className="text-3xl font-bold" style={{ color: 'var(--accent-light)' }}>{activeClients}</span>
+          <span className="text-[11px] font-spec font-semibold tracking-widest uppercase mt-1" style={{ color: 'var(--text-faint)' }}>
+            {activeClients === 1 ? 'Active Client' : 'Active Clients'}
+          </span>
+        </div>
+        <QuickLinksBar initialLinks={quickLinks} />
+      </div>
+
       <div className="flex flex-wrap gap-1 mb-8" style={{ borderBottom: '1px solid var(--border-accent)' }}>
         {tabs.map((t) => {
           const active = tab === t.key;

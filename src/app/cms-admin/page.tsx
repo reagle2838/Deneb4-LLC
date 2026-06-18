@@ -5,6 +5,7 @@ import { getAllClients } from "@/lib/clients";
 import { getLeads } from "@/lib/leads";
 import { getTasks } from "@/lib/tasks";
 import { getNotes } from "@/lib/notes";
+import { getQuickLinks } from "@/lib/quick-links";
 import Workspace from "./Workspace";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function CmsAdminPage() {
   const leads = getLeads();
   const tasks = getTasks();
   const notes = getNotes();
+  const quickLinks = getQuickLinks();
 
   return (
     <div style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
@@ -26,7 +28,7 @@ export default async function CmsAdminPage() {
           <h1 className="text-3xl font-bold" style={{ color: "var(--text-heading)" }}>Command Center</h1>
         </div>
 
-        <Workspace clients={clients} leads={leads} tasks={tasks} notes={notes} />
+        <Workspace clients={clients} leads={leads} tasks={tasks} notes={notes} quickLinks={quickLinks} />
       </div>
     </div>
   );

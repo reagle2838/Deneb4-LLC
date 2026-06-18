@@ -6,6 +6,14 @@ import type { Task, TaskStatus } from '@/lib/tasks';
 const TASK_STATUSES: TaskStatus[] = ['todo', 'doing', 'done'];
 const COLUMN_LABEL: Record<TaskStatus, string> = { todo: 'To Do', doing: 'Doing', done: 'Done' };
 
+function makeId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
 export default function TasksTab({
   initialTasks,
   clients,
@@ -34,7 +42,7 @@ export default function TasksTab({
     e.preventDefault();
     if (!title.trim()) return;
     persist([
-      { id: crypto.randomUUID(), title: title.trim(), status: 'todo', client, createdAt: new Date().toISOString() },
+      { id: makeId(), title: title.trim(), status: 'todo', client, createdAt: new Date().toISOString() },
       ...tasks,
     ]);
     setTitle('');

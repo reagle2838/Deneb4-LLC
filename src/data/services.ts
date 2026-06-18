@@ -1,89 +1,71 @@
-import type { ServicePackage, FunctionalTool } from "@/types";
+// ── Web Design & Development capability groups ───────────────────────
+// One offering, organized into capability areas (no fixed tiers).
 
-// ── Packages ─────────────────────────────────────────────────────────
+export interface CapabilityGroup {
+  id: string;
+  title: string;
+  tagline: string;
+  items: string[];
+}
 
-export const PACKAGES: ServicePackage[] = [
+export const CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
-    id: "foundation",
-    name: "Foundation",
-    price: "$4,500",
-    tagline: "A credible, professionally built web presence with clear lead generation.",
-    pages: "5 custom pages",
-    revisions: "1 revision round",
-    delivery: "~4 week delivery",
-    toolCredits: "$500 in functional tool credits",
-    aio: "On-page SEO",
-    features: [
-      "5 custom-designed pages",
-      "Mobile-first, responsive build",
-      "Contact form",
-      "On-page SEO optimization",
-      "Google Analytics setup",
-      "$500 in functional tool credits",
-      "One revision round",
+    id: "content-systems",
+    title: "Website + Content Systems",
+    tagline: "The website and the content infrastructure behind it, built to run without you in the weeds.",
+    items: [
+      "CMS setup",
+      "Product / service catalog setup",
+      "Case study / portfolio library",
+      "Careers pages",
+      "Galleries",
+      "File upload workflows",
+      "Quote request systems",
+      "Client portals",
     ],
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: "$6,000",
-    tagline: "For growing businesses that need more than a basic online presence.",
-    pages: "6 custom pages",
-    revisions: "2 revision rounds",
-    delivery: "6–8 week delivery",
-    toolCredits: "$1,500 in functional tool credits",
-    aio: "AIO structuring (ChatGPT, Gemini & more)",
-    features: [
-      "Everything in Foundation",
-      "6 custom-designed pages",
-      "$1,500 in functional tool credits",
-      "AIO structuring for AI discoverability",
-      "Two revision rounds",
-      "Advanced on-page SEO",
+    id: "sales-ops",
+    title: "Sales & Operations Systems",
+    tagline: "Lightweight systems to capture leads, track follow-ups, and see what's working.",
+    items: [
+      "Lightweight CRM setup",
+      "Lead intake workflows",
+      "Quote follow-up tracking",
+      "Sales dashboards",
+      "Campaign trackers",
+      "Support request intake",
+      "Client update request systems",
     ],
-    featured: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "$8,000",
-    tagline: "A site built to carry real operational weight.",
-    pages: "7 custom pages",
-    revisions: "2 revision rounds",
-    delivery: "8–10 week delivery",
-    toolCredits: "$2,500 in functional tool credits",
-    aio: "Full AIO optimization",
-    features: [
-      "Everything in Professional",
-      "7 custom-designed pages",
-      "$2,500 in functional tool credits",
-      "Full AIO optimization",
-      "Priority build scheduling",
-      "Extended documentation & handover",
+    id: "collateral",
+    title: "Sales Collateral & Print Materials",
+    tagline: "Print and physical materials that match the brand and close the loop offline.",
+    items: [
+      "Business cards",
+      "QR code cards",
+      "Postcards",
+      "Brochures",
+      "Capability statements",
+      "Product / service line cards",
+      "Leave-behind flyers",
+      "Sales folders",
+      "Proposal packets",
+      "Trade show handouts",
+      "Branded client handoff binders",
+      "Printed onboarding packets",
     ],
   },
-];
-
-// ── Functional tools (custom-built features) ─────────────────────────
-
-export const FUNCTIONAL_TOOLS: FunctionalTool[] = [
-  { label: "Product Catalog",      price: "from $500", desc: "Filterable, searchable product or equipment catalog with specs and categories." },
-  { label: "Quote Request Form",   price: "$500",      desc: "Structured RFQ form routed to your inbox, built for spec-driven, quote-based sales." },
-  { label: "Careers + Resume Upload", price: "$750",   desc: "Job listings with an application form and resume/file upload." },
-  { label: "Blog / Articles",      price: "$1,000",    desc: "Article system for technical content, case studies, and insights." },
-  { label: "Content Editor (CMS)", price: "$1,000",    desc: "Edit page content yourself without touching code." },
-  { label: "FAQ Manager",          price: "$500",      desc: "Self-managed, structured FAQ that doubles as AIO-friendly content." },
-  { label: "Protected Area",       price: "$1,200",    desc: "Login-gated pages for dealers, distributors, or internal documents." },
-  { label: "Custom Chatbot",       price: "$1,200",    desc: "A scoped assistant trained on your products, specs, and FAQs." },
 ];
 
 // ── Add-ons ──────────────────────────────────────────────────────────
 
 export const ADD_ONS: { label: string; price: string }[] = [
-  { label: "Additional page",            price: "$250 each" },
-  { label: "Extra revision round",       price: "$150 each" },
-  { label: "CMS section expansion",      price: "$200 / section" },
-  { label: "Ongoing maintenance",        price: "quoted per request" },
+  { label: "Additional page", price: "quoted per scope" },
+  { label: "Extra revision round", price: "quoted per scope" },
+  { label: "CMS section expansion", price: "quoted per scope" },
+  { label: "Ongoing maintenance", price: "quoted per request" },
 ];
 
 // ── Ownership model ──────────────────────────────────────────────────

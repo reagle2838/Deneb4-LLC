@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { INDUSTRIES } from "@/data/industries";
-import { PACKAGES, FUNCTIONAL_TOOLS } from "@/data/services";
+import { CAPABILITY_GROUPS } from "@/data/services";
+
+const ALL_CAPABILITIES = CAPABILITY_GROUPS.flatMap((g) => g.items);
 
 const inputCls =
   "w-full px-3 py-2.5 rounded-sm text-sm outline-none transition-colors bg-theme-surface focus:[border-color:var(--accent)]";
@@ -89,24 +91,24 @@ export default function ProjectForm() {
           <input id="p-site" className={inputCls} style={inputStyle} placeholder="https://" value={form.currentSite} onChange={(e) => set("currentSite", e.target.value)} />
         </div>
         <div>
-          <label htmlFor="p-package" className={labelCls} style={labelStyle}>Package interest</label>
+          <label htmlFor="p-package" className={labelCls} style={labelStyle}>Primary interest</label>
           <select id="p-package" className={inputCls} style={inputStyle} value={form.packageInterest} onChange={(e) => set("packageInterest", e.target.value)}>
-            {PACKAGES.map((p) => <option key={p.id} value={`${p.name} (${p.price})`}>{p.name}: {p.price}</option>)}
             <option value="Not sure yet">Not sure yet</option>
+            {CAPABILITY_GROUPS.map((g) => <option key={g.id} value={g.title}>{g.title}</option>)}
           </select>
         </div>
       </div>
 
       <div>
-        <span className={labelCls} style={labelStyle}>Functional tools you&apos;re considering</span>
+        <span className={labelCls} style={labelStyle}>What you&apos;re considering</span>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {FUNCTIONAL_TOOLS.map((t) => {
-            const checked = tools.includes(t.label);
+          {ALL_CAPABILITIES.map((label) => {
+            const checked = tools.includes(label);
             return (
               <button
                 type="button"
-                key={t.label}
-                onClick={() => toggleTool(t.label)}
+                key={label}
+                onClick={() => toggleTool(label)}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors"
                 style={{
                   border: `1px solid ${checked ? "var(--accent)" : "var(--border-accent)"}`,
@@ -120,7 +122,7 @@ export default function ProjectForm() {
                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   )}
                 </span>
-                {t.label}
+                {label}
               </button>
             );
           })}

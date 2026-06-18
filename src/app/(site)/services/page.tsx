@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
-import { PACKAGES, FUNCTIONAL_TOOLS, ADD_ONS, OWNERSHIP_POINTS } from "@/data/services";
+import { CAPABILITY_GROUPS, ADD_ONS, OWNERSHIP_POINTS } from "@/data/services";
 
 export const metadata: Metadata = {
-  title: "Services & Pricing",
+  title: "Services",
   description:
-    "Fixed-scope, fixed-price website packages for technical businesses: Foundation ($4,500), Professional ($6,000), and Enterprise ($8,000). Plus custom functional tools — catalogs, quote forms, CMS, and more.",
+    "Web design and development for technical businesses: websites and content systems, sales and operations systems, and sales collateral and print materials. Fixed-scope, fixed-price, and you own it.",
   alternates: { canonical: "https://deneb4.com/services" },
 };
 
@@ -24,63 +24,35 @@ export default function ServicesPage() {
         </div>
       </PageHero>
 
-      {/* Packages */}
+      {/* Web Design & Development */}
       <section id="packages" style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
+          <div className="mb-14 max-w-2xl">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Web Design &amp; Development</h2>
+            <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              One offering, scoped to what you actually need. Mix and match across three areas: the website and content systems behind it, the systems that run your sales and operations, and the printed materials that carry the brand offline.
+            </p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {PACKAGES.map((p) => (
-              <div key={p.id} className="card p-8 flex flex-col gap-5">
+            {CAPABILITY_GROUPS.map((g) => (
+              <div key={g.id} id={g.id} className="card p-8 flex flex-col gap-5 scroll-mt-28">
                 <div>
-                  <h2 className="text-2xl font-bold" style={{ color: "var(--text-heading)" }}>{p.name}</h2>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold" style={{ color: "var(--accent-light)" }}>{p.price}</span>
-                </div>
-                <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{p.tagline}</p>
-                <div className="flex flex-wrap gap-3 text-xs" style={{ color: "var(--text-faint)" }}>
-                  <span>{p.pages}</span>
-                  <span>·</span>
-                  <span>{p.revisions}</span>
-                  <span>·</span>
-                  <span>{p.delivery}</span>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: "var(--text-heading)" }}>{g.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{g.tagline}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-muted)" }}>
-                      <span style={{ color: "var(--accent)" }} className="mt-1.5 text-[8px] flex-shrink-0">●</span>{f}
+                  {g.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-muted)" }}>
+                      <span style={{ color: "var(--accent)" }} className="mt-1.5 text-[8px] flex-shrink-0">●</span>{item}
                     </li>
                   ))}
                 </ul>
-                <Link href="/start" className={`${p.featured ? "btn-primary" : "btn-outline"} justify-center text-sm`}>Start with {p.name}</Link>
               </div>
             ))}
           </div>
           <p className="text-sm mt-8 max-w-3xl" style={{ color: "var(--text-faint)" }}>
-            Tool credits apply toward any functional tools below. Unsure which tier fits? Send a brief and you&apos;ll get a recommendation, not a sales pitch.
+            Not sure what you need? Send a brief and you&apos;ll get a scoped recommendation, not a sales pitch.
           </p>
-        </div>
-      </section>
-
-      {/* Functional tools */}
-      <section id="tools" style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="mb-14 max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Functional tools</h2>
-            <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              The features that turn a brochure into working infrastructure. Add any to a package: your tool credits go toward these first.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {FUNCTIONAL_TOOLS.map((t) => (
-              <div key={t.label} className="card p-6 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-semibold text-sm" style={{ color: "var(--text-heading)" }}>{t.label}</h3>
-                  <span className="font-spec text-xs flex-shrink-0" style={{ color: "var(--accent-light)" }}>{t.price}</span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{t.desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -116,7 +88,7 @@ export default function ServicesPage() {
       {/* CTA */}
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Not sure which package fits?</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Not sure where to start?</h2>
           <p className="text-base max-w-xl mx-auto mb-8" style={{ color: "var(--text-muted)" }}>
             Describe what you need in the project brief and you&apos;ll get a scoped, fixed-price proposal back, usually within a day or two.
           </p>

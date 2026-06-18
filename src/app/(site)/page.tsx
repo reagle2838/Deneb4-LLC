@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import Marquee from "@/components/ui/Marquee";
 import FaqAccordion from "@/components/ui/FaqAccordion";
-import { PACKAGES } from "@/data/services";
+import { CAPABILITY_GROUPS } from "@/data/services";
 import { INDUSTRIES } from "@/data/industries";
 import { PHASES } from "@/data/process";
 import { FAQS } from "@/data/faq";
@@ -122,34 +122,61 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="flex items-end justify-between gap-6 mb-14">
             <div className="max-w-2xl">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Three ways to <span style={{ color: "var(--accent-light)" }}>start</span></h2>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">What we <span style={{ color: "var(--accent-light)" }}>build</span></h2>
               <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Every package is a complete, custom build you own outright: priced by scope, never by the hour.
+                Web design and development, scoped to what you actually need, and handed over as an asset you own outright.
               </p>
             </div>
             <Link href="/services" className="btn-outline flex-shrink-0 hidden sm:inline-flex">All Services →</Link>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {PACKAGES.map((p) => (
-              <div key={p.id} className="card p-8 flex flex-col gap-5">
-                <div>
-                  <h3 className="text-xl font-bold" style={{ color: "var(--text-heading)" }}>{p.name}</h3>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold" style={{ color: "var(--accent-light)" }}>{p.price}</span>
-                  <span className="font-spec text-xs" style={{ color: "var(--text-faint)" }}>{p.pages}</span>
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--text-muted)" }}>{p.tagline}</p>
-                <ul className="space-y-2">
-                  {p.features.slice(0, 4).map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-                      <span style={{ color: "var(--accent)" }} className="mt-1 text-[8px] flex-shrink-0">●</span>{f}
+            {CAPABILITY_GROUPS.map((g) => (
+              <Link key={g.id} href={`/services#${g.id}`} className="card p-8 flex flex-col gap-4 transition-transform hover:-translate-y-0.5">
+                <h3 className="text-xl font-bold" style={{ color: "var(--text-heading)" }}>{g.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{g.tagline}</p>
+                <ul className="space-y-2 mt-auto">
+                  {g.items.slice(0, 5).map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                      <span style={{ color: "var(--accent)" }} className="mt-1 text-[8px] flex-shrink-0">●</span>{item}
                     </li>
                   ))}
+                  {g.items.length > 5 && (
+                    <li className="text-xs font-spec" style={{ color: "var(--accent-light)" }}>+ {g.items.length - 5} more →</li>
+                  )}
                 </ul>
-                <Link href="/start" className={`${p.featured ? "btn-primary" : "btn-outline"} justify-center text-sm mt-auto`}>Start with {p.name}</Link>
-              </div>
+              </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Partnership: deployment & infrastructure ─────────────── */}
+      <section style={{ background: "var(--bg-surface)", borderTop: "1px solid var(--border-accent)" }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
+          <div className="card accent-banner p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <p className="font-spec text-xs tracking-widest uppercase mb-3" style={{ color: "var(--accent-light)" }}>Deployment &amp; Secured Infrastructure</p>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
+              </h2>
+              <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with Eagle Engineering &amp; Supply Co. Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
+              </p>
+              <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
+            </div>
+            <ul className="space-y-3">
+              {[
+                "Custom operations platform and CRM, built and owned by you",
+                "On-site deployment and provisioning by Eagle's enterprise IT team",
+                "SonicWall firewalls and network hardening",
+                "ViewSonic commercial displays",
+                "One turnkey, fully secured system with a single point of contact",
+              ].map((point) => (
+                <li key={point} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
+                  <span style={{ color: "var(--accent)" }} className="mt-1 text-[10px] flex-shrink-0">◆</span>{point}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

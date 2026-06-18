@@ -20,9 +20,10 @@ function formatDate(iso: string) {
 
 export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
-  const [converted, setConverted] = useState<{ id: string; password: string } | null>(null);
+  const [converted, setConverted] = useState<{ name: string; password: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   async function persist(next: Lead[]) {
     setLeads(next);
@@ -52,8 +53,9 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
       });
       const data = (await res.json()) as { slug?: string; password?: string; error?: string };
       if (data.password) {
-        setConverted({ id: lead.id, password: data.password });
-        persist(leads.map((l) => (l.id === lead.id ? { ...l, stage: 'won' } : l)));
+        setConverted({ name: lead.company || lead.name, password: data.password });
+        // Purge the lead from the inbox; it now lives in the client bank.
+        persist(leads.filter((l) => l.id !== lead.id));
       } else {
         setError(data.error ?? 'Could not create client.');
       }
@@ -64,13 +66,38 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
     }
   }
 
-  if (leads.length === 0) {
-    return <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No leads yet. Contact and Start-a-Project form submissions will appear here.</p>;
+  async function copy(text: string) {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
     <div className="space-y-6">
       {error && <p className="text-xs" style={{ color: '#e40014' }}>{error}</p>}
+
+      {converted && (
+        <div className="card p-4" style={{ borderColor: 'var(--accent-light)' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-1" style={{ color: 'var(--text-muted)' }}>
+                {converted.name} added to clients — portal password:
+              </p>
+              <code className="font-spec text-base" style={{ color: 'var(--text-heading)' }}>{converted.password}</code>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>Shown once. Find them under the Clients tab.</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={() => copy(converted.password)} className="btn-outline text-xs">{copied ? 'Copied!' : 'Copy'}</button>
+              <button onClick={() => setConverted(null)} className="text-xs font-spec" style={{ color: 'var(--text-faint)' }}>Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {leads.length === 0 && (
+        <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No leads right now. Contact and Start-a-Project form submissions will appear here.</p>
+      )}
+
       {LEAD_STAGES.map((stage) => {
         const group = leads.filter((l) => l.stage === stage);
         if (group.length === 0) return null;
@@ -116,14 +143,6 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
 
                   {l.message && (
                     <p className="text-sm mt-3 whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-muted)' }}>{l.message}</p>
-                  )}
-
-                  {converted?.id === l.id && (
-                    <div className="mt-3 p-3 rounded-sm" style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)' }}>
-                      <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-1" style={{ color: 'var(--text-muted)' }}>Client created — portal password:</p>
-                      <code className="font-spec text-base" style={{ color: 'var(--text-heading)' }}>{converted.password}</code>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>Shown once. Find this client under the Clients tab.</p>
-                    </div>
                   )}
                 </div>
               ))}

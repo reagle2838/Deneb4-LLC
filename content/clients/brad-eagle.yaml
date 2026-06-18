@@ -2,8 +2,9 @@ name: Brad Eagle
 email: bdeagle@eaglecompanies.com
 projectName: Eagle Engineering & Supply Co.
 active: true
-passwordHash: 4b774e379d7ef975246c3d1c6be46fa0:c11e7bc6d8ffacb304b7f352aa08f5934f563b3ac5c4d5267a94da3ebdfe7c9753144b315d5b692fee26c341b9903e072e28ba8e809fbc6d164af6cfb3df34d9
+passwordHash: 67044a4727b52a441ece73f545321900:66d1eb7803a386f6ec1e419fc1d406ffe7c469d374bf44b13e751d5107d50ffc43d7b3aadfdf8a430571e8ec01e5aebe35034986bd2c17a51c3f2ea383d241b2
 stage: ""
+driveFolder: ""
 updates: []
 files: []
 revisions: []

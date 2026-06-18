@@ -11,3 +11,9 @@ links:
   - label: Email
     url: https://mail.hostinger.com/mailboxes/INBOX
     icon: 📝
+  - label: Hostinger
+    url: https://hpanel.hostinger.com/domain/deneb4.com/domain-overview
+    icon: 🌐
+  - label: Google Admin Console
+    url: https://admin.google.com/?utm_source=og_am
+    icon: 🖥️

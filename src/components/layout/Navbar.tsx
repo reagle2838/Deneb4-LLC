@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Wordmark from "@/components/ui/Wordmark";
-import { PACKAGES, FUNCTIONAL_TOOLS } from "@/data/services";
+import { CAPABILITY_GROUPS } from "@/data/services";
 import { INDUSTRIES } from "@/data/industries";
 import { EXPLORE_LINKS } from "@/data/nav";
 import type { Article } from "@/types";
@@ -12,10 +13,14 @@ import type { Article } from "@/types";
 type OpenMenu = "services" | "industries" | "articles" | null;
 
 // Service categories shown in the left rail of the Services panel.
-const SERVICE_CATS = [
-  ...PACKAGES.map((p) => ({ id: p.id, label: p.name })),
-  { id: "tools", label: "Functional Tools" },
-];
+const SERVICE_CATS = CAPABILITY_GROUPS.map((g) => ({ id: g.id, label: g.title }));
+
+// Showcase image shown in the center panel for a given service group.
+const GROUP_IMAGES: Record<string, { src: string; w: number; h: number; alt: string }> = {
+  "content-systems": { src: "/mega-content-systems.png", w: 1448, h: 1086, alt: "Deneb4 content management and product catalog interface on a desktop display" },
+  collateral: { src: "/mega-collateral.png", w: 1254, h: 1254, alt: "Deneb4 branded print collateral: business cards, line cards, and leave-behinds" },
+  "sales-ops": { src: "/mega-sales-ops.png", w: 1448, h: 1086, alt: "Deneb4 sales and operations dashboard on a desktop display" },
+};
 
 // ── Sub-components ────────────────────────────────────────────────────
 
@@ -100,7 +105,7 @@ function PanelCTAs({ onClose }: { onClose: () => void }) {
 export default function Navbar({ articles }: { articles: Article[] }) {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
-  const [activeService, setActiveService] = useState("professional");
+  const [activeService, setActiveService] = useState("content-systems");
   const [serviceSearch, setServiceSearch] = useState("");
   const [industrySearch, setIndustrySearch] = useState("");
   const [articleSearch, setArticleSearch] = useState("");
@@ -164,14 +169,13 @@ export default function Navbar({ articles }: { articles: Article[] }) {
   const q = serviceSearch.trim().toLowerCase();
   const filteredCats = q
     ? SERVICE_CATS.filter((c) => {
-        if (c.id === "tools") return FUNCTIONAL_TOOLS.some((t) => t.label.toLowerCase().includes(q));
-        const p = PACKAGES.find((x) => x.id === c.id)!;
-        return p.name.toLowerCase().includes(q) || p.features.some((f) => f.toLowerCase().includes(q));
+        const g = CAPABILITY_GROUPS.find((x) => x.id === c.id)!;
+        return g.title.toLowerCase().includes(q) || g.items.some((i) => i.toLowerCase().includes(q));
       })
     : SERVICE_CATS;
 
-  const activeCatId = filteredCats.some((c) => c.id === activeService) ? activeService : (filteredCats[0]?.id ?? "professional");
-  const activePackage = PACKAGES.find((p) => p.id === activeCatId);
+  const activeCatId = filteredCats.some((c) => c.id === activeService) ? activeService : (filteredCats[0]?.id ?? "content-systems");
+  const activeGroup = CAPABILITY_GROUPS.find((g) => g.id === activeCatId);
 
   const filteredIndustries = industrySearch.trim()
     ? INDUSTRIES.filter((i) => i.label.toLowerCase().includes(industrySearch.toLowerCase()) || i.blurb.toLowerCase().includes(industrySearch.toLowerCase()))
@@ -219,7 +223,7 @@ export default function Navbar({ articles }: { articles: Article[] }) {
       {openMenu === "services" && (
         <div className="fixed left-0 right-0 hidden lg:flex flex-col z-50 overflow-hidden" style={{ top: "96px", bottom: 0, background: "var(--bg-surface)", borderTop: "1px solid var(--border-accent)" }} role="dialog" aria-label="Services menu">
           <div className="flex items-center gap-4 px-8 py-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-accent)" }}>
-            <SearchBar value={serviceSearch} onChange={setServiceSearch} placeholder="Search packages & tools…" inputRef={serviceSearchRef} />
+            <SearchBar value={serviceSearch} onChange={setServiceSearch} placeholder="Search services…" inputRef={serviceSearchRef} />
             <CloseBtn onClick={closeMenu} />
           </div>
 
@@ -255,57 +259,36 @@ export default function Navbar({ articles }: { articles: Article[] }) {
 
             {/* Center detail */}
             <div className="flex-1 overflow-y-auto px-12 py-10">
-              {activePackage ? (
+              {activeGroup && (
                 <>
-                  <div className="flex items-baseline gap-4 mb-2">
-                    <Link href="/services" className="text-2xl font-bold hover:underline" style={{ color: "var(--text-heading)" }} onClick={closeMenu}>
-                      {activePackage.name}
-                    </Link>
-                    <span className="text-2xl font-bold" style={{ color: "var(--accent-light)" }}>{activePackage.price}</span>
-                  </div>
-                  <p className="text-sm mb-8 max-w-2xl leading-relaxed" style={{ color: "var(--text-muted)" }}>{activePackage.tagline}</p>
-                  <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: "var(--text-faint)" }}>What&apos;s included</p>
-                  <div style={{ borderTop: "1px solid var(--border-accent)" }}>
-                    {[
-                      { k: "Pages", v: activePackage.pages },
-                      { k: "Revisions", v: activePackage.revisions },
-                      { k: "Delivery", v: activePackage.delivery },
-                      { k: "Tool credits", v: activePackage.toolCredits },
-                      { k: "Discoverability", v: activePackage.aio },
-                    ].map((row) => (
-                      <div key={row.k} className="flex items-start gap-10 py-4" style={{ borderBottom: "1px solid var(--border-accent)" }}>
-                        <p className="text-sm font-semibold w-40 flex-shrink-0" style={{ color: "var(--text-heading)" }}>{row.k}</p>
-                        <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{row.v}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <Link href="/services" className="btn-outline text-xs mt-6 inline-flex" onClick={closeMenu}>Compare all packages →</Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/services#tools" className="text-2xl font-bold mb-2 inline-block hover:underline" style={{ color: "var(--text-heading)" }} onClick={closeMenu}>
-                    Functional Tools →
+                  <Link href={`/services#${activeGroup.id}`} className="text-2xl font-bold mb-2 inline-block hover:underline" style={{ color: "var(--text-heading)" }} onClick={closeMenu}>
+                    {activeGroup.title} →
                   </Link>
-                  <p className="text-sm mb-8 max-w-2xl leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                    Custom-built features that turn a brochure site into working infrastructure. Add any of these to a package.
-                  </p>
-                  <div style={{ borderTop: "1px solid var(--border-accent)" }}>
-                    {FUNCTIONAL_TOOLS.filter((t) => !q || t.label.toLowerCase().includes(q)).map((tool) => (
-                      <Link
-                        key={tool.label}
-                        href="/services#tools"
-                        className="flex items-start gap-10 py-4 transition-colors"
-                        style={{ borderBottom: "1px solid var(--border-accent)" }}
-                        onClick={closeMenu}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,107,143,0.04)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                      >
-                        <p className="text-sm font-semibold w-44 flex-shrink-0" style={{ color: "var(--text-heading)" }}>{tool.label}</p>
-                        <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--text-muted)" }}>{tool.desc}</p>
-                        <span className="text-xs font-spec flex-shrink-0" style={{ color: "var(--accent-light)" }}>{tool.price}</span>
-                      </Link>
-                    ))}
+                  <p className="text-sm mb-8 max-w-2xl leading-relaxed" style={{ color: "var(--text-muted)" }}>{activeGroup.tagline}</p>
+                  <div className="flex gap-10">
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-10 self-start" style={{ borderTop: "1px solid var(--border-accent)" }}>
+                      {activeGroup.items
+                        .filter((i) => !q || i.toLowerCase().includes(q))
+                        .map((item) => (
+                          <div key={item} className="flex items-center gap-2.5 py-3 text-sm" style={{ borderBottom: "1px solid var(--border-accent)", color: "var(--text-muted)" }}>
+                            <span style={{ color: "var(--accent)" }} className="text-[8px] flex-shrink-0">●</span>{item}
+                          </div>
+                        ))}
+                    </div>
+                    {GROUP_IMAGES[activeGroup.id] && (
+                      <div className="hidden xl:block w-80 flex-shrink-0">
+                        <Image
+                          src={GROUP_IMAGES[activeGroup.id].src}
+                          alt={GROUP_IMAGES[activeGroup.id].alt}
+                          width={GROUP_IMAGES[activeGroup.id].w}
+                          height={GROUP_IMAGES[activeGroup.id].h}
+                          className="w-full h-auto rounded-lg"
+                          style={{ border: "1px solid var(--border-accent)" }}
+                        />
+                      </div>
+                    )}
                   </div>
+                  <Link href="/services" className="btn-outline text-xs mt-6 inline-flex" onClick={closeMenu}>See all services →</Link>
                 </>
               )}
             </div>
@@ -476,9 +459,16 @@ export default function Navbar({ articles }: { articles: Article[] }) {
             </ul>
 
             {/* Right: CTA */}
-            <div className="hidden lg:flex items-center gap-3 ml-auto flex-shrink-0">
-              <Link href="/login" className="text-sm font-medium" style={{ color: "var(--text-muted)" }} onClick={closeMenu}>Client Login</Link>
-              <Link href="/start" className="btn-primary text-sm" onClick={closeMenu}>Start a Project</Link>
+            <div className="hidden lg:flex flex-col items-stretch gap-2 ml-auto flex-shrink-0">
+              <Link href="/start" className="btn-primary text-sm justify-center" onClick={closeMenu}>Start a Project</Link>
+              <Link
+                href="/login"
+                onClick={closeMenu}
+                className="inline-flex items-center justify-center text-sm font-semibold transition-colors"
+                style={{ background: "#ffffff", color: "var(--accent)", border: "1px solid var(--border-accent)", padding: "0.625rem 1.5rem", borderRadius: "2px", letterSpacing: "0.025em" }}
+              >
+                Client Portal
+              </Link>
             </div>
 
             {/* Mobile: hamburger */}
@@ -505,12 +495,12 @@ export default function Navbar({ articles }: { articles: Article[] }) {
                 </button>
                 {mobileServices && (
                   <div className="pl-3 pb-2 space-y-0.5">
-                    {PACKAGES.map((p) => (
-                      <Link key={p.id} href="/services" onClick={() => setMobileOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm rounded-sm" style={{ color: "var(--text-muted)" }}>
-                        <span>{p.name}</span><span className="font-spec text-xs" style={{ color: "var(--accent-light)" }}>{p.price}</span>
+                    <Link href="/services" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm rounded-sm font-medium" style={{ color: "var(--text-heading)" }}>Web Design &amp; Development</Link>
+                    {SERVICE_CATS.map((c) => (
+                      <Link key={c.id} href={`/services#${c.id}`} onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm rounded-sm" style={{ color: "var(--text-muted)" }}>
+                        {c.label}
                       </Link>
                     ))}
-                    <Link href="/services#tools" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm rounded-sm" style={{ color: "var(--text-muted)" }}>Functional Tools</Link>
                   </div>
                 )}
               </div>
@@ -548,7 +538,7 @@ export default function Navbar({ articles }: { articles: Article[] }) {
 
               <div className="pt-3 pb-4 flex gap-3">
                 <Link href="/start" className="btn-primary flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Start a Project</Link>
-                <Link href="/login" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Client Login</Link>
+                <Link href="/login" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Client Portal</Link>
               </div>
             </div>
           </div>

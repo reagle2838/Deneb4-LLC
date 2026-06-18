@@ -1,8 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifySession } from '@/lib/cms-auth';
-import { getAllClients } from '@/lib/clients';
-import { getQuickLinks } from '@/lib/quick-links';
 import KeystaticApp from './keystatic-app';
 import KeystaticClientManager from './KeystaticClientManager';
 
@@ -13,13 +11,10 @@ export default async function KeystaticAdminPage() {
   if (!(await verifySession(token))) {
     redirect('/cms-login');
   }
-  const clients = await getAllClients();
-  const activeClients = clients.filter((c) => c.active).length;
-  const quickLinks = getQuickLinks();
   return (
     <>
       <KeystaticApp />
-      <KeystaticClientManager activeClients={activeClients} quickLinks={quickLinks} />
+      <KeystaticClientManager />
     </>
   );
 }
