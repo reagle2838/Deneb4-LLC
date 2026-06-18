@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { DocumentRenderer } from "@keystatic/core/renderer";
 import { getAllProjects, getAllProjectSlugs, getProjectBySlug } from "@/lib/work";
+import WorkGallery from "./WorkGallery";
 
 export async function generateStaticParams() {
   const slugs = await getAllProjectSlugs();
@@ -60,6 +62,16 @@ export default async function WorkProjectPage({ params }: { params: Promise<{ sl
           </div>
         </header>
 
+        {/* Cover image */}
+        {project.coverImage && (
+          <div style={{ background: "var(--bg-surface)" }}>
+            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={project.coverImage} alt={project.title} className="w-full h-auto rounded-lg" style={{ border: "1px solid var(--border-accent)" }} />
+            </div>
+          </div>
+        )}
+
         {/* Tech tags */}
         {project.tags.length > 0 && (
           <div style={{ background: "var(--bg-alt)", borderBottom: "1px solid var(--border-accent)" }}>
@@ -76,7 +88,11 @@ export default async function WorkProjectPage({ params }: { params: Promise<{ sl
         {/* Body */}
         <div style={{ background: "var(--bg-surface)" }}>
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-14">
-            <div className="article-body" dangerouslySetInnerHTML={{ __html: project.body }} />
+            <div className="article-body">
+              <DocumentRenderer document={project.body} />
+            </div>
+
+            <WorkGallery images={project.gallery} title={project.title} />
 
             <div className="accent-banner card p-7 mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
               <div>

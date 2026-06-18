@@ -6,17 +6,13 @@ export default config({
   },
   ui: {
     brand: { name: 'Deneb4' },
-    // Case Studies (work) is intentionally hidden from the sidebar and
-    // dashboard. It is still editable at /keystatic/collection/work and
-    // still renders on the site. The Client Manager card on the dashboard
-    // takes its place.
     navigation: {
-      'Content Management': ['articles', 'privacyPolicy', 'termsOfService'],
+      'Content Management': ['articles', 'work', 'services', 'privacyPolicy', 'termsOfService'],
     },
   },
   collections: {
     work: collection({
-      label: 'Case Studies',
+      label: 'Work (Case Studies)',
       slugField: 'title',
       path: 'content/work/*',
       schema: {
@@ -29,6 +25,12 @@ export default config({
           label: 'Summary',
           multiline: true,
           description: 'Short description shown on the Work index card.',
+        }),
+        coverImage: fields.image({
+          label: 'Cover Image',
+          directory: 'public/images/work',
+          publicPath: '/images/work',
+          description: 'Main image shown on the Work card and at the top of the case study.',
         }),
         tags: fields.text({
           label: 'Tags',
@@ -44,11 +46,31 @@ export default config({
         }),
         date: fields.date({ label: 'Completion Date' }),
         liveUrl: fields.text({ label: 'Live Site URL (optional)' }),
-        body: fields.text({
-          label: 'Case Study Body (Markdown)',
-          multiline: true,
-          description: 'Full written case study. Use ## headings, - bullets, **bold**.',
+        body: fields.document({
+          label: 'Case Study Body',
+          description: 'Paste from Google Docs or Word and it keeps your formatting. Use the toolbar for headings, bold, lists, and links.',
+          formatting: true,
+          dividers: true,
+          links: true,
+          images: {
+            directory: 'public/images/work',
+            publicPath: '/images/work',
+          },
         }),
+        gallery: fields.array(
+          fields.object({
+            image: fields.image({
+              label: 'Image',
+              directory: 'public/images/work',
+              publicPath: '/images/work',
+            }),
+            caption: fields.text({ label: 'Caption (optional)' }),
+          }),
+          {
+            label: 'Image Gallery',
+            itemLabel: (props) => props.fields.caption.value || 'Image',
+          }
+        ),
       },
     }),
     articles: collection({
@@ -82,15 +104,51 @@ export default config({
           label: 'Read Time',
           description: 'e.g. 6 min read',
         }),
-        body: fields.text({
-          label: 'Body (Markdown)',
-          multiline: true,
-          description: 'Write in Markdown. Use ## for headings, - for bullets, **bold**.',
+        coverImage: fields.image({
+          label: 'Cover Image',
+          directory: 'public/images/articles',
+          publicPath: '/images/articles',
+          description: 'Shown on the article card and at the top of the article.',
+        }),
+        body: fields.document({
+          label: 'Body',
+          description: 'Paste from Google Docs or Word and it keeps your formatting. Use the toolbar for headings, bold, lists, and links.',
+          formatting: true,
+          dividers: true,
+          links: true,
+          images: {
+            directory: 'public/images/articles',
+            publicPath: '/images/articles',
+          },
         }),
       },
     }),
   },
   singletons: {
+    services: singleton({
+      label: 'Services (What I Offer)',
+      path: 'content/pages/services',
+      schema: {
+        groups: fields.array(
+          fields.object({
+            id: fields.text({
+              label: 'ID (anchor / image key)',
+              description: 'Keep stable: content-systems, sales-ops, or collateral. Used for links and the mega-menu image.',
+            }),
+            title: fields.text({ label: 'Title', validation: { isRequired: true } }),
+            tagline: fields.text({ label: 'Tagline', multiline: true }),
+            items: fields.array(fields.text({ label: 'Item' }), {
+              label: 'Items',
+              itemLabel: (props) => props.value || 'Item',
+            }),
+          }),
+          {
+            label: 'Capability Groups',
+            itemLabel: (props) => props.fields.title.value || 'Group',
+          }
+        ),
+      },
+    }),
     privacyPolicy: singleton({
       label: 'Privacy Policy',
       path: 'content/pages/privacy-policy',

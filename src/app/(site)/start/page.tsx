@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ProjectForm from "./ProjectForm";
+import { getCapabilityGroups } from "@/lib/services-content";
 
 export const metadata: Metadata = {
   title: "Start a Project",
@@ -14,7 +15,8 @@ const STEPS = [
   { n: "03", t: "We build", d: "On approval, we kick off the four-phase process with sign-off at each step." },
 ];
 
-export default function StartPage() {
+export default async function StartPage() {
+  const groups = await getCapabilityGroups();
   return (
     <section className="bg-grid" style={{ background: "var(--bg-base)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
@@ -44,7 +46,7 @@ export default function StartPage() {
 
           {/* Right: form */}
           <div className="lg:col-span-3">
-            <ProjectForm />
+            <ProjectForm groups={groups} />
           </div>
         </div>
       </div>

@@ -26,8 +26,12 @@ export default async function ArticlesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {articles.map((a) => (
               <Link key={a.slug} href={`/articles/${a.slug}`} className="card flex flex-col no-underline group overflow-hidden">
-                <div className="relative h-36 flex-shrink-0 bg-grid flex items-end p-4" style={{ borderBottom: "1px solid var(--border-accent)" }}>
-                  <span className="font-spec text-[10px] tracking-widest" style={{ color: "var(--accent-light)" }}>{a.type}</span>
+                <div className="relative h-36 flex-shrink-0 bg-grid flex items-end p-4 overflow-hidden" style={{ borderBottom: "1px solid var(--border-accent)" }}>
+                  {a.coverImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={a.coverImage} alt={a.title} className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  <span className="font-spec text-[10px] tracking-widest relative z-10 px-1.5 py-0.5 rounded-sm" style={{ color: "var(--accent-light)", background: a.coverImage ? "var(--bg-surface)" : "transparent" }}>{a.type}</span>
                 </div>
                 <div className="p-6 flex flex-col gap-2 flex-1">
                   <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>{a.topic} · {a.readTime}</span>

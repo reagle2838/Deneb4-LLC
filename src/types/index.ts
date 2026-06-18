@@ -1,6 +1,10 @@
 // ── Shared types ─────────────────────────────────────────────────────
 
+import type { DocumentRendererProps } from "@keystatic/core/renderer";
+
 export type ArticleType = "Article" | "Case Study";
+
+export type ArticleBody = DocumentRendererProps["document"];
 
 export interface Article {
   slug: string;
@@ -10,8 +14,9 @@ export interface Article {
   topic: string;
   date: string;       // ISO yyyy-mm-dd
   readTime: string;   // e.g. "6 min read"
-  /** HTML string rendered inside a `.article-body` container. */
-  body: string;
+  coverImage: string | null;
+  /** Keystatic document nodes rendered with <DocumentRenderer />. */
+  body: ArticleBody;
 }
 
 export interface ServicePackage {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { DocumentRenderer } from "@keystatic/core/renderer";
 import { getAllArticles, getArticleBySlug, getAllArticleSlugs } from "@/lib/content";
 
 export async function generateStaticParams() {
@@ -61,10 +62,22 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </header>
 
+        {/* Cover image */}
+        {article.coverImage && (
+          <div style={{ background: "var(--bg-surface)" }}>
+            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={article.coverImage} alt={article.title} className="w-full h-auto rounded-lg" style={{ border: "1px solid var(--border-accent)" }} />
+            </div>
+          </div>
+        )}
+
         {/* Body */}
         <div style={{ background: "var(--bg-surface)" }}>
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-14">
-            <div className="article-body" dangerouslySetInnerHTML={{ __html: article.body }} />
+            <div className="article-body">
+              <DocumentRenderer document={article.body} />
+            </div>
 
             <div className="accent-banner card p-7 mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
               <div>

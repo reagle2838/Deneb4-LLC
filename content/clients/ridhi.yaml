@@ -2,20 +2,20 @@ name: Ridhi
 email: hello.ridhie@gmail.com
 projectName: Deneb4.com
 active: true
-passwordHash: 1125b2bd1285c75827ed94500a13be72:476376cec0ad0589800bff29d8304f5df50b13c69ed6b586770b5596327bf96e38a68d59cf4378b4b92aad4a881ddb3fd6a56895ab9d7db78fb84b0806bfbcdd
+passwordHash: 72d2ba9f030012e4acfed8ce28db7af4:0004b4485042cba2a9bccbd96da49e17ab3ac934cc6db4f31c25bd3ff92d358c5c41efede6bb73acde78a98538c5659543c0c67cd431b5665427660c6f31745e
 stage: Development
-driveFolder: https://drive.google.com/drive/folders/119_pLejrhNiLqFXc0zTxZxQOi65w6Maf?usp=drive_link
+driveFolder: https://drive.google.com/drive/folders/1lr-PWYW9Hbsaf04IJAVWMdozBZlOJrDw?usp=sharing
 updates: []
 files: []
 revisions:
   - phase: "1"
     description: Change navigation to mega-menu type.
-    status: in-progress
+    status: complete
     date: "2026-06-16"
 invoices:
   - description: Deposit (50%)
     amount: "1250"
-    status: pending
+    status: paid
     dueDate: "2026-06-24"
     invoiceUrl: https://link.waveapps.com/pkskjw-7ctgau
 staging:

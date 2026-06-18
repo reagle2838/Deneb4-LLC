@@ -68,7 +68,7 @@ export default function PortalView({ client }: { client: PortalData }) {
   const [initialSeen, setInitialSeen] = useState<Record<string, string[]> | null>(null);
   const [open, setOpen] = useState<Record<SectionKey, boolean>>({
     updates: false,
-    files: false,
+    files: true, // Shared Files starts expanded
     revisions: false,
     invoices: false,
   });
@@ -88,8 +88,9 @@ export default function PortalView({ client }: { client: PortalData }) {
     }
     setInitialSeen(parsed);
 
-    // Auto-open sections that have unseen items.
-    const nextOpen = { updates: false, files: false, revisions: false, invoices: false } as Record<SectionKey, boolean>;
+    // Shared Files starts expanded; other sections auto-open if they have
+    // unseen items.
+    const nextOpen = { updates: false, files: true, revisions: false, invoices: false } as Record<SectionKey, boolean>;
     for (const key of SECTION_KEYS) {
       const seenSigs = parsed[key] ?? [];
       const hasNew = items[key].some((it) => !seenSigs.includes(sig(it)));
@@ -127,14 +128,13 @@ export default function PortalView({ client }: { client: PortalData }) {
   }
 
   const openRevisions = client.revisions.filter((r) => r.status !== 'complete').length;
-  const unpaidInvoices = client.invoices.filter((i) => i.status !== 'paid').length;
   const hasStaging = client.staging.url || client.staging.username || client.staging.notes;
 
   const tiles: { key: SectionKey; label: string; value: number }[] = [
     { key: 'updates', label: 'Updates', value: client.updates.length },
     { key: 'files', label: 'Files', value: client.files.length },
     { key: 'revisions', label: 'Open Revisions', value: openRevisions },
-    { key: 'invoices', label: 'Unpaid Invoices', value: unpaidInvoices },
+    { key: 'invoices', label: 'Invoices', value: client.invoices.length },
   ];
 
   return (
@@ -151,6 +151,68 @@ export default function PortalView({ client }: { client: PortalData }) {
               Project: <span style={{ color: 'var(--text-heading)' }}>{client.projectName}</span>
             </p>
           )}
+        </div>
+
+        {/* Folders: Shared Files + Invoices */}
+        <div className="space-y-3 mb-6">
+          <FolderSection
+            sectionRef={refs.files}
+            title="Shared Files"
+            count={client.files.length}
+            isNew={newCount('files')}
+            open={open.files}
+            onToggle={() => toggle('files')}
+            empty="No files shared yet."
+            prepend={
+              client.driveFolder ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>Upload your files</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Add briefs, assets, or content to our shared Google Drive folder.</p>
+                  </div>
+                  <a href={client.driveFolder} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm flex-shrink-0">
+                    Upload to shared folder →
+                  </a>
+                </div>
+              ) : undefined
+            }
+          >
+            {client.files.map((f, i) => (
+              <div key={i} className="px-6 py-4 flex items-start justify-between gap-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
+                <div>
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium" style={{ color: 'var(--accent-light)' }}>{f.name} →</a>
+                  {f.description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.description}</p>}
+                </div>
+                {f.date && <span className="font-spec text-[10px] flex-shrink-0 mt-0.5" style={{ color: 'var(--text-faint)' }}>{formatDate(f.date)}</span>}
+              </div>
+            ))}
+          </FolderSection>
+
+          <FolderSection
+            sectionRef={refs.invoices}
+            title="Invoices"
+            count={client.invoices.length}
+            isNew={newCount('invoices')}
+            open={open.invoices}
+            onToggle={() => toggle('invoices')}
+            empty="No invoices yet."
+          >
+            {client.invoices.map((inv, i) => (
+              <div key={i} className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>{inv.description}</p>
+                  {inv.dueDate && <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>Due {formatDate(inv.dueDate)}</p>}
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <span className="font-spec font-semibold text-sm" style={{ color: 'var(--text-heading)' }}>{inv.amount}</span>
+                  <StatusPill status={inv.status} />
+                  {inv.invoiceUrl && (
+                    <a href={inv.invoiceUrl} target="_blank" rel="noopener noreferrer" className="font-spec text-[10px]" style={{ color: 'var(--accent-light)' }}>PDF →</a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </FolderSection>
         </div>
 
         {/* Build progress */}
@@ -236,40 +298,6 @@ export default function PortalView({ client }: { client: PortalData }) {
           </AccordionSection>
 
           <AccordionSection
-            sectionRef={refs.files}
-            title="Shared Files"
-            subtitle="Design files, briefs, and deliverables."
-            count={client.files.length}
-            isNew={newCount('files')}
-            open={open.files}
-            onToggle={() => toggle('files')}
-            empty="No files shared yet."
-            prepend={
-              client.driveFolder ? (
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>Upload your files</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Add briefs, assets, or content to our shared Google Drive folder.</p>
-                  </div>
-                  <a href={client.driveFolder} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm flex-shrink-0">
-                    Upload to shared folder →
-                  </a>
-                </div>
-              ) : undefined
-            }
-          >
-            {client.files.map((f, i) => (
-              <div key={i} className="px-6 py-4 flex items-start justify-between gap-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
-                <div>
-                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium" style={{ color: 'var(--accent-light)' }}>{f.name} →</a>
-                  {f.description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.description}</p>}
-                </div>
-                {f.date && <span className="font-spec text-[10px] flex-shrink-0 mt-0.5" style={{ color: 'var(--text-faint)' }}>{formatDate(f.date)}</span>}
-              </div>
-            ))}
-          </AccordionSection>
-
-          <AccordionSection
             sectionRef={refs.revisions}
             title="Feedback & Revisions"
             subtitle="Revision requests tracked by phase."
@@ -289,33 +317,6 @@ export default function PortalView({ client }: { client: PortalData }) {
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
-              </div>
-            ))}
-          </AccordionSection>
-
-          <AccordionSection
-            sectionRef={refs.invoices}
-            title="Invoices"
-            subtitle="Project invoices and payment history."
-            count={client.invoices.length}
-            isNew={newCount('invoices')}
-            open={open.invoices}
-            onToggle={() => toggle('invoices')}
-            empty="No invoices yet."
-          >
-            {client.invoices.map((inv, i) => (
-              <div key={i} className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>{inv.description}</p>
-                  {inv.dueDate && <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>Due {formatDate(inv.dueDate)}</p>}
-                </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="font-spec font-semibold text-sm" style={{ color: 'var(--text-heading)' }}>{inv.amount}</span>
-                  <StatusPill status={inv.status} />
-                  {inv.invoiceUrl && (
-                    <a href={inv.invoiceUrl} target="_blank" rel="noopener noreferrer" className="font-spec text-[10px]" style={{ color: 'var(--accent-light)' }}>PDF →</a>
-                  )}
-                </div>
               </div>
             ))}
           </AccordionSection>
@@ -376,6 +377,111 @@ function ProgressBar({ currentIndex }: { currentIndex: number }) {
         })}
       </div>
       <p className="font-spec text-[11px] tracking-widest mt-4" style={{ color: 'var(--text-faint)' }}>{pct}% COMPLETE</p>
+    </div>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden className="flex-shrink-0">
+      <path
+        d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3.8a1.5 1.5 0 0 1 1.06.44L10.6 6.5h8.9A1.5 1.5 0 0 1 21 8v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V6.5Z"
+        fill="var(--accent)"
+        fillOpacity="0.14"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function FolderSection({
+  title,
+  count,
+  isNew,
+  open,
+  onToggle,
+  empty,
+  children,
+  sectionRef,
+  prepend,
+}: {
+  title: string;
+  count: number;
+  isNew: number;
+  open: boolean;
+  onToggle: () => void;
+  empty: string;
+  children: React.ReactNode;
+  sectionRef: React.RefObject<HTMLDivElement | null>;
+  prepend?: React.ReactNode;
+}) {
+  const edge = open ? 'var(--accent)' : 'var(--border-accent)';
+  return (
+    <div ref={sectionRef} className="scroll-mt-24">
+      {/* Folder tab */}
+      <div
+        style={{
+          width: '44%',
+          maxWidth: '220px',
+          height: '16px',
+          background: 'var(--bg-surface)',
+          borderTop: `1px solid ${edge}`,
+          borderLeft: `1px solid ${edge}`,
+          borderRight: `1px solid ${edge}`,
+          borderRadius: '8px 14px 0 0',
+        }}
+      />
+      {/* Folder body */}
+      <div
+        style={{
+          background: 'var(--bg-surface)',
+          border: `1px solid ${edge}`,
+          borderRadius: '0 10px 10px 10px',
+          marginTop: '-1px',
+          overflow: 'hidden',
+        }}
+      >
+        <button onClick={onToggle} className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left">
+          <div className="flex items-center gap-3">
+            <FolderIcon />
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold" style={{ color: 'var(--text-heading)' }}>{title}</h2>
+                <span className="font-spec text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{count}</span>
+                {isNew > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent-light)' }} />
+                    <span className="font-spec text-[10px] tracking-widest" style={{ color: 'var(--accent-light)' }}>{isNew} NEW</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <span
+            className="transition-transform flex-shrink-0"
+            style={{ color: 'var(--text-faint)', transform: open ? 'rotate(180deg)' : 'none' }}
+            aria-hidden
+          >
+            ▾
+          </span>
+        </button>
+        {open && (
+          <div>
+            {prepend && (
+              <div className="px-6 py-4" style={{ borderTop: '1px solid var(--border-accent)' }}>{prepend}</div>
+            )}
+            {count === 0 ? (
+              <div className="px-6 py-6 text-center" style={{ borderTop: '1px solid var(--border-accent)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-faint)' }}>{empty}</p>
+              </div>
+            ) : (
+              <div>{children}</div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

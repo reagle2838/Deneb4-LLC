@@ -32,7 +32,7 @@ export default function Wordmark({
       className={`flex items-center flex-shrink-0 ${className}`}
       aria-label="Deneb4, Home"
     >
-      <Image src="/logo.png" alt="Deneb4 — Web Design & Development" width={676} height={216} priority className="h-[72px] w-auto" />
+      <Image src="/logo.png" alt="Deneb4 — Web Design & Development" width={676} height={216} priority className="h-11 lg:h-[72px] w-auto" />
     </Link>
   );
 }

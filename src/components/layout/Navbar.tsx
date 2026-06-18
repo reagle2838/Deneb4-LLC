@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Wordmark from "@/components/ui/Wordmark";
-import { CAPABILITY_GROUPS } from "@/data/services";
+import type { CapabilityGroup } from "@/data/services";
 import { INDUSTRIES } from "@/data/industries";
 import { EXPLORE_LINKS } from "@/data/nav";
 import type { Article } from "@/types";
@@ -13,8 +13,6 @@ import type { Article } from "@/types";
 type OpenMenu = "services" | "industries" | "articles" | null;
 
 // Service categories shown in the left rail of the Services panel.
-const SERVICE_CATS = CAPABILITY_GROUPS.map((g) => ({ id: g.id, label: g.title }));
-
 // Showcase image shown in the center panel for a given service group.
 const GROUP_IMAGES: Record<string, { src: string; w: number; h: number; alt: string }> = {
   "content-systems": { src: "/mega-content-systems.png", w: 1448, h: 1086, alt: "Deneb4 content management and product catalog interface on a desktop display" },
@@ -102,7 +100,8 @@ function PanelCTAs({ onClose }: { onClose: () => void }) {
 
 // ── Component ─────────────────────────────────────────────────────────
 
-export default function Navbar({ articles }: { articles: Article[] }) {
+export default function Navbar({ articles, serviceGroups }: { articles: Article[]; serviceGroups: CapabilityGroup[] }) {
+  const SERVICE_CATS = serviceGroups.map((g) => ({ id: g.id, label: g.title }));
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
   const [activeService, setActiveService] = useState("content-systems");
@@ -169,13 +168,13 @@ export default function Navbar({ articles }: { articles: Article[] }) {
   const q = serviceSearch.trim().toLowerCase();
   const filteredCats = q
     ? SERVICE_CATS.filter((c) => {
-        const g = CAPABILITY_GROUPS.find((x) => x.id === c.id)!;
+        const g = serviceGroups.find((x) => x.id === c.id)!;
         return g.title.toLowerCase().includes(q) || g.items.some((i) => i.toLowerCase().includes(q));
       })
     : SERVICE_CATS;
 
   const activeCatId = filteredCats.some((c) => c.id === activeService) ? activeService : (filteredCats[0]?.id ?? "content-systems");
-  const activeGroup = CAPABILITY_GROUPS.find((g) => g.id === activeCatId);
+  const activeGroup = serviceGroups.find((g) => g.id === activeCatId);
 
   const filteredIndustries = industrySearch.trim()
     ? INDUSTRIES.filter((i) => i.label.toLowerCase().includes(industrySearch.toLowerCase()) || i.blurb.toLowerCase().includes(industrySearch.toLowerCase()))
@@ -264,7 +263,7 @@ export default function Navbar({ articles }: { articles: Article[] }) {
                   <Link href={`/services#${activeGroup.id}`} className="text-2xl font-bold mb-2 inline-block hover:underline" style={{ color: "var(--text-heading)" }} onClick={closeMenu}>
                     {activeGroup.title} →
                   </Link>
-                  <p className="text-sm mb-8 max-w-2xl leading-relaxed" style={{ color: "var(--text-muted)" }}>{activeGroup.tagline}</p>
+                  <p className="text-sm font-semibold mb-8 max-w-2xl leading-relaxed" style={{ color: "var(--accent)" }}>{activeGroup.tagline}</p>
                   <div className="flex gap-10">
                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-10 self-start" style={{ borderTop: "1px solid var(--border-accent)" }}>
                       {activeGroup.items
@@ -321,6 +320,14 @@ export default function Navbar({ articles }: { articles: Article[] }) {
                   </div>
                 </div>
               )}
+
+              <div className="mt-8 p-4 rounded-sm" style={{ border: "1px solid var(--border-accent)", background: "var(--bg-alt)" }}>
+                <p className="text-[10px] font-spec font-semibold tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>Deployment &amp; Infrastructure</p>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
+                  Need it deployed on secured, on-site infrastructure? We partner with Eagle Engineering &amp; Supply Co. for a turnkey, fully secured system.
+                </p>
+                <Link href="/services#deployment" className="text-xs font-spec" style={{ color: "var(--accent-light)" }} onClick={closeMenu}>Learn more →</Link>
+              </div>
 
               <PanelCTAs onClose={closeMenu} />
             </div>
@@ -430,7 +437,7 @@ export default function Navbar({ articles }: { articles: Article[] }) {
       {/* ── Sticky header ──────────────────────────────────────── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl saturate-150" style={{ background: "var(--bg-navbar)", borderBottom: "1px solid var(--border-accent)" }}>
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
-          <div className="flex h-24 items-center gap-6">
+          <div className="flex h-16 lg:h-24 items-center gap-6">
             <Wordmark onClick={closeMenu} />
 
             {/* Desktop nav */}

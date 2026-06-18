@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
-import { PHASES } from "@/data/process";
+import PhaseStack from "./PhaseStack";
 
 export const metadata: Metadata = {
   title: "Process",
@@ -21,28 +21,7 @@ export default function ProcessPage() {
 
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="space-y-6">
-            {PHASES.map((phase, i) => (
-              <div key={phase.n} className="card p-8 lg:p-10 flex flex-col lg:flex-row gap-8" style={i === 0 ? { borderColor: "var(--accent)" } : undefined}>
-                <div className="lg:w-48 flex-shrink-0">
-                  <span className="font-spec text-4xl font-bold" style={{ color: "var(--accent-light)" }}>{phase.n}</span>
-                  <p className="text-xs mt-2 font-spec" style={{ color: "var(--text-faint)" }}>{phase.weeks}</p>
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-3" style={{ color: "var(--text-heading)" }}>{phase.title}</h2>
-                  <p className="text-base leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>{phase.summary}</p>
-                  <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: "var(--text-faint)" }}>Deliverables</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {phase.deliverables.map((d) => (
-                      <div key={d} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-muted)" }}>
-                        <span style={{ color: "var(--accent)" }} className="mt-1.5 text-[8px] flex-shrink-0">●</span>{d}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <PhaseStack />
         </div>
       </section>
 

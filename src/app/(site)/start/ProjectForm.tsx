@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { INDUSTRIES } from "@/data/industries";
-import { CAPABILITY_GROUPS } from "@/data/services";
-
-const ALL_CAPABILITIES = CAPABILITY_GROUPS.flatMap((g) => g.items);
+import type { CapabilityGroup } from "@/data/services";
 
 const inputCls =
   "w-full px-3 py-2.5 rounded-sm text-sm outline-none transition-colors bg-theme-surface focus:[border-color:var(--accent)]";
@@ -17,11 +15,12 @@ type Status = "idle" | "submitting" | "success" | "error";
 const BUDGETS = ["Under $5k", "$5k–$8k", "$8k+", "Not sure yet"];
 const TIMELINES = ["ASAP", "1–2 months", "3+ months", "Just exploring"];
 
-export default function ProjectForm() {
+export default function ProjectForm({ groups }: { groups: CapabilityGroup[] }) {
   const [form, setForm] = useState({
     name: "", email: "", business: "", industry: "", currentSite: "",
-    packageInterest: "Not sure yet", budget: "", timeline: "", details: "",
+    budget: "", timeline: "", details: "",
   });
+  const [areas, setAreas] = useState<string[]>([]);
   const [tools, setTools] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
@@ -29,19 +28,34 @@ export default function ProjectForm() {
   function set<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
   }
+  function toggleArea(id: string) {
+    setAreas((a) => {
+      if (a.includes(id)) {
+        const groupItems = groups.find((g) => g.id === id)?.items ?? [];
+        setTools((t) => t.filter((x) => !groupItems.includes(x)));
+        return a.filter((x) => x !== id);
+      }
+      return [...a, id];
+    });
+  }
   function toggleTool(label: string) {
     setTools((t) => (t.includes(label) ? t.filter((x) => x !== label) : [...t, label]));
   }
+
+  const selectedGroups = groups.filter((g) => areas.includes(g.id));
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("submitting");
     setError("");
+    const packageInterest = selectedGroups.length
+      ? selectedGroups.map((g) => g.title).join(", ")
+      : "Not sure yet";
     try {
       const res = await fetch("/api/project", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, tools }),
+        body: JSON.stringify({ ...form, packageInterest, tools }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Submission failed.");
@@ -90,44 +104,70 @@ export default function ProjectForm() {
           <label htmlFor="p-site" className={labelCls} style={labelStyle}>Current website (if any)</label>
           <input id="p-site" className={inputCls} style={inputStyle} placeholder="https://" value={form.currentSite} onChange={(e) => set("currentSite", e.target.value)} />
         </div>
-        <div>
-          <label htmlFor="p-package" className={labelCls} style={labelStyle}>Primary interest</label>
-          <select id="p-package" className={inputCls} style={inputStyle} value={form.packageInterest} onChange={(e) => set("packageInterest", e.target.value)}>
-            <option value="Not sure yet">Not sure yet</option>
-            {CAPABILITY_GROUPS.map((g) => <option key={g.id} value={g.title}>{g.title}</option>)}
-          </select>
-        </div>
       </div>
 
+      {/* Area selection */}
       <div>
-        <span className={labelCls} style={labelStyle}>What you&apos;re considering</span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {ALL_CAPABILITIES.map((label) => {
-            const checked = tools.includes(label);
+        <span className={labelCls} style={labelStyle}>What are you interested in?</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {groups.map((g) => {
+            const on = areas.includes(g.id);
             return (
               <button
                 type="button"
-                key={label}
-                onClick={() => toggleTool(label)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors"
+                key={g.id}
+                onClick={() => toggleArea(g.id)}
+                aria-pressed={on}
+                className="text-left p-4 rounded-sm transition-colors"
                 style={{
-                  border: `1px solid ${checked ? "var(--accent)" : "var(--border-accent)"}`,
-                  background: checked ? "rgba(0,107,143,0.08)" : "var(--bg-surface)",
-                  color: "var(--text-primary)",
+                  border: `1px solid ${on ? "var(--accent)" : "var(--border-accent)"}`,
+                  background: on ? "rgba(0,107,143,0.08)" : "var(--bg-surface)",
                 }}
-                aria-pressed={checked}
               >
-                <span className="w-4 h-4 rounded-sm flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${checked ? "var(--accent)" : "var(--border-accent)"}`, background: checked ? "var(--accent)" : "transparent" }}>
-                  {checked && (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  )}
-                </span>
-                {label}
+                <span className="text-sm font-semibold block" style={{ color: "var(--text-heading)" }}>{g.title}</span>
+                <span className="text-xs font-semibold mt-1 block leading-snug" style={{ color: "var(--accent)" }}>{g.tagline}</span>
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Considering — only the items for the chosen areas */}
+      {selectedGroups.length > 0 && (
+        <div className="flex flex-col gap-5">
+          {selectedGroups.map((g) => (
+            <div key={g.id}>
+              <span className={labelCls} style={labelStyle}>{g.title}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {g.items.map((label) => {
+                  const checked = tools.includes(label);
+                  return (
+                    <button
+                      type="button"
+                      key={label}
+                      onClick={() => toggleTool(label)}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors"
+                      style={{
+                        border: `1px solid ${checked ? "var(--accent)" : "var(--border-accent)"}`,
+                        background: checked ? "rgba(0,107,143,0.08)" : "var(--bg-surface)",
+                        color: "var(--text-primary)",
+                      }}
+                      aria-pressed={checked}
+                    >
+                      <span className="w-4 h-4 rounded-sm flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${checked ? "var(--accent)" : "var(--border-accent)"}`, background: checked ? "var(--accent)" : "transparent" }}>
+                        {checked && (
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        )}
+                      </span>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>

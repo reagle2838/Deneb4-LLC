@@ -1,0 +1,37 @@
+groups:
+  - id: content-systems
+    title: Website + Content Systems
+    tagline: >-
+      The website and the content infrastructure behind it, built to run without
+      you in the weeds.
+    items:
+      - Content management system - Edit your website in real time
+      - Product / service catalog setup
+      - Case study / portfolio library
+      - Careers pages
+      - Galleries
+      - File upload workflows
+      - Quote request systems
+      - Client portals
+  - id: sales-ops
+    title: Sales & Operations Systems
+    tagline: >-
+      Lightweight systems to track campaigns, intake support, and handle client
+      requests.
+    items:
+      - Campaign trackers
+      - Support request intake
+      - Client update request systems
+  - id: collateral
+    title: Sales Collateral & Print Materials
+    tagline: >-
+      Print and physical materials that match your brand and close the loop
+      offline.
+    items:
+      - Business cards
+      - Postcards
+      - Brochures
+      - Product / service line cards
+      - Leave-behind flyers
+      - Trade show handouts
+      - Promotional products

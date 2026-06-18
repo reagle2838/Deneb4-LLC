@@ -26,9 +26,14 @@ export default async function WorkPage() {
           {projects.map((p) => {
             const inner = (
               <>
-                <div className="relative h-44 bg-grid flex items-center justify-center flex-shrink-0" style={{ borderBottom: "1px solid var(--border-accent)" }}>
-                  <span className="font-spec text-sm tracking-widest" style={{ color: "var(--accent-light)" }}>{p.title}</span>
-                  <span className="absolute top-3 left-3 font-spec text-[10px] tracking-widest px-2 py-0.5 rounded-sm" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-accent)", color: p.status === "live" ? "var(--accent-light)" : "var(--text-faint)" }}>
+                <div className="relative h-56 bg-grid flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ borderBottom: "1px solid var(--border-accent)" }}>
+                  {p.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.coverImage} alt={p.title} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-spec text-sm tracking-widest" style={{ color: "var(--accent-light)" }}>{p.title}</span>
+                  )}
+                  <span className="absolute top-3 left-3 font-spec text-[10px] tracking-widest px-2 py-0.5 rounded-sm z-10" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-accent)", color: p.status === "live" ? "var(--accent-light)" : "var(--text-faint)" }}>
                     {p.status === "live" ? "LIVE" : "IN PROGRESS"}
                   </span>
                 </div>
@@ -41,19 +46,15 @@ export default async function WorkPage() {
                       <span key={t}>{i > 0 && <span className="mr-2">·</span>}{t}</span>
                     ))}
                   </div>
-                  {p.body && <p className="mt-5 font-spec text-xs" style={{ color: "var(--accent-light)" }}>Read the case study →</p>}
+                  <p className="mt-5 font-spec text-xs" style={{ color: "var(--accent-light)" }}>Read the case study →</p>
                 </div>
               </>
             );
 
-            return p.body ? (
+            return (
               <Link key={p.slug} href={`/work/${p.slug}`} className="card overflow-hidden no-underline block" style={{ padding: 0 }}>
                 {inner}
               </Link>
-            ) : (
-              <div key={p.slug} className="card overflow-hidden" style={{ padding: 0 }}>
-                {inner}
-              </div>
             );
           })}
 

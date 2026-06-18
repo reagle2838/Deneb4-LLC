@@ -1,5 +1,7 @@
 // ── Web Design & Development capability groups ───────────────────────
 // One offering, organized into capability areas (no fixed tiers).
+// The live content is editable in Keystatic (Services singleton); these
+// defaults are the fallback if that content is empty.
 
 export interface CapabilityGroup {
   id: string;
@@ -8,7 +10,7 @@ export interface CapabilityGroup {
   items: string[];
 }
 
-export const CAPABILITY_GROUPS: CapabilityGroup[] = [
+export const DEFAULT_CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
     id: "content-systems",
     title: "Website + Content Systems",
@@ -27,12 +29,8 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
   {
     id: "sales-ops",
     title: "Sales & Operations Systems",
-    tagline: "Lightweight systems to capture leads, track follow-ups, and see what's working.",
+    tagline: "Lightweight systems to track campaigns, intake support, and handle client requests.",
     items: [
-      "Lightweight CRM setup",
-      "Lead intake workflows",
-      "Quote follow-up tracking",
-      "Sales dashboards",
       "Campaign trackers",
       "Support request intake",
       "Client update request systems",
@@ -72,7 +70,7 @@ export const ADD_ONS: { label: string; price: string }[] = [
 
 export const OWNERSHIP_POINTS: string[] = [
   "You own the full source code and all associated data.",
-  "No recurring licensing fees and no mandatory monthly retainers.",
+  "No recurring licensing fees and no mandatory monthly retainers.*",
   "Your hosting, domain, and analytics accounts stay in your name.",
   "Fixed-scope, fixed-price delivery: quoted before work begins.",
 ];

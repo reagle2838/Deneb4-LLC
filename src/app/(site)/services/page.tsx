@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
-import { CAPABILITY_GROUPS, ADD_ONS, OWNERSHIP_POINTS } from "@/data/services";
+import { ADD_ONS, OWNERSHIP_POINTS } from "@/data/services";
+import { getCapabilityGroups } from "@/lib/services-content";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://deneb4.com/services" },
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const groups = await getCapabilityGroups();
   return (
     <>
       <PageHero
@@ -34,11 +36,11 @@ export default function ServicesPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {CAPABILITY_GROUPS.map((g) => (
+            {groups.map((g) => (
               <div key={g.id} id={g.id} className="card p-8 flex flex-col gap-5 scroll-mt-28">
                 <div>
                   <h3 className="text-xl font-bold mb-2" style={{ color: "var(--text-heading)" }}>{g.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{g.tagline}</p>
+                  <p className="text-sm font-semibold leading-relaxed" style={{ color: "var(--accent)" }}>{g.tagline}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1">
                   {g.items.map((item) => (
@@ -53,6 +55,37 @@ export default function ServicesPage() {
           <p className="text-sm mt-8 max-w-3xl" style={{ color: "var(--text-faint)" }}>
             Not sure what you need? Send a brief and you&apos;ll get a scoped recommendation, not a sales pitch.
           </p>
+        </div>
+      </section>
+
+      {/* Deployment & secured infrastructure (Eagle partnership) */}
+      <section id="deployment" style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="font-spec text-xs tracking-widest uppercase mb-3" style={{ color: "var(--accent-light)" }}>Deployment &amp; Secured Infrastructure</p>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+                We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
+              </h2>
+              <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                We design and build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner directly with Eagle Engineering &amp; Supply Co. Their team handles the complete deployment and provisioning of the on-site hardware while we handle the software, so you get one turnkey, secured system without coordinating between separate tech vendors.
+              </p>
+              <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
+            </div>
+            <div className="card p-7">
+              <ul className="space-y-4">
+                {[
+                  "Deployment and provisioning by Eagle's team",
+                  "SonicWall firewalls and network hardening",
+                  "ViewSonic commercial displays",
+                ].map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
+                    <span style={{ color: "var(--accent)" }} className="mt-1 text-[10px] flex-shrink-0">◆</span>{point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -81,6 +114,9 @@ export default function ServicesPage() {
                 ))}
               </ul>
             </div>
+            <p className="text-xs mt-4" style={{ color: "var(--text-faint)" }}>
+              *Monthly retainers are available if you&apos;d like ongoing support. They&apos;re optional, never required.
+            </p>
           </div>
         </div>
       </section>

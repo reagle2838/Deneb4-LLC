@@ -1,8 +1,18 @@
 import { createReader } from '@keystatic/core/reader';
 import keystaticConfig from '../../keystatic.config';
-import { marked } from 'marked';
+import type { DocumentRendererProps } from '@keystatic/core/renderer';
 
 const reader = createReader(process.cwd(), keystaticConfig);
+
+const readResolved = (slug: string) => reader.collections.work.read(slug, { resolveLinkedFiles: true });
+type WorkEntry = NonNullable<Awaited<ReturnType<typeof readResolved>>>;
+
+export type WorkBody = DocumentRendererProps['document'];
+
+export interface WorkImage {
+  src: string;
+  caption: string;
+}
 
 export interface WorkProject {
   slug: string;
@@ -13,11 +23,12 @@ export interface WorkProject {
   status: 'live' | 'in-progress';
   date: string;
   liveUrl?: string;
-  body: string;
+  coverImage: string | null;
+  gallery: WorkImage[];
+  body: WorkBody;
 }
 
-function parseEntry(slug: string, entry: Awaited<ReturnType<typeof reader.collections.work.read>>): WorkProject | null {
-  if (!entry) return null;
+function parseEntry(slug: string, entry: WorkEntry): WorkProject {
   return {
     slug,
     title: entry.title,
@@ -27,7 +38,11 @@ function parseEntry(slug: string, entry: Awaited<ReturnType<typeof reader.collec
     status: entry.status as WorkProject['status'],
     date: entry.date ?? '',
     ...(entry.liveUrl ? { liveUrl: entry.liveUrl } : {}),
-    body: marked.parse(entry.body ?? '') as string,
+    coverImage: entry.coverImage ?? null,
+    gallery: (entry.gallery ?? [])
+      .map((g) => ({ src: g.image ?? '', caption: g.caption ?? '' }))
+      .filter((g) => g.src),
+    body: (entry.body ?? []) as WorkBody,
   };
 }
 
@@ -35,16 +50,15 @@ export async function getAllProjects(): Promise<WorkProject[]> {
   const slugs = await reader.collections.work.list();
   const projects: WorkProject[] = [];
   for (const slug of slugs) {
-    const entry = await reader.collections.work.read(slug);
-    const project = parseEntry(slug, entry);
-    if (project) projects.push(project);
+    const entry = await readResolved(slug);
+    if (entry) projects.push(parseEntry(slug, entry));
   }
   return projects.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export async function getProjectBySlug(slug: string): Promise<WorkProject | null> {
-  const entry = await reader.collections.work.read(slug);
-  return parseEntry(slug, entry);
+  const entry = await readResolved(slug);
+  return entry ? parseEntry(slug, entry) : null;
 }
 
 export async function getAllProjectSlugs(): Promise<string[]> {

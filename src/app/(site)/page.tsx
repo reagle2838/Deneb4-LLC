@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import Marquee from "@/components/ui/Marquee";
 import FaqAccordion from "@/components/ui/FaqAccordion";
-import { CAPABILITY_GROUPS } from "@/data/services";
+import { getCapabilityGroups } from "@/lib/services-content";
 import { INDUSTRIES } from "@/data/industries";
 import { PHASES } from "@/data/process";
 import { FAQS } from "@/data/faq";
@@ -63,6 +63,7 @@ function HeroMock() {
 
 export default async function HomePage() {
   const articles = (await getAllArticles()).slice(0, 3);
+  const groups = await getCapabilityGroups();
 
   return (
     <>
@@ -130,10 +131,10 @@ export default async function HomePage() {
             <Link href="/services" className="btn-outline flex-shrink-0 hidden sm:inline-flex">All Services →</Link>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {CAPABILITY_GROUPS.map((g) => (
+            {groups.map((g) => (
               <Link key={g.id} href={`/services#${g.id}`} className="card p-8 flex flex-col gap-4 transition-transform hover:-translate-y-0.5">
                 <h3 className="text-xl font-bold" style={{ color: "var(--text-heading)" }}>{g.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{g.tagline}</p>
+                <p className="text-sm font-semibold leading-relaxed" style={{ color: "var(--accent)" }}>{g.tagline}</p>
                 <ul className="space-y-2 mt-auto">
                   {g.items.slice(0, 5).map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -160,17 +161,15 @@ export default async function HomePage() {
                 We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
               </h2>
               <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with Eagle Engineering &amp; Supply Co. Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
+                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with <a href="https://www.eaglecompanies.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--accent-light)" }}>Eagle Engineering &amp; Supply Co.</a> Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
               </p>
               <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
             </div>
             <ul className="space-y-3">
               {[
-                "Custom operations platform and CRM, built and owned by you",
-                "On-site deployment and provisioning by Eagle's enterprise IT team",
+                "Deployment and provisioning by Eagle's team*",
                 "SonicWall firewalls and network hardening",
                 "ViewSonic commercial displays",
-                "One turnkey, fully secured system with a single point of contact",
               ].map((point) => (
                 <li key={point} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
                   <span style={{ color: "var(--accent)" }} className="mt-1 text-[10px] flex-shrink-0">◆</span>{point}
@@ -178,6 +177,9 @@ export default async function HomePage() {
               ))}
             </ul>
           </div>
+          <p className="text-xs mt-5 max-w-3xl" style={{ color: "var(--text-faint)" }}>
+            *Deployment depends on your location and Eagle Engineering &amp; Supply Co.&apos;s ability to travel to your site. We&apos;ll confirm availability before scoping.
+          </p>
         </div>
       </section>
 
@@ -195,7 +197,6 @@ export default async function HomePage() {
               <div key={phase.n} className="card p-7 flex flex-col gap-3">
                 <div>
                   <span className="font-spec text-2xl font-bold" style={{ color: "var(--accent-light)" }}>{phase.n}</span>
-                  <span className="block text-xs mt-1" style={{ color: "var(--text-faint)" }}>{phase.weeks}</span>
                 </div>
                 <h3 className="font-bold" style={{ color: "var(--text-heading)" }}>{phase.title}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{phase.summary}</p>
