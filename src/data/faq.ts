@@ -7,7 +7,7 @@ export const FAQS: Faq[] = [
   },
   {
     q: "How long does a project take?",
-    a: "Roughly 2–3 weeks for Foundation, 3–4 weeks for Professional, and 4–6 weeks for Enterprise, depending on how quickly content and feedback come back from your side.",
+    a: "It depends on scope. Once I review your brief, you get a fixed timeline alongside the fixed price, and the project runs through four phases with your sign-off at each step before the next begins. The biggest variable is how quickly content and feedback come back from your side.",
   },
   {
     q: "Do I need to supply the content?",

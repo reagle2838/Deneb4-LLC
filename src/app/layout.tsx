@@ -72,9 +72,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 "Technical product catalogs",
               ],
               makesOffer: [
-                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Foundation website package" } },
-                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Professional website package" } },
-                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Enterprise website package" } },
+                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Web design and development" } },
+                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Website and content systems" } },
+                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Sales and operations systems" } },
+                { "@type": "Offer", itemOffered: { "@type": "Service", name: "Sales collateral and print materials" } },
               ],
             }),
           }}
