@@ -15,9 +15,9 @@ type OpenMenu = "services" | "industries" | "articles" | null;
 // Service categories shown in the left rail of the Services panel.
 // Showcase image shown in the center panel for a given service group.
 const GROUP_IMAGES: Record<string, { src: string; w: number; h: number; alt: string }> = {
-  "content-systems": { src: "/mega-content-systems.png", w: 1448, h: 1086, alt: "Deneb4 content management and product catalog interface on a desktop display" },
+  "content-systems": { src: "/mega-sales-ops.png", w: 1448, h: 1086, alt: "Deneb4 sales and operations dashboard on a desktop display" },
   collateral: { src: "/mega-collateral.png", w: 1254, h: 1254, alt: "Deneb4 branded print collateral: business cards, line cards, and leave-behinds" },
-  "sales-ops": { src: "/mega-sales-ops.png", w: 1448, h: 1086, alt: "Deneb4 sales and operations dashboard on a desktop display" },
+  "sales-ops": { src: "/mega-content-systems.png", w: 1448, h: 1086, alt: "Deneb4 content management and product catalog interface on a desktop display" },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────
@@ -192,7 +192,6 @@ export default function Navbar({ articles, serviceGroups }: { articles: Article[
 
   const latestArticle = sorted.find((a) => a.type === "Article") ?? null;
   const latestCaseStudy = sorted.find((a) => a.type === "Case Study") ?? null;
-  const featured = latestCaseStudy ?? latestArticle;
 
   const isServicesActive = pathname.startsWith("/services");
   const isIndustriesActive = pathname.startsWith("/industries");
@@ -294,6 +293,25 @@ export default function Navbar({ articles, serviceGroups }: { articles: Article[
 
             {/* Right sidebar */}
             <div className="w-64 flex-shrink-0 overflow-y-auto py-10 px-8" style={{ borderLeft: "1px solid var(--border-accent)" }}>
+              {/* Partner: deployment & infrastructure */}
+              <div className="mb-8 p-4 rounded-md" style={{ border: "1px solid var(--accent)", background: "rgba(0,107,143,0.06)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth={1.8} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 12l2 2 3.5-4" />
+                  </svg>
+                  <span className="text-[10px] font-spec font-semibold tracking-widest uppercase" style={{ color: "var(--accent)" }}>Deployment</span>
+                  <span className="ml-auto text-[9px] font-spec font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded-sm" style={{ background: "var(--accent)", color: "#fff" }}>Partner</span>
+                </div>
+                <p className="text-xs font-semibold leading-snug mb-1.5" style={{ color: "var(--text-heading)" }}>
+                  Software by us, secured deployment by Eagle Technology Solutions.
+                </p>
+                <p className="text-xs leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
+                  Need it running on secured, on-site infrastructure? You get one turnkey, fully secured system.
+                </p>
+                <Link href="/services#deployment" className="text-xs font-spec font-semibold inline-flex" style={{ color: "var(--accent)" }} onClick={closeMenu}>Learn more →</Link>
+              </div>
+
               <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: "var(--text-faint)" }}>Explore</p>
               <div style={{ borderTop: "1px solid var(--border-accent)" }}>
                 {EXPLORE_LINKS.map(({ label, href }) => (
@@ -304,29 +322,6 @@ export default function Navbar({ articles, serviceGroups }: { articles: Article[
                     </svg>
                   </Link>
                 ))}
-              </div>
-
-              {featured && (
-                <div className="mt-8">
-                  <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: "var(--text-faint)" }}>{featured.type}</p>
-                  <div style={{ borderTop: "1px solid var(--border-accent)", paddingTop: "0.75rem" }}>
-                    <p className="text-[10px] font-spec tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>{featured.topic}</p>
-                    <Link href={`/articles/${featured.slug}`} className="text-xs font-semibold leading-snug mb-3 block hover:underline" style={{ color: "var(--text-heading)" }} onClick={closeMenu}>
-                      {featured.title}
-                    </Link>
-                    <Link href={`/articles/${featured.slug}`} className="text-xs font-spec" style={{ color: "var(--accent-light)" }} onClick={closeMenu}>
-                      {featured.type === "Case Study" ? "Read case study →" : "Read article →"}
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-8 p-4 rounded-sm" style={{ border: "1px solid var(--border-accent)", background: "var(--bg-alt)" }}>
-                <p className="text-[10px] font-spec font-semibold tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>Deployment &amp; Infrastructure</p>
-                <p className="text-xs leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
-                  Need it deployed on secured, on-site infrastructure? We partner with Eagle Engineering &amp; Supply Co. for a turnkey, fully secured system.
-                </p>
-                <Link href="/services#deployment" className="text-xs font-spec" style={{ color: "var(--accent-light)" }} onClick={closeMenu}>Learn more →</Link>
               </div>
 
               <PanelCTAs onClose={closeMenu} />

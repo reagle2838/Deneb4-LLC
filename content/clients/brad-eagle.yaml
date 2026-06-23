@@ -3,7 +3,7 @@ email: bdeagle@eaglecompanies.com
 projectName: Eagle Engineering & Supply Co.
 active: true
 passwordHash: 67044a4727b52a441ece73f545321900:66d1eb7803a386f6ec1e419fc1d406ffe7c469d374bf44b13e751d5107d50ffc43d7b3aadfdf8a430571e8ec01e5aebe35034986bd2c17a51c3f2ea383d241b2
-stage: ""
+stage: Development
 driveFolder: ""
 updates: []
 files: []

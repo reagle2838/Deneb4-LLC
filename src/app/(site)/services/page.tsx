@@ -68,7 +68,7 @@ export default async function ServicesPage() {
                 We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
               </h2>
               <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                We design and build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner directly with Eagle Engineering &amp; Supply Co. Their team handles the complete deployment and provisioning of the on-site hardware while we handle the software, so you get one turnkey, secured system without coordinating between separate tech vendors.
+                We design and build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner directly with Eagle Technology Solutions. Their team handles the complete deployment and provisioning of the on-site hardware while we handle the software, so you get one turnkey, secured system without coordinating between separate tech vendors.
               </p>
               <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
             </div>

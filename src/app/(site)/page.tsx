@@ -161,7 +161,7 @@ export default async function HomePage() {
                 We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
               </h2>
               <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with <a href="https://www.eaglecompanies.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--accent-light)" }}>Eagle Engineering &amp; Supply Co.</a> Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
+                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with <a href="https://www.eaglecompanies.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--accent-light)" }}>Eagle Technology Solutions</a> Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
               </p>
               <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
             </div>
@@ -178,7 +178,7 @@ export default async function HomePage() {
             </ul>
           </div>
           <p className="text-xs mt-5 max-w-3xl" style={{ color: "var(--text-faint)" }}>
-            *Deployment depends on your location and Eagle Engineering &amp; Supply Co.&apos;s ability to travel to your site. We&apos;ll confirm availability before scoping.
+            *Deployment depends on your location and Eagle Technology Solutions&apos; ability to travel to your site. We&apos;ll confirm availability before scoping.
           </p>
         </div>
       </section>
