@@ -9,9 +9,10 @@ import ClientManagerUI from './ClientManagerUI';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
 import NotesTab from './NotesTab';
+import FeedbackTab from './FeedbackTab';
 import QuickLinksBar from './QuickLinksBar';
 
-type Tab = 'clients' | 'leads' | 'tasks' | 'notes';
+type Tab = 'clients' | 'leads' | 'tasks' | 'feedback' | 'notes';
 
 export default function Workspace({
   clients,
@@ -31,11 +32,16 @@ export default function Workspace({
   const newLeads = leads.filter((l) => l.stage === 'new').length;
   const openTasks = tasks.filter((t) => t.status !== 'done').length;
   const activeClients = clients.filter((c) => c.active).length;
+  const unreadFeedback = clients.reduce(
+    (sum, c) => sum + c.feedback.filter((m) => m.author === 'client' && !m.read).length,
+    0
+  );
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
     { key: 'clients', label: 'Clients', badge: clients.length },
     { key: 'leads', label: 'Leads', badge: newLeads || undefined },
     { key: 'tasks', label: 'Tasks', badge: openTasks || undefined },
+    { key: 'feedback', label: 'Feedback', badge: unreadFeedback || undefined },
     { key: 'notes', label: 'Notes' },
   ];
 
@@ -82,6 +88,7 @@ export default function Workspace({
       {tab === 'clients' && <ClientManagerUI initialClients={clients} />}
       {tab === 'leads' && <LeadsTab initialLeads={leads} />}
       {tab === 'tasks' && <TasksTab initialTasks={tasks} clients={clientList} />}
+      {tab === 'feedback' && <FeedbackTab initialClients={clients} />}
       {tab === 'notes' && <NotesTab initialNotes={notes} />}
     </div>
   );

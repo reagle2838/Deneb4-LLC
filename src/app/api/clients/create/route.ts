@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
-import { slugify, clientExists, writeClient, EMPTY_STAGING } from '@/lib/clients';
+import { slugify, clientExists, writeClient, EMPTY_STAGING, generateWidgetKey } from '@/lib/clients';
 import { generateClientPassword, hashPassword } from '@/lib/portal-auth';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
 
     const password = generateClientPassword();
     const passwordHash = hashPassword(password);
+    const widgetKey = generateWidgetKey();
 
     writeClient(slug, {
       passwordHash,
@@ -45,10 +46,13 @@ export async function POST(req: NextRequest) {
         revisions: [],
         invoices: [],
         staging: EMPTY_STAGING,
+        feedbackOpen: false,
+        feedback: [],
+        widgetKey,
       },
     });
 
-    return NextResponse.json({ slug, password });
+    return NextResponse.json({ slug, password, widgetKey });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

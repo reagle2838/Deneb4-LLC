@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BUILD_STAGES } from '@/lib/stages';
 import type {
@@ -43,6 +43,9 @@ function toData(c: Client): ClientData {
     revisions: c.revisions.map((r) => ({ ...r })),
     invoices: c.invoices.map((i) => ({ ...i })),
     staging: { ...(c.staging ?? EMPTY_STAGING) },
+    feedbackOpen: c.feedbackOpen,
+    feedback: c.feedback,
+    widgetKey: c.widgetKey,
   };
 }
 
@@ -68,6 +71,41 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
   const [dragOver, setDragOver] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [deleteText, setDeleteText] = useState('');
+  const [embedCopied, setEmbedCopied] = useState(false);
+  const [widgetBusy, setWidgetBusy] = useState(false);
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
+
+  async function regenWidgetKey() {
+    if (!selected) return;
+    setWidgetBusy(true);
+    setError('');
+    try {
+      const res = await fetch('/api/clients/widget-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: selected }),
+      });
+      const data = (await res.json()) as { widgetKey?: string; error?: string };
+      if (data.widgetKey) {
+        setDraft((d) => (d ? { ...d, widgetKey: data.widgetKey as string } : d));
+        setClients((prev) => prev.map((c) => (c.slug === selected ? { ...c, widgetKey: data.widgetKey as string } : c)));
+      } else {
+        setError(data.error ?? 'Could not generate key.');
+      }
+    } catch {
+      setError('Server error — try again.');
+    } finally {
+      setWidgetBusy(false);
+    }
+  }
+
+  function copyEmbed(snippet: string) {
+    navigator.clipboard.writeText(snippet).then(() => {
+      setEmbedCopied(true);
+      setTimeout(() => setEmbedCopied(false), 2000);
+    });
+  }
 
   function selectClient(slug: string) {
     if (selected === slug) {
@@ -93,7 +131,7 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(addForm),
       });
-      const data = (await res.json()) as { slug?: string; password?: string; error?: string };
+      const data = (await res.json()) as { slug?: string; password?: string; widgetKey?: string; error?: string };
       if (data.slug && data.password) {
         const newClient: Client = {
           slug: data.slug,
@@ -109,6 +147,9 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
           revisions: [],
           invoices: [],
           staging: { ...EMPTY_STAGING },
+          feedbackOpen: false,
+          feedback: [],
+          widgetKey: data.widgetKey ?? '',
         };
         setClients((prev) => [...prev, newClient]);
         setPassword({ slug: data.slug, value: data.password });
@@ -446,6 +487,41 @@ export default function ClientManagerUI({ initialClients }: { initialClients: Cl
                       <input className={inputClass} style={inputStyle} value={draft.staging.notes} placeholder="Homepage and About are live; product pages coming Friday."
                         onChange={(e) => setStaging({ notes: e.target.value })} />
                     </Field>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                    <input type="checkbox" checked={draft.feedbackOpen} onChange={(e) => setDraft({ ...draft, feedbackOpen: e.target.checked })} />
+                    Allow this client to leave feedback &amp; suggestions (staging widget + portal)
+                  </label>
+
+                  {/* Staging feedback widget embed */}
+                  <div className="pt-2 mt-1" style={{ borderTop: '1px solid var(--border-accent)' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-spec font-semibold tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>Staging feedback bubble</span>
+                      {draft.widgetKey && (
+                        <button type="button" onClick={regenWidgetKey} disabled={widgetBusy} className="text-[10px] font-spec" style={{ color: 'var(--text-faint)' }}>
+                          {widgetBusy ? '...' : 'Regenerate key'}
+                        </button>
+                      )}
+                    </div>
+                    {draft.widgetKey ? (
+                      <>
+                        <p className="text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                          Paste this one line into the staging site (just before &lt;/body&gt;) to add the floating feedback bubble.
+                        </p>
+                        <div className="flex items-stretch gap-2">
+                          <code className="flex-1 px-2 py-1.5 rounded-sm text-[11px] overflow-x-auto whitespace-nowrap" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-accent)', color: 'var(--text-primary)' }}>
+                            {`<script src="${origin}/widget.js" data-deneb4-key="${draft.widgetKey}" defer></script>`}
+                          </code>
+                          <button type="button" onClick={() => copyEmbed(`<script src="${origin}/widget.js" data-deneb4-key="${draft.widgetKey}" defer></script>`)} className="btn-outline text-xs flex-shrink-0">
+                            {embedCopied ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button type="button" onClick={regenWidgetKey} disabled={widgetBusy} className="btn-outline text-xs">
+                        {widgetBusy ? 'Generating...' : 'Generate embed code'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

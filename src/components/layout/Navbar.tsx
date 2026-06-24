@@ -13,6 +13,14 @@ import type { Article } from "@/types";
 type OpenMenu = "services" | "industries" | "articles" | null;
 
 // Service categories shown in the left rail of the Services panel.
+function SwirlIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 4a8 8 0 1 0 8 8 5.2 5.2 0 1 0-5.2 5.2 2.6 2.6 0 1 0 2.6-2.6" />
+    </svg>
+  );
+}
+
 // Showcase image shown in the center panel for a given service group.
 const GROUP_IMAGES: Record<string, { src: string; w: number; h: number; alt: string }> = {
   "content-systems": { src: "/mega-sales-ops.png", w: 1448, h: 1086, alt: "Deneb4 sales and operations dashboard on a desktop display" },
@@ -466,10 +474,11 @@ export default function Navbar({ articles, serviceGroups }: { articles: Article[
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="inline-flex items-center justify-center text-sm font-semibold transition-colors"
+                className="inline-flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
                 style={{ background: "#ffffff", color: "var(--accent)", border: "1px solid var(--border-accent)", padding: "0.625rem 1.5rem", borderRadius: "2px", letterSpacing: "0.025em" }}
               >
-                Client Portal
+                <SwirlIcon className="w-4 h-4" />
+                My Portal
               </Link>
             </div>
 
@@ -540,7 +549,7 @@ export default function Navbar({ articles, serviceGroups }: { articles: Article[
 
               <div className="pt-3 pb-4 flex gap-3">
                 <Link href="/start" className="btn-primary flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Start a Project</Link>
-                <Link href="/login" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}>Client Portal</Link>
+                <Link href="/login" className="btn-outline flex-1 justify-center text-xs" onClick={() => setMobileOpen(false)}><SwirlIcon className="w-3.5 h-3.5" />My Portal</Link>
               </div>
             </div>
           </div>

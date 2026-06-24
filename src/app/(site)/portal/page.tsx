@@ -31,6 +31,8 @@ export default async function PortalPage() {
     files: client.files,
     revisions: client.revisions,
     invoices: client.invoices,
+    feedbackOpen: client.feedbackOpen,
+    feedback: client.feedback,
   };
 
   return <PortalView client={data} />;

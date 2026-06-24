@@ -1,6 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+
+export function generateWidgetKey(): string {
+  return crypto.randomBytes(9).toString('hex'); // 18-char unguessable key
+}
 
 export interface ClientUpdate {
   phase: string;
@@ -47,6 +52,16 @@ export const EMPTY_STAGING: ClientStaging = {
   notes: '',
 };
 
+export interface ClientFeedback {
+  id: string;
+  author: 'client' | 'deneb4';
+  message: string;
+  page: string; // which page/area of the staging site (client comments)
+  date: string; // ISO timestamp
+  read: boolean; // read by Deneb4 (for the unread badge)
+  resolved: boolean; // archived to history once the issue is handled
+}
+
 export { BUILD_STAGES } from './stages';
 
 export interface Client {
@@ -63,6 +78,9 @@ export interface Client {
   revisions: ClientRevision[];
   invoices: ClientInvoice[];
   staging: ClientStaging;
+  feedbackOpen: boolean; // whether the client can leave feedback in their portal
+  feedback: ClientFeedback[];
+  widgetKey: string; // per-client key embedded in the staging-site feedback widget
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -137,6 +155,17 @@ function parseFile(slug: string): Client | null {
       ...(str(i.invoiceUrl) ? { invoiceUrl: str(i.invoiceUrl) } : {}),
     })),
     staging: parseStaging(data.staging),
+    feedbackOpen: data.feedbackOpen === true,
+    feedback: asArray(data.feedback).map((m) => ({
+      id: str(m.id),
+      author: (str(m.author) === 'deneb4' ? 'deneb4' : 'client') as ClientFeedback['author'],
+      message: str(m.message),
+      page: str(m.page),
+      date: str(m.date),
+      read: m.read === true,
+      resolved: m.resolved === true,
+    })),
+    widgetKey: str(data.widgetKey),
   };
 }
 
@@ -169,6 +198,24 @@ export async function getClientByEmail(email: string): Promise<Client | null> {
   return clients.find((c) => c.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
+/** Look up a client by their staging-widget key. */
+export async function getClientByWidgetKey(key: string): Promise<Client | null> {
+  if (!key) return null;
+  const clients = await getAllClients();
+  return clients.find((c) => c.widgetKey && c.widgetKey === key) ?? null;
+}
+
+/** Generate (or regenerate) a client's widget key and persist it. Returns the key. */
+export function setWidgetKey(slug: string): string | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const key = generateWidgetKey();
+  const data = clientToData(c);
+  data.widgetKey = key;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return key;
+}
+
 /** Write a full client record to disk. Creates the directory if needed. */
 export function writeClient(
   slug: string,
@@ -189,6 +236,9 @@ export function writeClient(
     revisions: data.revisions,
     invoices: data.invoices,
     staging: data.staging ?? EMPTY_STAGING,
+    feedbackOpen: data.feedbackOpen ?? false,
+    feedback: data.feedback ?? [],
+    widgetKey: data.widgetKey ?? '',
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }
@@ -197,5 +247,71 @@ export function deleteClient(slug: string): boolean {
   const filePath = clientPath(slug);
   if (!fs.existsSync(filePath)) return false;
   fs.unlinkSync(filePath);
+  return true;
+}
+
+function clientToData(c: Client): ClientData {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { slug: _slug, passwordHash: _passwordHash, ...rest } = c;
+  return rest;
+}
+
+/** Append one feedback message to a client's thread. */
+export function addFeedback(slug: string, entry: ClientFeedback): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.feedback = [...data.feedback, entry];
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Mark all of a client's feedback as read by Deneb4. */
+export function markFeedbackRead(slug: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.feedback = data.feedback.map((m) => ({ ...m, read: true }));
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Edit one message's text. Only succeeds if the message author matches. */
+export function editFeedback(slug: string, id: string, message: string, author: ClientFeedback['author']): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  let found = false;
+  data.feedback = data.feedback.map((m) => {
+    if (m.id === id && m.author === author) {
+      found = true;
+      return { ...m, message };
+    }
+    return m;
+  });
+  if (!found) return false;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Delete one message. Only succeeds if the message author matches. */
+export function deleteFeedback(slug: string, id: string, author: ClientFeedback['author']): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  const before = data.feedback.length;
+  data.feedback = data.feedback.filter((m) => !(m.id === id && m.author === author));
+  if (data.feedback.length === before) return false;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Archive the active thread to history (mark all current messages resolved). */
+export function resolveFeedback(slug: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.feedback = data.feedback.map((m) => ({ ...m, resolved: true, read: true }));
+  writeClient(slug, { data, passwordHash: c.passwordHash });
   return true;
 }

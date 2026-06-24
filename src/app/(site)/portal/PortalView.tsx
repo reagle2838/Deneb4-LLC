@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { BUILD_STAGES } from '@/lib/stages';
-import type { ClientUpdate, ClientFile, ClientRevision, ClientInvoice, ClientStaging } from '@/lib/clients';
+import type { ClientUpdate, ClientFile, ClientRevision, ClientInvoice, ClientStaging, ClientFeedback } from '@/lib/clients';
 
 export interface PortalData {
   slug: string;
@@ -16,6 +16,8 @@ export interface PortalData {
   files: ClientFile[];
   revisions: ClientRevision[];
   invoices: ClientInvoice[];
+  feedbackOpen: boolean;
+  feedback: ClientFeedback[];
 }
 
 type SectionKey = 'updates' | 'files' | 'revisions' | 'invoices';
@@ -127,19 +129,17 @@ export default function PortalView({ client }: { client: PortalData }) {
     setTimeout(() => refs[key].current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
-  const openRevisions = client.revisions.filter((r) => r.status !== 'complete').length;
   const hasStaging = client.staging.url || client.staging.username || client.staging.notes;
 
   const tiles: { key: SectionKey; label: string; value: number }[] = [
     { key: 'updates', label: 'Updates', value: client.updates.length },
     { key: 'files', label: 'Files', value: client.files.length },
-    { key: 'revisions', label: 'Open Revisions', value: openRevisions },
     { key: 'invoices', label: 'Invoices', value: client.invoices.length },
   ];
 
   return (
     <section style={{ background: 'var(--bg-base)' }}>
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <div className="mb-8">
           <p className="font-spec text-xs tracking-widest uppercase mb-2" style={{ color: 'var(--accent-light)' }}>Client Portal</p>
@@ -263,11 +263,28 @@ export default function PortalView({ client }: { client: PortalData }) {
                 )}
               </div>
               {client.staging.url && (
-                <a href={client.staging.url} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm flex-shrink-0">
+                <a
+                  href={/^https?:\/\//i.test(client.staging.url) ? client.staging.url : `https://${client.staging.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary text-sm flex-shrink-0"
+                >
                   Open staging site →
                 </a>
               )}
             </div>
+            {(client.feedbackOpen || client.feedback.length > 0) && (
+              <p className="text-xs mt-3 flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--text-faint)' }}>
+                <span>
+                  {client.feedbackOpen
+                    ? 'Look for the feedback bubble on your staging site — drag it anywhere and comment as you browse.'
+                    : 'Your feedback history stays available.'}
+                </span>
+                <a href="/portal-feedback" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--accent-light)' }}>
+                  View feedback &amp; history →
+                </a>
+              </p>
+            )}
           </div>
         )}
 
@@ -293,30 +310,6 @@ export default function PortalView({ client }: { client: PortalData }) {
                   </div>
                 </div>
                 {u.notes && <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{u.notes}</p>}
-              </div>
-            ))}
-          </AccordionSection>
-
-          <AccordionSection
-            sectionRef={refs.revisions}
-            title="Feedback & Revisions"
-            subtitle="Revision requests tracked by phase."
-            count={client.revisions.length}
-            isNew={newCount('revisions')}
-            open={open.revisions}
-            onToggle={() => toggle('revisions')}
-            empty="No revision requests yet."
-          >
-            {client.revisions.map((r, i) => (
-              <div key={i} className="px-6 py-4" style={{ borderTop: '1px solid var(--border-accent)' }}>
-                <div className="flex items-start justify-between gap-4 mb-1">
-                  <p className="text-xs font-spec uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>{r.phase}</p>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <StatusPill status={r.status} />
-                    {r.date && <span className="font-spec text-[10px]" style={{ color: 'var(--text-faint)' }}>{formatDate(r.date)}</span>}
-                  </div>
-                </div>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{r.description}</p>
               </div>
             ))}
           </AccordionSection>

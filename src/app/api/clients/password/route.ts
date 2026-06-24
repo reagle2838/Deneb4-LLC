@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
         revisions: existing.revisions,
         invoices: existing.invoices,
         staging: existing.staging,
+        feedbackOpen: existing.feedbackOpen,
+        feedback: existing.feedback,
+        widgetKey: existing.widgetKey,
       },
     });
 

@@ -2,9 +2,9 @@ name: Brad Eagle
 email: bdeagle@eaglecompanies.com
 projectName: Eagle Engineering & Supply Co.
 active: true
-passwordHash: 67044a4727b52a441ece73f545321900:66d1eb7803a386f6ec1e419fc1d406ffe7c469d374bf44b13e751d5107d50ffc43d7b3aadfdf8a430571e8ec01e5aebe35034986bd2c17a51c3f2ea383d241b2
+passwordHash: e59a4c2cfcfb751cbbb8fc8032483e5e:4b5a4fde135616684ccc9fd854649299aee680bd72d8156192c5372481d3257fe0857f3dce355cbe2c3014b55a36d6b6cd9752d77e31f3d7d3c3090f6011afbe
 stage: Development
-driveFolder: ""
+driveFolder: https://drive.google.com/drive/folders/1IKkDcuMb5Mx_X6qaAa5OvBIa1f9YkOxr?usp=drive_link
 updates: []
 files: []
 revisions: []
@@ -20,3 +20,20 @@ staging:
   password: ""
   status: ready
   notes: ""
+feedbackOpen: true
+feedback:
+  - id: 1015ef28-e7be-47b4-ad31-baaa27279af0
+    author: client
+    message: testing
+    page: testing
+    date: "2026-06-24T18:40:06.756Z"
+    read: true
+    resolved: true
+  - id: b6fd65e7-0e72-44b8-ac55-ea86486aac35
+    author: deneb4
+    message: Got it
+    page: ""
+    date: "2026-06-24T18:40:50.017Z"
+    read: true
+    resolved: true
+widgetKey: 049cabbd77308a3db2

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
-import { getClientBySlug, writeClient, type ClientData } from '@/lib/clients';
+import { getClientBySlug, writeClient, generateWidgetKey, type ClientData } from '@/lib/clients';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
         revisions: data.revisions ?? [],
         invoices: data.invoices ?? [],
         staging: data.staging ?? existing.staging,
+        feedbackOpen: data.feedbackOpen ?? existing.feedbackOpen,
+        feedback: existing.feedback,
+        widgetKey: existing.widgetKey || generateWidgetKey(),
       },
     });
 
