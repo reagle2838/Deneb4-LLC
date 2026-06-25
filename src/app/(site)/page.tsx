@@ -56,7 +56,6 @@ function HeroMock() {
           </div>
         </div>
       </div>
-      <span className="absolute -top-3 -right-3 spec-tag">Next.js · owned by you</span>
     </div>
   );
 }
@@ -109,9 +108,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             {CREDENTIALS.map((item, i) => (
-              <div key={item.stat} className="flex flex-col items-center text-center py-10 px-4" style={{ borderRight: i < CREDENTIALS.length - 1 ? "1px solid var(--border-accent)" : undefined }}>
-                <span className="font-bold mb-1 leading-tight text-2xl sm:text-3xl" style={{ color: "var(--text-heading)" }}>{item.stat}</span>
-                <span className="text-xs font-spec tracking-wide leading-snug mt-2" style={{ color: "var(--text-muted)" }}>{item.desc}</span>
+              <div key={item.stat} className="flex flex-col items-center text-center py-10 px-4" style={{ minHeight: "140px", borderRight: i < CREDENTIALS.length - 1 ? "1px solid var(--border-accent)" : undefined }}>
               </div>
             ))}
           </div>
