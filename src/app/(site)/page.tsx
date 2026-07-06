@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import Marquee from "@/components/ui/Marquee";
 import FaqAccordion from "@/components/ui/FaqAccordion";
+import CtaBanner from "@/components/ui/CtaBanner";
+import SectionEyebrow from "@/components/ui/SectionEyebrow";
+import Reveal from "@/components/motion/Reveal";
+import Stagger from "@/components/motion/Stagger";
 import { getCapabilityGroups } from "@/lib/services-content";
 import { INDUSTRIES } from "@/data/industries";
 import { PHASES } from "@/data/process";
 import { FAQS } from "@/data/faq";
-import { CREDENTIALS } from "@/data/nav";
 import { getAllArticles } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -68,7 +70,7 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-      {/* ── Hero + Marquee ───────────────────────────────────────── */}
+      {/* ── Hero ─────────────────────────────────────────────────── */}
       <div className="flex flex-col hero-viewport-lock">
         <section className="flex-1 min-h-0 flex items-center overflow-y-auto" style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-accent)" }}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 w-full">
@@ -98,38 +100,25 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-        <div className="flex-shrink-0">
-          <Marquee />
-        </div>
       </div>
-
-      {/* ── Credentials strip ────────────────────────────────────── */}
-      <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-            {CREDENTIALS.map((item, i) => (
-              <div key={item.stat} className="flex flex-col items-center text-center py-10 px-4" style={{ minHeight: "140px", borderRight: i < CREDENTIALS.length - 1 ? "1px solid var(--border-accent)" : undefined }}>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── Services preview ─────────────────────────────────────── */}
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="flex items-end justify-between gap-6 mb-14">
+          <Reveal className="flex items-end justify-between gap-6 mb-14">
             <div className="max-w-2xl">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4">What we <span style={{ color: "var(--accent-light)" }}>build</span></h2>
+              <SectionEyebrow index="01" label="Capabilities" />
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Built around how <span style={{ color: "var(--accent-light)" }}>your buyers buy</span></h2>
               <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Web design and development, scoped to what you actually need, and handed over as an asset you own outright.
+                Your customers check the spec sheet before they ever pick up the phone. Everything here is scoped to
+                that reality, and handed over as an asset you own outright.
               </p>
             </div>
             <Link href="/services" className="btn-outline flex-shrink-0 hidden sm:inline-flex">All Services →</Link>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          </Reveal>
+          <Stagger className="grid grid-cols-1 lg:grid-cols-3 gap-6" step={110}>
             {groups.map((g) => (
-              <Link key={g.id} href={`/services#${g.id}`} className="card p-8 flex flex-col gap-4 transition-transform hover:-translate-y-0.5">
+              <Link key={g.id} href={`/services#${g.id}`} className="card card-glow p-8 flex flex-col gap-4 transition-transform hover:-translate-y-0.5">
                 <h3 className="text-xl font-bold" style={{ color: "var(--text-heading)" }}>{g.title}</h3>
                 <p className="text-sm font-semibold leading-relaxed" style={{ color: "var(--accent)" }}>{g.tagline}</p>
                 <ul className="space-y-2 mt-auto">
@@ -144,54 +133,57 @@ export default async function HomePage() {
                 </ul>
               </Link>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* ── Partnership: deployment & infrastructure ─────────────── */}
       <section style={{ background: "var(--bg-surface)", borderTop: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="card accent-banner p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="font-spec text-xs tracking-widest uppercase mb-3" style={{ color: "var(--accent-light)" }}>Deployment &amp; Secured Infrastructure</p>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                We build the software. Our partner <span style={{ color: "var(--accent-light)" }}>secures and deploys it.</span>
-              </h2>
-              <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                We build your custom operations platform. For clients who need it running on secured, on-site infrastructure, we partner with <a href="https://www.eaglecompanies.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--accent-light)" }}>Eagle Technology Solutions</a> Their enterprise IT team provisions the firewalls, displays, and network hardening while we handle the software, so you get one turnkey, fully secured system and a single point of contact.
-              </p>
-              <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
+          <Reveal>
+            <div className="card card-glow accent-banner p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="font-spec text-xs tracking-widest uppercase mb-3" style={{ color: "var(--accent-light)" }}>Deployment &amp; Secured Infrastructure</p>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  Your software, built here. <span style={{ color: "var(--accent-light)" }}>Secured and deployed</span> by our partner.
+                </h2>
+                <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  If you need your custom operations platform running on secured, on-site infrastructure, we partner with <a href="https://www.eaglecompanies.com/" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: "var(--accent-light)" }}>Eagle Technology Solutions</a>. Their enterprise IT team provisions the firewalls, displays, and network hardening while we build the software, so you get one turnkey, fully secured system and a single point of contact.
+                </p>
+                <Link href="/work/eagle-engineering" className="btn-outline text-sm mt-6 inline-flex">See the Eagle Engineering build →</Link>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  "Deployment and provisioning by Eagle's team*",
+                  "SonicWall firewalls and network hardening",
+                  "ViewSonic commercial displays",
+                ].map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
+                    <span style={{ color: "var(--accent)" }} className="mt-1 text-[10px] flex-shrink-0">◆</span>{point}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-3">
-              {[
-                "Deployment and provisioning by Eagle's team*",
-                "SonicWall firewalls and network hardening",
-                "ViewSonic commercial displays",
-              ].map((point) => (
-                <li key={point} className="flex items-start gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
-                  <span style={{ color: "var(--accent)" }} className="mt-1 text-[10px] flex-shrink-0">◆</span>{point}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <p className="text-xs mt-5 max-w-3xl" style={{ color: "var(--text-faint)" }}>
-            *Deployment depends on your location and Eagle Technology Solutions&apos; ability to travel to your site. We&apos;ll confirm availability before scoping.
-          </p>
+            <p className="text-xs mt-5 max-w-3xl" style={{ color: "var(--text-faint)" }}>
+              *Deployment depends on your location and Eagle Technology Solutions&apos; ability to travel to your site. We&apos;ll confirm availability before scoping.
+            </p>
+          </Reveal>
         </div>
       </section>
 
       {/* ── Process ──────────────────────────────────────────────── */}
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="mb-14 max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">A transparent, <span style={{ color: "var(--accent-light)" }}>four-phase process</span></h2>
+          <Reveal className="mb-14 max-w-2xl">
+            <SectionEyebrow index="02" label="Process" />
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">You approve <span style={{ color: "var(--accent-light)" }}>every phase</span> before the next one starts</h2>
             <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              No vague timelines. No black-box delivery. Each phase needs your sign-off before the next begins.
+              No vague timelines. No black-box delivery. You always know exactly where your project stands.
             </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          </Reveal>
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" step={100}>
             {PHASES.map((phase) => (
-              <div key={phase.n} className="card p-7 flex flex-col gap-3">
+              <div key={phase.n} className="card card-glow p-7 flex flex-col gap-3">
                 <div>
                   <span className="font-spec text-2xl font-bold" style={{ color: "var(--accent-light)" }}>{phase.n}</span>
                 </div>
@@ -199,75 +191,82 @@ export default async function HomePage() {
                 <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{phase.summary}</p>
               </div>
             ))}
-          </div>
-          <div className="mt-10"><Link href="/process" className="btn-outline text-sm">See the full process →</Link></div>
+          </Stagger>
+          <Reveal className="mt-10" variant="fade">
+            <Link href="/process" className="btn-outline text-sm">See the full process →</Link>
+          </Reveal>
         </div>
       </section>
 
       {/* ── Industries ───────────────────────────────────────────── */}
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="mb-14 max-w-2xl">
+          <Reveal className="mb-14 max-w-2xl">
+            <SectionEyebrow index="03" label="Industries" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Built for businesses that <span style={{ color: "var(--accent-light)" }}>make things</span></h2>
             <p className="text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Industry literacy is the difference. No learning curve, no stock-photo fluff. Just sites that speak your buyers&apos; language.
+              If your buyers ask about tolerances, certifications, and lead times before they ever call, you are in the right place.
             </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          </Reveal>
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" step={70}>
             {INDUSTRIES.map((s) => (
-              <Link key={s.slug} href={`/industries#${s.slug}`} className="card p-7 flex flex-col gap-2 no-underline">
+              <Link key={s.slug} href={`/industries#${s.slug}`} className="card card-glow p-7 flex flex-col gap-2 no-underline">
                 <h3 className="font-semibold text-sm" style={{ color: "var(--text-heading)" }}>{s.label}</h3>
                 <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{s.blurb}</p>
               </Link>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* ── Featured work ────────────────────────────────────────── */}
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="accent-banner card p-10 flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-1">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3">Eagle Engineering & Supply Co.</h2>
-              <p className="text-base leading-relaxed mb-4" style={{ color: "var(--text-muted)" }}>
-                A 55-year-old, multi-division industrial firm: electrical controls, proprietary material
-                handling, authorized distribution, rebuilt as owned infrastructure. The full-screen mega
-                menu and blueprint design system you&apos;re using right now started there.
-              </p>
-              <Link href="/work" className="btn-outline text-sm">View the work →</Link>
+          <Reveal variant="scale-in">
+            <div className="accent-banner card card-glow card-tilt p-10 flex flex-col lg:flex-row gap-8 items-start">
+              <div className="flex-1">
+                <SectionEyebrow index="04" label="Selected work" />
+                <h2 className="text-2xl sm:text-3xl font-bold mb-3">Eagle Engineering &amp; Supply Co.</h2>
+                <p className="text-base leading-relaxed mb-4" style={{ color: "var(--text-muted)" }}>
+                  A 55-year-old, multi-division industrial firm: electrical controls, proprietary material
+                  handling, authorized distribution, rebuilt as owned infrastructure. The full-screen mega
+                  menu and blueprint design system you&apos;re using right now started there.
+                </p>
+                <Link href="/work" className="btn-outline text-sm">View the work →</Link>
+              </div>
+              <div className="flex flex-col gap-3 lg:w-56 flex-shrink-0 w-full">
+                {[
+                  { k: "Sector", v: "Industrial engineering" },
+                  { k: "Scope", v: "Multi-division + catalog" },
+                  { k: "Stack", v: "Next.js · owned outright" },
+                ].map((row) => (
+                  <div key={row.k} className="flex flex-col" style={{ borderTop: "1px solid var(--border-accent)", paddingTop: "0.5rem" }}>
+                    <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>{row.k}</span>
+                    <span className="text-sm" style={{ color: "var(--text-heading)" }}>{row.v}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-3 lg:w-56 flex-shrink-0 w-full">
-              {[
-                { k: "Sector", v: "Industrial engineering" },
-                { k: "Scope", v: "Multi-division + catalog" },
-                { k: "Stack", v: "Next.js · owned outright" },
-              ].map((row) => (
-                <div key={row.k} className="flex flex-col" style={{ borderTop: "1px solid var(--border-accent)", paddingTop: "0.5rem" }}>
-                  <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>{row.k}</span>
-                  <span className="text-sm" style={{ color: "var(--text-heading)" }}>{row.v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* ── From the studio (articles) ───────────────────────────── */}
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="flex items-end justify-between gap-6 mb-14">
+          <Reveal className="flex items-end justify-between gap-6 mb-14">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold">From the studio</h2>
+              <SectionEyebrow index="05" label="Field notes" />
+              <h2 className="text-3xl sm:text-4xl font-bold">From the <span style={{ color: "var(--accent-light)" }}>studio</span></h2>
               <p className="text-base mt-2 max-w-xl" style={{ color: "var(--text-muted)" }}>
                 Plain-spoken pieces on building websites that pull their weight.
               </p>
             </div>
             <Link href="/articles" className="btn-outline flex-shrink-0 hidden sm:inline-flex">All Articles →</Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          </Reveal>
+          <Stagger className="grid grid-cols-1 sm:grid-cols-3 gap-6" step={110}>
             {articles.map((a) => (
-              <Link key={a.slug} href={`/articles/${a.slug}`} className="card flex flex-col no-underline group overflow-hidden">
+              <Link key={a.slug} href={`/articles/${a.slug}`} className="card card-glow flex flex-col no-underline group overflow-hidden">
                 <div className="relative h-32 flex-shrink-0 bg-grid flex items-end p-4" style={{ borderBottom: "1px solid var(--border-accent)" }}>
                   <span className="font-spec text-[10px] tracking-widest" style={{ color: "var(--accent-light)" }}>{a.type}</span>
                 </div>
@@ -278,35 +277,36 @@ export default async function HomePage() {
                 </div>
               </Link>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────── */}
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="mb-14"><h2 className="text-3xl sm:text-4xl font-bold">Questions clients ask first</h2></div>
-          <FaqAccordion faqs={FAQS.slice(0, 6)} />
-          <div className="mt-10"><Link href="/faq" className="btn-outline text-sm">All questions →</Link></div>
+          <Reveal className="mb-14">
+            <SectionEyebrow index="06" label="Questions" />
+            <h2 className="text-3xl sm:text-4xl font-bold">The questions owners <span style={{ color: "var(--accent-light)" }}>ask first</span></h2>
+          </Reveal>
+          <Reveal delay={120} variant="fade">
+            <FaqAccordion faqs={FAQS.slice(0, 6)} />
+            <div className="mt-10"><Link href="/faq" className="btn-outline text-sm">All questions →</Link></div>
+          </Reveal>
         </div>
       </section>
 
       {/* ── Final CTA ────────────────────────────────────────────── */}
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="card p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8" style={{ background: "linear-gradient(135deg, rgba(0,107,143,0.10) 0%, var(--bg-surface) 100%)", borderLeft: "3px solid var(--accent)" }}>
-            <div className="flex-1">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3">Let&apos;s talk about <span style={{ color: "var(--accent-light)" }}>your project.</span></h2>
-              <p className="text-sm leading-relaxed max-w-xl mb-4" style={{ color: "var(--text-muted)" }}>
-                Tell me what you make and who you sell to. I read every message personally and reply with a clear next step, usually within a day or two.
-              </p>
-              <p className="font-spec text-[10px] tracking-wide" style={{ color: "var(--text-faint)" }}>hello@deneb4.com · Mon–Fri 9am–5pm EST</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              <Link href="/start" className="btn-primary">Start a Project</Link>
-              <Link href="/contact" className="btn-outline">Contact</Link>
-            </div>
-          </div>
+          <Reveal variant="scale-in">
+            <CtaBanner
+              title={<>Your site should be <span style={{ color: "var(--accent-light)" }}>winning you quotes.</span></>}
+              body="Tell me what you make and who you sell to. I read every message personally and reply with a clear next step, usually within a day or two."
+              footnote="hello@deneb4.com · Mon-Fri 9am-5pm EST"
+              primary={{ href: "/start", label: "Start a Project" }}
+              secondary={{ href: "/contact", label: "Contact" }}
+            />
+          </Reveal>
         </div>
       </section>
     </>

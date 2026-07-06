@@ -60,7 +60,7 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
         setError(data.error ?? 'Could not create client.');
       }
     } catch {
-      setError('Server error — try again.');
+      setError('Server error, try again.');
     } finally {
       setBusy(null);
     }
@@ -81,7 +81,7 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-spec font-semibold tracking-widest uppercase mb-1" style={{ color: 'var(--text-muted)' }}>
-                {converted.name} added to clients — portal password:
+                {converted.name} added to clients. Portal password:
               </p>
               <code className="font-spec text-base" style={{ color: 'var(--text-heading)' }}>{converted.password}</code>
               <p className="text-xs mt-1" style={{ color: 'var(--text-faint)' }}>Shown once. Find them under the Clients tab.</p>
@@ -113,8 +113,8 @@ export default function LeadsTab({ initialLeads }: { initialLeads: Lead[] }) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <p className="font-semibold" style={{ color: 'var(--text-heading)' }}>{l.name}</p>
-                        <span className="font-spec text-[10px] tracking-widest px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-raised)', color: 'var(--text-faint)' }}>
-                          {l.source === 'start' ? 'PROJECT BRIEF' : 'INQUIRY'}
+                        <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
+                          {l.source === 'start' ? 'Project brief' : 'Inquiry'}
                         </span>
                       </div>
                       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>

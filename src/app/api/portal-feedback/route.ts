@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifyPortalSession } from '@/lib/portal-auth';
-import { addFeedback, editFeedback, deleteFeedback, type ClientFeedback } from '@/lib/clients';
+import {
+  addFeedback,
+  editFeedback,
+  deleteFeedback,
+  markThreadSeenByClient,
+  getClientBySlug,
+  type ClientFeedback,
+} from '@/lib/clients';
+import { notifyOwnerOfClientMessage } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +20,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as { action?: 'edit' | 'delete'; id?: string; message?: string; page?: string };
+    const body = (await req.json()) as { action?: 'edit' | 'delete' | 'seen'; id?: string; message?: string; page?: string };
+
+    // The client opened/scrolled to the thread: record it for unread tracking.
+    if (body.action === 'seen') {
+      markThreadSeenByClient(clientSlug);
+      return NextResponse.json({ ok: true });
+    }
 
     // Clients may only edit/delete their own (author: 'client') messages.
     if (body.action === 'edit') {
@@ -48,6 +62,8 @@ export async function POST(req: NextRequest) {
     if (!addFeedback(clientSlug, entry)) {
       return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
     }
+    const client = await getClientBySlug(clientSlug);
+    if (client) await notifyOwnerOfClientMessage(client, entry, 'portal');
     return NextResponse.json({ ok: true, entry });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

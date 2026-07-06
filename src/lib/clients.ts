@@ -81,6 +81,7 @@ export interface Client {
   feedbackOpen: boolean; // whether the client can leave feedback in their portal
   feedback: ClientFeedback[];
   widgetKey: string; // per-client key embedded in the staging-site feedback widget
+  lastSeenByClient: string; // ISO timestamp: when the client last viewed the thread
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -166,6 +167,7 @@ function parseFile(slug: string): Client | null {
       resolved: m.resolved === true,
     })),
     widgetKey: str(data.widgetKey),
+    lastSeenByClient: str(data.lastSeenByClient),
   };
 }
 
@@ -239,6 +241,7 @@ export function writeClient(
     feedbackOpen: data.feedbackOpen ?? false,
     feedback: data.feedback ?? [],
     widgetKey: data.widgetKey ?? '',
+    lastSeenByClient: data.lastSeenByClient ?? '',
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }
@@ -314,4 +317,46 @@ export function resolveFeedback(slug: string): boolean {
   data.feedback = data.feedback.map((m) => ({ ...m, resolved: true, read: true }));
   writeClient(slug, { data, passwordHash: c.passwordHash });
   return true;
+}
+
+/** Record that the client has viewed the message thread just now. */
+export function markThreadSeenByClient(slug: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.lastSeenByClient = new Date().toISOString();
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Studio replies the client has not seen yet (drives the portal unread dot). */
+export function countUnreadForClient(client: Client): number {
+  return client.feedback.filter(
+    (m) =>
+      m.author === 'deneb4' &&
+      !m.resolved &&
+      (!client.lastSeenByClient || m.date > client.lastSeenByClient)
+  ).length;
+}
+
+/** Client messages the studio has not read yet (drives the Workspace badge). */
+export function countUnreadForOwner(client: Client): number {
+  return client.feedback.filter((m) => m.author === 'client' && !m.read && !m.resolved).length;
+}
+
+/**
+ * Client-side approval of a pending-signoff update. The index + phase echo
+ * guards against the list changing between render and click. Flips the
+ * update to complete and returns the updated client, or null if the
+ * update no longer exists or is not awaiting sign-off.
+ */
+export function approveUpdate(slug: string, index: number, phase: string): Client | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const target = c.updates[index];
+  if (!target || target.phase !== phase || target.status !== 'pending-signoff') return null;
+  const data = clientToData(c);
+  data.updates = c.updates.map((u, i) => (i === index ? { ...u, status: 'complete' as const } : u));
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return parseFile(slug);
 }

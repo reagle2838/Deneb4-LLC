@@ -1,6 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
+import CtaBanner from "@/components/ui/CtaBanner";
+import Reveal from "@/components/motion/Reveal";
 import FaqAccordion from "@/components/ui/FaqAccordion";
 import { FAQS } from "@/data/faq";
 
@@ -28,23 +29,29 @@ export default function FaqPage() {
 
       <PageHero
         eyebrow="FAQ"
-        title="Straight answers."
+        title={<>Straight <span style={{ color: "var(--accent-light)" }}>answers.</span></>}
         subtitle="The questions clients ask most. If yours isn't here, just send a message: you'll get a real reply."
       />
 
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-24">
-          <FaqAccordion faqs={FAQS} />
+          <Reveal variant="fade">
+            <FaqAccordion faqs={FAQS} />
+          </Reveal>
         </div>
       </section>
 
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Still have a question?</h2>
-          <div className="flex flex-wrap gap-3 justify-center mt-4">
-            <Link href="/contact" className="btn-primary">Ask a question</Link>
-            <Link href="/start" className="btn-outline">Start a Project</Link>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+          <Reveal variant="scale-in">
+            <CtaBanner
+              variant="centered"
+              title={<>Still have <span style={{ color: "var(--accent-light)" }}>a question?</span></>}
+              body="Ask anything about your project. Real questions get real replies, not a drip campaign."
+              primary={{ href: "/contact", label: "Ask a question" }}
+              secondary={{ href: "/start", label: "Start a Project" }}
+            />
+          </Reveal>
         </div>
       </section>
     </>

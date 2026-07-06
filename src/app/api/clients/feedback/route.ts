@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifySession } from '@/lib/cms-auth';
-import { addFeedback, markFeedbackRead, editFeedback, deleteFeedback, resolveFeedback, type ClientFeedback } from '@/lib/clients';
+import { addFeedback, markFeedbackRead, editFeedback, deleteFeedback, resolveFeedback, getClientBySlug, type ClientFeedback } from '@/lib/clients';
+import { notifyClientOfReply } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest) {
     if (!addFeedback(slug, entry)) {
       return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
     }
+    const client = await getClientBySlug(slug);
+    if (client) await notifyClientOfReply(client, entry);
     return NextResponse.json({ ok: true, entry });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

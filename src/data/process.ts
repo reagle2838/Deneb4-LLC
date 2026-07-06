@@ -18,7 +18,7 @@ export const PHASES: Phase[] = [
   {
     n: "02",
     title: "Design",
-    weeks: "Weeks 2–3",
+    weeks: "Weeks 2-3",
     summary:
       "Wireframes and visual design come before any code. You review and approve each layer separately. Nothing moves to build until design is signed off.",
     deliverables: ["Wireframes", "Desktop & mobile mockups", "Typography & color spec", "Component library preview"],
@@ -26,7 +26,7 @@ export const PHASES: Phase[] = [
   {
     n: "03",
     title: "Development",
-    weeks: "Weeks 3–6",
+    weeks: "Weeks 3-6",
     summary:
       "Pages are built in priority order with staged releases. You get early access to a staging environment so you can watch it come together. The CMS is integrated and tested here.",
     deliverables: ["Staged page builds", "Staging environment access", "CMS integration", "Functional tools wired up"],
@@ -34,7 +34,7 @@ export const PHASES: Phase[] = [
   {
     n: "04",
     title: "QA & Launch",
-    weeks: "Weeks 6–8",
+    weeks: "Weeks 6-8",
     summary:
       "A final pass covers responsiveness, accessibility, SEO, and every interactive feature. After your approval, the site deploys to production. No vague timelines. No black-box delivery.",
     deliverables: ["Responsive & accessibility QA", "SEO & performance checks", "Production deploy + DNS handover", "Documentation"],

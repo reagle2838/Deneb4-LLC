@@ -10,9 +10,15 @@ import Workspace from "./Workspace";
 
 export const dynamic = "force-dynamic";
 
-export default async function CmsAdminPage() {
+export default async function CmsAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; client?: string }>;
+}) {
   const token = (await cookies()).get("cms_auth")?.value;
   if (!(await verifySession(token))) redirect("/cms-login");
+
+  const { tab, client } = await searchParams;
 
   const clients = await getAllClients();
   const leads = getLeads();
@@ -22,13 +28,21 @@ export default async function CmsAdminPage() {
 
   return (
     <div style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <p className="font-spec text-xs tracking-widest uppercase mb-2" style={{ color: "var(--accent-light)" }}>Workspace</p>
           <h1 className="text-3xl font-bold" style={{ color: "var(--text-heading)" }}>Command Center</h1>
         </div>
 
-        <Workspace clients={clients} leads={leads} tasks={tasks} notes={notes} quickLinks={quickLinks} />
+        <Workspace
+          clients={clients}
+          leads={leads}
+          tasks={tasks}
+          notes={notes}
+          quickLinks={quickLinks}
+          initialTab={tab}
+          initialClient={client}
+        />
       </div>
     </div>
   );

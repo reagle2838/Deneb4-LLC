@@ -1,6 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
+import CtaBanner from "@/components/ui/CtaBanner";
+import Stagger from "@/components/motion/Stagger";
+import Reveal from "@/components/motion/Reveal";
 import { INDUSTRIES } from "@/data/industries";
 
 export const metadata: Metadata = {
@@ -15,35 +17,36 @@ export default function IndustriesPage() {
     <>
       <PageHero
         eyebrow="Who it's for"
-        title="Built for businesses that make things."
-        subtitle="Deneb4 works with technically sophisticated, B2B, quote-driven companies, usually 10 to 250 people. Industry literacy means no learning curve and no generic marketing fluff."
+        title={<>Built for businesses that <span style={{ color: "var(--accent-light)" }}>make things.</span></>}
+        subtitle="If your buyers ask about tolerances, certifications, and lead times before they ever call, you are in the right place. No learning curve, no generic marketing fluff."
       />
 
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Stagger className="grid grid-cols-1 lg:grid-cols-2 gap-6" step={80}>
             {INDUSTRIES.map((ind) => (
-              <div key={ind.slug} id={ind.slug} className="card p-8 flex flex-col gap-3 scroll-mt-28">
+              <div key={ind.slug} id={ind.slug} className="card card-glow p-8 flex flex-col gap-3 scroll-mt-28">
                 <div>
                   <h2 className="text-xl font-bold" style={{ color: "var(--text-heading)" }}>{ind.label}</h2>
                 </div>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{ind.blurb}</p>
               </div>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Don&apos;t see your exact field?</h2>
-          <p className="text-base max-w-xl mx-auto mb-8" style={{ color: "var(--text-muted)" }}>
-            If you sell something technical to careful buyers, you&apos;re in the right place. Tell me what you make.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/start" className="btn-primary">Start a Project</Link>
-            <Link href="/work" className="btn-outline">See the Work</Link>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+          <Reveal variant="scale-in">
+            <CtaBanner
+              variant="centered"
+              title={<>Don&apos;t see <span style={{ color: "var(--accent-light)" }}>your exact field?</span></>}
+              body="If you sell something technical to careful buyers, you're in the right place. Tell me what you make."
+              primary={{ href: "/start", label: "Start a Project" }}
+              secondary={{ href: "/work", label: "See the Work" }}
+            />
+          </Reveal>
         </div>
       </section>
     </>

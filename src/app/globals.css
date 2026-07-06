@@ -174,35 +174,6 @@
     border-left: 3px solid var(--accent);
   }
 
-  /* Marquee */
-  .marquee-outer {
-    overflow: hidden;
-    position: relative;
-  }
-  .marquee-outer::before,
-  .marquee-outer::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 8%;
-    z-index: 2;
-    pointer-events: none;
-  }
-  .marquee-outer::before {
-    left: 0;
-    background: linear-gradient(to right, var(--bg-alt), transparent);
-  }
-  .marquee-outer::after {
-    right: 0;
-    background: linear-gradient(to left, var(--bg-alt), transparent);
-  }
-  .marquee-inner {
-    display: flex;
-    width: max-content;
-    animation: marquee 40s linear infinite;
-  }
-  .marquee-inner:hover { animation-play-state: paused; }
 }
 
 /* ── UTILITIES ──────────────────────────────────────────────────────── */
@@ -226,12 +197,6 @@
   .hero-viewport-lock {
     height: calc(100svh - 96px);
   }
-}
-
-/* ── MARQUEE KEYFRAME ────────────────────────────────────────────────── */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
 }
 
 /* ── SKELETON LOADER ─────────────────────────────────────────────────── */
@@ -280,4 +245,117 @@ html:not(.dark) .btn-primary:hover,
 html:not(.dark) .btn-outline:hover,
 html:not(.dark) .badge {
   color: inherit;
+}
+
+/* ── MOTION ──────────────────────────────────────────────────────────── */
+/* Scroll reveals are animation-based (never transition-based) so they
+   can't collide with .card's own hover transitions. Server HTML renders
+   visible; only below-the-fold elements are hidden post-hydration. */
+
+@keyframes reveal-up    { from { opacity: 0; transform: translateY(26px); }  to { opacity: 1; transform: none; } }
+@keyframes reveal-fade  { from { opacity: 0; }                               to { opacity: 1; } }
+@keyframes reveal-left  { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+@keyframes reveal-right { from { opacity: 0; transform: translateX(26px); }  to { opacity: 1; transform: none; } }
+@keyframes reveal-scale { from { opacity: 0; transform: scale(0.955); }      to { opacity: 1; transform: none; } }
+
+.reveal-hidden { opacity: 0; }
+.reveal-play {
+  animation: reveal-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+.reveal-play[data-variant="fade"]       { animation-name: reveal-fade; }
+.reveal-play[data-variant="fade-left"]  { animation-name: reveal-left; }
+.reveal-play[data-variant="fade-right"] { animation-name: reveal-right; }
+.reveal-play[data-variant="scale-in"]   { animation-name: reveal-scale; }
+
+/* Staggered groups: children carry --si (index), container sets the step */
+.stagger-hidden > * { opacity: 0; }
+.stagger-play > * {
+  animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--si, 0) * var(--stagger-step, 90ms) + var(--reveal-delay, 0ms));
+}
+.stagger-play[data-variant="fade"] > *     { animation-name: reveal-fade; }
+.stagger-play[data-variant="scale-in"] > * { animation-name: reveal-scale; }
+
+/* Page entrance: (site)/template.tsx remounts this on every navigation */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-enter { animation: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Hero cascade: pure CSS so it plays from first paint, no JS needed */
+.hero-rise {
+  animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--rise, 0ms);
+}
+
+/* Blueprint marks: strokes draw themselves via pathLength=1 */
+.bp-hidden path, .bp-hidden line, .bp-hidden circle { opacity: 0; }
+.bp-play path, .bp-play line, .bp-play circle:not(.bp-dot) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: bp-draw 1s cubic-bezier(0.6, 0.05, 0.25, 1) both;
+  animation-delay: calc(var(--bp-i, 0) * 130ms + var(--reveal-delay, 0ms));
+}
+.bp-play .bp-dot {
+  animation: reveal-fade 0.5s ease both;
+  animation-delay: calc(var(--bp-i, 0) * 130ms + var(--reveal-delay, 0ms));
+}
+@keyframes bp-draw {
+  from { stroke-dashoffset: 1; opacity: 1; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* Hairline rule that draws across */
+.section-rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), var(--border-accent) 70%, transparent);
+  transform-origin: left;
+}
+.rule-hidden { transform: scaleX(0); }
+.rule-play   { animation: rule-draw 0.9s cubic-bezier(0.6, 0.05, 0.25, 1) both; }
+@keyframes rule-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Cursor-following accent glow (set via PointerEffects, no wrappers) */
+.card-glow { position: relative; }
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(31, 147, 186, 0.13),
+    transparent 65%
+  );
+}
+.card-glow:hover::after { opacity: 1; }
+
+/* Cursor-aware tilt (composes with .card hover lift) */
+.card.card-tilt:hover {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-1px);
+}
+
+/* Respect prefers-reduced-motion: everything lands instantly, fully visible */
+@media (prefers-reduced-motion: reduce) {
+  html, body { scroll-behavior: auto; }
+  .reveal-hidden, .stagger-hidden > *, .bp-hidden path, .bp-hidden line, .bp-hidden circle {
+    opacity: 1 !important;
+  }
+  .reveal-play, .stagger-play > *, .page-enter, .rule-play, .hero-rise,
+  .bp-play path, .bp-play line, .bp-play circle {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .bp-play path, .bp-play line, .bp-play circle { stroke-dashoffset: 0 !important; }
+  .rule-hidden, .rule-play { transform: scaleX(1) !important; }
+  .card.card-tilt:hover { transform: translateY(-1px) !important; }
 }

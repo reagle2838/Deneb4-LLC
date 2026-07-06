@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import { DocumentRenderer } from "@keystatic/core/renderer";
+import Reveal from "@/components/motion/Reveal";
+import Stagger from "@/components/motion/Stagger";
 import { getAllProjects, getAllProjectSlugs, getProjectBySlug } from "@/lib/work";
 import WorkGallery from "./WorkGallery";
 
@@ -40,16 +43,15 @@ export default async function WorkProjectPage({ params }: { params: Promise<{ sl
         {/* Header */}
         <header className="bg-grid" style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-accent)" }}>
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-            <Link href="/work" className="font-spec text-xs mb-6 inline-block" style={{ color: "var(--accent-light)" }}>← All work</Link>
-            <div className="flex items-center gap-3 mb-5">
-              <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>{project.sector}</span>
-              <span className="font-spec text-[10px] tracking-widest px-2 py-0.5 rounded-sm" style={{ background: "var(--bg-alt)", border: "1px solid var(--border-accent)", color: project.status === "live" ? "var(--accent-light)" : "var(--text-faint)" }}>
-                {project.status === "live" ? "LIVE" : "IN PROGRESS"}
+            <Link href="/work" className="hero-rise font-spec text-xs mb-6 inline-block" style={{ color: "var(--accent-light)" }}>← All work</Link>
+            <div className="hero-rise flex items-center gap-3 mb-5" style={{ "--rise": "60ms" } as CSSProperties}>
+              <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>
+                {project.sector} · <span style={{ color: project.status === "live" ? "var(--accent-light)" : "var(--text-faint)" }}>{project.status === "live" ? "Live" : "In progress"}</span>
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">{project.title}</h1>
-            <p className="text-lg leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>{project.summary}</p>
-            <div className="flex flex-wrap items-center gap-4">
+            <h1 className="hero-rise text-3xl sm:text-4xl font-bold leading-tight mb-4" style={{ "--rise": "120ms" } as CSSProperties}>{project.title}</h1>
+            <p className="hero-rise text-lg leading-relaxed mb-6" style={{ color: "var(--text-muted)", "--rise": "200ms" } as CSSProperties}>{project.summary}</p>
+            <div className="hero-rise flex flex-wrap items-center gap-4" style={{ "--rise": "280ms" } as CSSProperties}>
               {project.date && (
                 <p className="font-spec text-xs" style={{ color: "var(--text-faint)" }}>{formatDate(project.date)}</p>
               )}
@@ -94,13 +96,15 @@ export default async function WorkProjectPage({ params }: { params: Promise<{ sl
 
             <WorkGallery images={project.gallery} title={project.title} />
 
-            <div className="accent-banner card p-7 mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-              <div>
-                <h2 className="text-lg font-bold mb-1">Have a project like this?</h2>
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Tell me what you make and who you sell to.</p>
+            <Reveal variant="scale-in">
+              <div className="accent-banner card card-glow p-7 mt-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                <div>
+                  <h2 className="text-lg font-bold mb-1">Have a project like this?</h2>
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>Tell me what you make and who you sell to.</p>
+                </div>
+                <Link href="/start" className="btn-primary flex-shrink-0">Start a Project</Link>
               </div>
-              <Link href="/start" className="btn-primary flex-shrink-0">Start a Project</Link>
-            </div>
+            </Reveal>
           </div>
         </div>
 
@@ -108,15 +112,17 @@ export default async function WorkProjectPage({ params }: { params: Promise<{ sl
         {more.length > 0 && (
           <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)" }}>
             <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16">
-              <h2 className="text-xl font-bold mb-6">More work</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Reveal>
+                <h2 className="text-xl font-bold mb-6">More work</h2>
+              </Reveal>
+              <Stagger className="grid grid-cols-1 sm:grid-cols-2 gap-5" step={90}>
                 {more.map((p) => (
-                  <Link key={p.slug} href={`/work/${p.slug}`} className="card p-6 no-underline group">
+                  <Link key={p.slug} href={`/work/${p.slug}`} className="card card-glow p-6 no-underline group">
                     <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: "var(--text-faint)" }}>{p.sector}</span>
                     <h3 className="text-sm font-semibold leading-snug mt-2 group-hover:underline" style={{ color: "var(--text-heading)" }}>{p.title}</h3>
                   </Link>
                 ))}
-              </div>
+              </Stagger>
             </div>
           </section>
         )}

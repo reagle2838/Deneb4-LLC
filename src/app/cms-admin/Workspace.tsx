@@ -1,51 +1,108 @@
 'use client';
 
 import { useState } from 'react';
-import type { Client } from '@/lib/clients';
+import type { Client, ClientData } from '@/lib/clients';
 import type { Lead } from '@/lib/leads';
 import type { Task } from '@/lib/tasks';
 import type { QuickLink } from '@/lib/quick-links';
-import ClientManagerUI from './ClientManagerUI';
+import Link from 'next/link';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
 import NotesTab from './NotesTab';
-import FeedbackTab from './FeedbackTab';
 import QuickLinksBar from './QuickLinksBar';
+import ClientsView from './components/ClientsView';
+import ClientCommandCenter from './components/ClientCommandCenter';
+import MessagesView from './components/MessagesView';
 
-type Tab = 'clients' | 'leads' | 'tasks' | 'feedback' | 'notes';
+type Tab = 'clients' | 'messages' | 'leads' | 'tasks' | 'notes';
+const TABS: Tab[] = ['clients', 'messages', 'leads', 'tasks', 'notes'];
 
+/**
+ * The Workspace shell. `initialTab`/`initialClient` come from the URL
+ * (?tab=, ?client=) so email notifications can deep-link straight into
+ * a client's command center.
+ */
 export default function Workspace({
-  clients,
+  clients: initialClients,
   leads,
-  tasks,
+  tasks: initialTasks,
   notes,
   quickLinks,
+  initialTab,
+  initialClient,
 }: {
   clients: Client[];
   leads: Lead[];
   tasks: Task[];
   notes: string;
   quickLinks: QuickLink[];
+  initialTab?: string;
+  initialClient?: string;
 }) {
-  const [tab, setTab] = useState<Tab>('clients');
+  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tab, setTabState] = useState<Tab>(() =>
+    TABS.includes(initialTab as Tab) ? (initialTab as Tab) : 'clients'
+  );
+  const [openClient, setOpenClient] = useState<string | null>(() =>
+    initialClient && initialClients.some((c) => c.slug === initialClient) ? initialClient : null
+  );
+
+  function syncUrl(nextTab: Tab, nextClient: string | null) {
+    const params = new URLSearchParams();
+    if (nextTab !== 'clients') params.set('tab', nextTab);
+    if (nextClient) params.set('client', nextClient);
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `/cms-admin?${qs}` : '/cms-admin');
+  }
+
+  function setTab(next: Tab) {
+    setTabState(next);
+    syncUrl(next, next === 'clients' ? openClient : null);
+  }
+
+  function openCommandCenter(slug: string) {
+    setOpenClient(slug);
+    setTabState('clients');
+    syncUrl('clients', slug);
+  }
+
+  function closeCommandCenter() {
+    setOpenClient(null);
+    syncUrl('clients', null);
+  }
 
   const newLeads = leads.filter((l) => l.stage === 'new').length;
   const openTasks = tasks.filter((t) => t.status !== 'done').length;
   const activeClients = clients.filter((c) => c.active).length;
-  const unreadFeedback = clients.reduce(
-    (sum, c) => sum + c.feedback.filter((m) => m.author === 'client' && !m.read).length,
+  const unreadMessages = clients.reduce(
+    (sum, c) => sum + c.feedback.filter((m) => m.author === 'client' && !m.read && !m.resolved).length,
     0
   );
 
-  const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'clients', label: 'Clients', badge: clients.length },
-    { key: 'leads', label: 'Leads', badge: newLeads || undefined },
-    { key: 'tasks', label: 'Tasks', badge: openTasks || undefined },
-    { key: 'feedback', label: 'Feedback', badge: unreadFeedback || undefined },
+  const tabs: { key: Tab; label: string; count?: number; alert?: boolean }[] = [
+    { key: 'clients', label: 'Clients', count: clients.length },
+    { key: 'messages', label: 'Messages', count: unreadMessages || undefined, alert: unreadMessages > 0 },
+    { key: 'leads', label: 'Leads', count: newLeads || undefined, alert: newLeads > 0 },
+    { key: 'tasks', label: 'Tasks', count: openTasks || undefined },
     { key: 'notes', label: 'Notes' },
   ];
 
   const clientList = clients.map((c) => ({ slug: c.slug, name: c.name }));
+  const current = openClient ? clients.find((c) => c.slug === openClient) ?? null : null;
+
+  function handleSaved(slug: string, draft: ClientData) {
+    setClients((prev) => prev.map((c) => (c.slug === slug ? { ...c, ...draft } : c)));
+  }
+
+  function handleDeleted(slug: string) {
+    setClients((prev) => prev.filter((c) => c.slug !== slug));
+    closeCommandCenter();
+  }
+
+  function handleCreated(client: Client) {
+    setClients((prev) => [...prev, client]);
+  }
 
   return (
     <div>
@@ -75,9 +132,12 @@ export default function Workspace({
               }}
             >
               {t.label}
-              {t.badge ? (
-                <span className="font-spec text-[10px] px-1.5 py-0.5 rounded" style={{ background: active ? 'var(--accent)' : 'var(--bg-raised)', color: active ? '#fff' : 'var(--text-faint)' }}>
-                  {t.badge}
+              {t.count ? (
+                <span
+                  className="font-spec text-[11px]"
+                  style={{ color: t.alert ? '#e40014' : active ? 'var(--accent-light)' : 'var(--text-faint)' }}
+                >
+                  {t.count}
                 </span>
               ) : null}
             </button>
@@ -85,11 +145,33 @@ export default function Workspace({
         })}
       </div>
 
-      {tab === 'clients' && <ClientManagerUI initialClients={clients} />}
+      {tab === 'clients' && (
+        current ? (
+          <ClientCommandCenter
+            key={current.slug}
+            client={current}
+            tasks={tasks}
+            onTasksChange={setTasks}
+            onBack={closeCommandCenter}
+            onSaved={handleSaved}
+            onDeleted={handleDeleted}
+          />
+        ) : (
+          <ClientsView clients={clients} onOpen={openCommandCenter} onCreated={handleCreated} />
+        )
+      )}
+      {tab === 'messages' && <MessagesView clients={clients} onOpenClient={openCommandCenter} />}
       {tab === 'leads' && <LeadsTab initialLeads={leads} />}
-      {tab === 'tasks' && <TasksTab initialTasks={tasks} clients={clientList} />}
-      {tab === 'feedback' && <FeedbackTab initialClients={clients} />}
+      {tab === 'tasks' && <TasksTab tasks={tasks} onChange={setTasks} clients={clientList} />}
       {tab === 'notes' && <NotesTab initialNotes={notes} />}
+
+      <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--border-accent)' }}>
+        <p className="text-xs text-center font-spec" style={{ color: 'var(--text-faint)' }}>
+          <Link href="/keystatic" style={{ color: 'var(--accent-light)' }}>← Articles &amp; Work CMS</Link>
+          {' · '}
+          <Link href="/" style={{ color: 'var(--text-faint)' }}>Main site</Link>
+        </p>
+      </div>
     </div>
   );
 }

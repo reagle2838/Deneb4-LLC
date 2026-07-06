@@ -7,6 +7,7 @@ import {
   deleteFeedback,
   type ClientFeedback,
 } from '@/lib/clients';
+import { notifyOwnerOfClientMessage } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
     resolved: false,
   };
   const ok = addFeedback(slug, entry);
+  if (ok) await notifyOwnerOfClientMessage(client, entry, 'widget');
   return ok
     ? json({ ok: true, entry: publicThread([entry])[0] })
     : json({ error: 'Could not save.' }, 500);

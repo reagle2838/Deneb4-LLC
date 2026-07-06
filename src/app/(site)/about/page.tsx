@@ -1,6 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
+import CtaBanner from "@/components/ui/CtaBanner";
+import Reveal from "@/components/motion/Reveal";
+import Stagger from "@/components/motion/Stagger";
 
 export const metadata: Metadata = {
   title: "About",
@@ -14,13 +16,13 @@ export default function AboutPage() {
     <>
       <PageHero
         eyebrow="About Deneb4"
-        title="One person. Every part of the build."
+        title={<>One person. <span style={{ color: "var(--accent-light)" }}>Every part of the build.</span></>}
         subtitle="I started Deneb4 because the businesses I grew up around were being handed generic websites that didn't earn their place."
       />
 
       {/* Founder story */}
       <section style={{ background: "var(--bg-surface)" }}>
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-24">
+        <Reveal variant="fade" className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-24">
           <div className="article-body">
             <p>
               My name is <strong>Ridhi</strong>. I have a computer science degree and I grew up in a family
@@ -62,16 +64,18 @@ export default function AboutPage() {
               limitation. It&apos;s the point.
             </p>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* How I work */}
       <section style={{ background: "var(--bg-alt)", borderTop: "1px solid var(--border-accent)", borderBottom: "1px solid var(--border-accent)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-14">
-            What that looks like <span style={{ color: "var(--accent-light)" }}>in practice</span>
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Reveal>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-14">
+              What that looks like <span style={{ color: "var(--accent-light)" }}>in practice</span>
+            </h2>
+          </Reveal>
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 gap-6" step={100}>
             {[
               {
                 title: "Industry-first",
@@ -90,32 +94,26 @@ export default function AboutPage() {
                 body: "The quote comes before the work. Nothing outside that scope moves without your approval and a separate price.",
               },
             ].map((v) => (
-              <div key={v.title} className="card p-8">
+              <div key={v.title} className="card card-glow p-8">
                 <h3 className="text-lg font-bold mb-3" style={{ color: "var(--text-heading)" }}>{v.title}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{v.body}</p>
               </div>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* CTA */}
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="accent-banner card p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-                Your site should work as hard as <span style={{ color: "var(--accent-light)" }}>you do.</span>
-              </h2>
-              <p className="text-base leading-relaxed max-w-xl" style={{ color: "var(--text-muted)" }}>
-                Tell me what you make and who you sell to. I read every message personally and reply with a clear next step, usually within a day or two.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              <Link href="/start" className="btn-primary">Start a Project</Link>
-              <Link href="/contact" className="btn-outline">Contact</Link>
-            </div>
-          </div>
+          <Reveal variant="scale-in">
+            <CtaBanner
+              title={<>Your site should work as hard as <span style={{ color: "var(--accent-light)" }}>you do.</span></>}
+              body="Tell me what you make and who you sell to. I read every message personally and reply with a clear next step, usually within a day or two."
+              primary={{ href: "/start", label: "Start a Project" }}
+              secondary={{ href: "/contact", label: "Contact" }}
+            />
+          </Reveal>
         </div>
       </section>
     </>

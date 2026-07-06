@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
+import Stagger from "@/components/motion/Stagger";
 import { getAllArticles } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -17,15 +18,15 @@ export default async function ArticlesPage() {
     <>
       <PageHero
         eyebrow="Articles & Insights"
-        title="Notes on building sites that pull their weight."
+        title={<>Notes on building sites that <span style={{ color: "var(--accent-light)" }}>pull their weight.</span></>}
         subtitle="Strategy, AI discoverability, ownership, and the occasional case study. Written for people who make technical things."
       />
 
       <section style={{ background: "var(--bg-surface)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" step={90}>
             {articles.map((a) => (
-              <Link key={a.slug} href={`/articles/${a.slug}`} className="card flex flex-col no-underline group overflow-hidden">
+              <Link key={a.slug} href={`/articles/${a.slug}`} className="card card-glow flex flex-col no-underline group overflow-hidden">
                 <div className="relative h-36 flex-shrink-0 bg-grid flex items-end p-4 overflow-hidden" style={{ borderBottom: "1px solid var(--border-accent)" }}>
                   {a.coverImage && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -41,7 +42,7 @@ export default async function ArticlesPage() {
                 </div>
               </Link>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
     </>

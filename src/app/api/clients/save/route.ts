@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         feedbackOpen: data.feedbackOpen ?? existing.feedbackOpen,
         feedback: existing.feedback,
         widgetKey: existing.widgetKey || generateWidgetKey(),
+        lastSeenByClient: existing.lastSeenByClient,
       },
     });
 

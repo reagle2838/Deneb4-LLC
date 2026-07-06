@@ -35,14 +35,14 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1 sm:col-span-2">
             <div className="mb-4">
-              <Image src="/logo.png" alt="Deneb4 — Web Design & Development" width={676} height={216} className="h-10 w-auto" />
+              <Image src="/logo.png" alt="Deneb4: Web Design & Development" width={676} height={216} className="h-10 w-auto" />
             </div>
             <p className="text-xs leading-relaxed mb-4 max-w-xs" style={{ color: "var(--text-faint)" }}>
               Web design and development for industrial, engineering, and manufacturing businesses. Sharp work, no agency overhead.
             </p>
             <div className="font-spec text-[11px] space-y-1 mb-5" style={{ color: "var(--text-faint)" }}>
               <div>BUILT FOR BUSINESSES THAT MAKE THINGS</div>
-              <div>MON–FRI · 9AM–5PM EST</div>
+              <div>MON-FRI · 9AM-5PM EST</div>
             </div>
             <div className="flex gap-2">
               <a
@@ -98,7 +98,7 @@ export default function Footer() {
               </div>
               <div>
                 <p className="font-spec tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>Hours</p>
-                <p className="leading-relaxed">Monday–Friday<br />9am–5pm EST</p>
+                <p className="leading-relaxed">Monday to Friday<br />9am to 5pm EST</p>
               </div>
               <div>
                 <Link href="/start" className="btn-outline text-xs">Start a Project →</Link>

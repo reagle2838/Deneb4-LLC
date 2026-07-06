@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyPortalSession } from "@/lib/portal-auth";
-import { getClientBySlug } from "@/lib/clients";
+import { getClientBySlug, countUnreadForClient } from "@/lib/clients";
 import PortalView, { type PortalData } from "./PortalView";
 
 export const metadata: Metadata = {
@@ -33,6 +33,7 @@ export default async function PortalPage() {
     invoices: client.invoices,
     feedbackOpen: client.feedbackOpen,
     feedback: client.feedback,
+    unreadMessages: countUnreadForClient(client),
   };
 
   return <PortalView client={data} />;

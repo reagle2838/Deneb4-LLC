@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Link from "next/link";
+import Reveal from "@/components/motion/Reveal";
 import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
@@ -16,22 +18,24 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
           {/* Left: copy */}
           <div className="lg:col-span-2">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase mb-5" style={{ color: "var(--accent-light)" }}>Contact</p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-5">Let&apos;s talk about your project.</h1>
-            <p className="text-lg leading-relaxed mb-8" style={{ color: "var(--text-muted)" }}>
-              I read every message personally and reply with a clear next step, usually within a day or two. No automated sequences.
+            <p className="hero-rise text-xs font-semibold tracking-[0.2em] uppercase mb-5" style={{ color: "var(--accent-light)" }}>Contact</p>
+            <h1 className="hero-rise text-4xl sm:text-5xl font-bold leading-tight mb-5" style={{ "--rise": "90ms" } as CSSProperties}>
+              Tell me where your website is <span style={{ color: "var(--accent-light)" }}>falling short.</span>
+            </h1>
+            <p className="hero-rise text-lg leading-relaxed mb-8" style={{ color: "var(--text-muted)", "--rise": "180ms" } as CSSProperties}>
+              Your question, a real reply. I read every message personally and come back with a clear next step, usually within a day or two. No automated sequences.
             </p>
-            <div className="space-y-5">
+            <div className="hero-rise space-y-5" style={{ "--rise": "260ms" } as CSSProperties}>
               <div>
                 <p className="font-spec text-xs tracking-widest uppercase mb-1" style={{ color: "var(--text-faint)" }}>Email</p>
                 <a href="mailto:hello@deneb4.com" className="text-lg" style={{ color: "var(--accent-light)" }}>hello@deneb4.com</a>
               </div>
               <div>
                 <p className="font-spec text-xs tracking-widest uppercase mb-1" style={{ color: "var(--text-faint)" }}>Hours</p>
-                <p style={{ color: "var(--text-primary)" }}>Monday–Friday · 9am–5pm EST</p>
+                <p style={{ color: "var(--text-primary)" }}>Monday to Friday · 9am to 5pm EST</p>
               </div>
             </div>
-            <div className="accent-banner card p-5 mt-8">
+            <div className="hero-rise accent-banner card p-5 mt-8" style={{ "--rise": "340ms" } as CSSProperties}>
               <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
                 Ready to start? The <Link href="/start" style={{ color: "var(--accent-light)" }}>project brief</Link> helps me come back with a scoped proposal faster.
               </p>
@@ -39,9 +43,9 @@ export default function ContactPage() {
           </div>
 
           {/* Right: form */}
-          <div className="lg:col-span-3">
+          <Reveal variant="fade-right" delay={150} eager className="lg:col-span-3">
             <ContactForm />
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

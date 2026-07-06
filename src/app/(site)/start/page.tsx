@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
+import Reveal from "@/components/motion/Reveal";
+import Stagger from "@/components/motion/Stagger";
 import ProjectForm from "./ProjectForm";
 import { getCapabilityGroups } from "@/lib/services-content";
 
@@ -11,8 +14,8 @@ export const metadata: Metadata = {
 
 const STEPS = [
   { n: "01", t: "You send the brief", d: "The form below: five minutes. The more detail, the faster the turnaround." },
-  { n: "02", t: "I scope it", d: "I review and come back with a fixed-price proposal and a clear plan." },
-  { n: "03", t: "We build", d: "On approval, we kick off the four-phase process with sign-off at each step." },
+  { n: "02", t: "It comes back scoped", d: "You get a fixed-price proposal and a clear plan, not a discovery-call funnel." },
+  { n: "03", t: "You approve, we build", d: "The four-phase process kicks off, with your sign-off at every step." },
 ];
 
 export default async function StartPage() {
@@ -23,12 +26,14 @@ export default async function StartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
           {/* Left: copy + steps */}
           <div className="lg:col-span-2">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase mb-5" style={{ color: "var(--accent-light)" }}>Start a Project</p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-5">Tell me what you make.</h1>
-            <p className="text-lg leading-relaxed mb-10" style={{ color: "var(--text-muted)" }}>
-              A few details about your business and goals is all it takes to get a useful, scoped proposal back. No obligation, no sales pressure.
+            <p className="hero-rise text-xs font-semibold tracking-[0.2em] uppercase mb-5" style={{ color: "var(--accent-light)" }}>Start a Project</p>
+            <h1 className="hero-rise text-4xl sm:text-5xl font-bold leading-tight mb-5" style={{ "--rise": "90ms" } as CSSProperties}>
+              Tell me <span style={{ color: "var(--accent-light)" }}>what you make.</span>
+            </h1>
+            <p className="hero-rise text-lg leading-relaxed mb-10" style={{ color: "var(--text-muted)", "--rise": "180ms" } as CSSProperties}>
+              Five minutes of detail about your business gets you a scoped, fixed-price plan back. No obligation, no sales calls, no pressure.
             </p>
-            <div className="space-y-6">
+            <Stagger className="space-y-6" step={120} delay={260}>
               {STEPS.map((s) => (
                 <div key={s.n} className="flex gap-4">
                   <span className="font-spec text-xl font-bold flex-shrink-0" style={{ color: "var(--accent-light)" }}>{s.n}</span>
@@ -38,16 +43,16 @@ export default async function StartPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </Stagger>
             <p className="font-spec text-xs mt-10" style={{ color: "var(--text-faint)" }}>
-              Prefer email? hello@deneb4.com · Mon–Fri 9am–5pm EST
+              Prefer email? hello@deneb4.com · Mon-Fri 9am-5pm EST
             </p>
           </div>
 
           {/* Right: form */}
-          <div className="lg:col-span-3">
+          <Reveal variant="fade-right" delay={150} eager className="lg:col-span-3">
             <ProjectForm groups={groups} />
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

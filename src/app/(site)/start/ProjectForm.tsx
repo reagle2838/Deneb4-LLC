@@ -12,8 +12,8 @@ const labelStyle = { color: "var(--text-muted)" } as React.CSSProperties;
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const BUDGETS = ["Under $5k", "$5k–$8k", "$8k+", "Not sure yet"];
-const TIMELINES = ["ASAP", "1–2 months", "3+ months", "Just exploring"];
+const BUDGETS = ["Under $5k", "$5k-$8k", "$8k+", "Not sure yet"];
+const TIMELINES = ["ASAP", "1-2 months", "3+ months", "Just exploring"];
 
 export default function ProjectForm({ groups }: { groups: CapabilityGroup[] }) {
   const [form, setForm] = useState({
