@@ -15,6 +15,10 @@ export async function signSession(): Promise<string> {
 }
 
 export async function verifySession(token: string | undefined): Promise<boolean> {
+  // TEMPORARY: bypass all CMS auth for testing. Remove CMS_AUTH_DISABLED
+  // from .env.local (or set it to anything but "true") to restore the
+  // password + 2FA gate. This does NOT affect the client portal.
+  if (process.env.CMS_AUTH_DISABLED === 'true') return true;
   if (!token) return false;
   try {
     await jwtVerify(token, getSecret());
