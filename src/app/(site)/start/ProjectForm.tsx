@@ -15,6 +15,9 @@ type Status = "idle" | "submitting" | "success" | "error";
 const BUDGETS = ["Under $5k", "$5k-$8k", "$8k+", "Not sure yet"];
 const TIMELINES = ["ASAP", "1-2 months", "3+ months", "Just exploring"];
 
+// Google Calendar appointment scheduling link, offered after the brief.
+const DISCOVERY_CALL_URL = "https://calendar.app.google/EyR1Mjzi6iGJK3gA6";
+
 export default function ProjectForm({ groups }: { groups: CapabilityGroup[] }) {
   const [form, setForm] = useState({
     name: "", email: "", business: "", industry: "", currentSite: "",
@@ -73,6 +76,16 @@ export default function ProjectForm({ groups }: { groups: CapabilityGroup[] }) {
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
           I&apos;ll review the details and come back with a useful, scoped proposal, usually within a day or two. Watch your inbox for a reply from hello@deneb4.com.
         </p>
+        <div className="section-divider my-6" />
+        <p className="font-spec text-[11px] tracking-widest uppercase mb-2" style={{ color: "var(--text-faint)" }}>
+          Prefer to talk it through?
+        </p>
+        <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--text-muted)" }}>
+          If you&apos;d rather walk through your project on a quick call, grab a time that works for you. Completely optional, and there&apos;s no pressure either way.
+        </p>
+        <a href={DISCOVERY_CALL_URL} target="_blank" rel="noopener noreferrer" className="btn-outline">
+          Book a discovery call →
+        </a>
       </div>
     );
   }
