@@ -1,0 +1,8 @@
+- id: 9a6c6589-d032-45c5-baf5-4f720844763d
+  date: "2026-07-07T21:09:51.031Z"
+  agent: system
+  kind: event
+  message: Agent workspace initialized. One channel per client plus this Studio channel. Agents post events, handoffs, alerts, and decisions here; Ridhi reads everything and posts notes and decisions to steer the pipeline.
+  data:
+    roadmap: ROADMAP.md
+    api: /api/agents/ledger

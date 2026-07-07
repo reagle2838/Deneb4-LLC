@@ -5,6 +5,7 @@ import type { Client, ClientData } from '@/lib/clients';
 import type { Lead } from '@/lib/leads';
 import type { Task } from '@/lib/tasks';
 import type { QuickLink } from '@/lib/quick-links';
+import type { LedgerEntry } from '@/lib/agent-roster';
 import Link from 'next/link';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
@@ -13,9 +14,10 @@ import QuickLinksBar from './QuickLinksBar';
 import ClientsView from './components/ClientsView';
 import ClientCommandCenter from './components/ClientCommandCenter';
 import MessagesView from './components/MessagesView';
+import AgentSpace from './components/AgentSpace';
 
-type Tab = 'clients' | 'messages' | 'leads' | 'tasks' | 'notes';
-const TABS: Tab[] = ['clients', 'messages', 'leads', 'tasks', 'notes'];
+type Tab = 'clients' | 'messages' | 'agents' | 'leads' | 'tasks' | 'notes';
+const TABS: Tab[] = ['clients', 'messages', 'agents', 'leads', 'tasks', 'notes'];
 
 /**
  * The Workspace shell. `initialTab`/`initialClient` come from the URL
@@ -28,6 +30,7 @@ export default function Workspace({
   tasks: initialTasks,
   notes,
   quickLinks,
+  agentLedgers,
   initialTab,
   initialClient,
 }: {
@@ -36,6 +39,7 @@ export default function Workspace({
   tasks: Task[];
   notes: string;
   quickLinks: QuickLink[];
+  agentLedgers: Record<string, LedgerEntry[]>;
   initialTab?: string;
   initialClient?: string;
 }) {
@@ -83,6 +87,7 @@ export default function Workspace({
   const tabs: { key: Tab; label: string; count?: number; alert?: boolean }[] = [
     { key: 'clients', label: 'Clients', count: clients.length },
     { key: 'messages', label: 'Messages', count: unreadMessages || undefined, alert: unreadMessages > 0 },
+    { key: 'agents', label: 'Agents' },
     { key: 'leads', label: 'Leads', count: newLeads || undefined, alert: newLeads > 0 },
     { key: 'tasks', label: 'Tasks', count: openTasks || undefined },
     { key: 'notes', label: 'Notes' },
@@ -161,6 +166,7 @@ export default function Workspace({
         )
       )}
       {tab === 'messages' && <MessagesView clients={clients} onOpenClient={openCommandCenter} />}
+      {tab === 'agents' && <AgentSpace initialLedgers={agentLedgers} clients={clientList} />}
       {tab === 'leads' && <LeadsTab initialLeads={leads} />}
       {tab === 'tasks' && <TasksTab tasks={tasks} onChange={setTasks} clients={clientList} />}
       {tab === 'notes' && <NotesTab initialNotes={notes} />}

@@ -6,6 +6,7 @@ import { getLeads } from "@/lib/leads";
 import { getTasks } from "@/lib/tasks";
 import { getNotes } from "@/lib/notes";
 import { getQuickLinks } from "@/lib/quick-links";
+import { getAllLedgers } from "@/lib/agent-ledger";
 import Workspace from "./Workspace";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export default async function CmsAdminPage({
   const tasks = getTasks();
   const notes = getNotes();
   const quickLinks = getQuickLinks();
+  const agentLedgers = getAllLedgers();
 
   return (
     <div style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
@@ -40,6 +42,7 @@ export default async function CmsAdminPage({
           tasks={tasks}
           notes={notes}
           quickLinks={quickLinks}
+          agentLedgers={agentLedgers}
           initialTab={tab}
           initialClient={client}
         />
