@@ -15,8 +15,9 @@ type Status = "idle" | "submitting" | "success" | "error";
 const BUDGETS = ["Under $5k", "$5k-$8k", "$8k+", "Not sure yet"];
 const TIMELINES = ["ASAP", "1-2 months", "3+ months", "Just exploring"];
 
-// Google Calendar appointment scheduling link, offered after the brief.
-const DISCOVERY_CALL_URL = "https://calendar.app.google/EyR1Mjzi6iGJK3gA6";
+// Google Calendar appointment scheduling link. Offered upfront in the
+// Start page left rail and again on the brief success screen.
+export const DISCOVERY_CALL_URL = "https://calendar.app.google/EyR1Mjzi6iGJK3gA6";
 
 export default function ProjectForm({ groups }: { groups: CapabilityGroup[] }) {
   const [form, setForm] = useState({

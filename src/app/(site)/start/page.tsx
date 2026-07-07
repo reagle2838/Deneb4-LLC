@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Reveal from "@/components/motion/Reveal";
 import Stagger from "@/components/motion/Stagger";
-import ProjectForm from "./ProjectForm";
+import ProjectForm, { DISCOVERY_CALL_URL } from "./ProjectForm";
 import { getCapabilityGroups } from "@/lib/services-content";
 
 export const metadata: Metadata = {
@@ -46,6 +46,12 @@ export default async function StartPage() {
             </Stagger>
             <p className="font-spec text-xs mt-10" style={{ color: "var(--text-faint)" }}>
               Prefer email? hello@deneb4.com · Mon-Fri 9am-5pm EST
+            </p>
+            <p className="font-spec text-xs mt-2" style={{ color: "var(--text-faint)" }}>
+              Prefer to talk it through?{" "}
+              <a href={DISCOVERY_CALL_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-light)" }}>
+                Book a discovery call →
+              </a>
             </p>
           </div>
 
