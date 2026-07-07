@@ -1,1 +1,14 @@
-leads: []
+leads:
+  - id: e97897a1-b068-49eb-bd20-17cf61565cd4
+    name: Ridhi
+    email: hello@deneb4.com
+    company: Deneb4
+    source: start
+    stage: new
+    message: |-
+      Package: Sales Collateral & Print Materials
+      Budget: Under $5k
+      Timeline: ASAP
+
+      its cool
+    createdAt: "2026-07-06T23:13:10.534Z"
