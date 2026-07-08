@@ -49,9 +49,12 @@
 
 ## Phase 3: Verification harness (keystone)
 
-- [ ] **[Claude]** Per-module test suites (make "pre-tested" a re-runnable fact)
-- [ ] **[Claude]** Assembly/integration suite: builds, renders, tools function with this config, contrast/accessibility, links valid
-- [ ] **[Claude]** Machine-checkable "definition of done" per build and per change + visual regression
+- [x] **[Claude]** Site verification harness `scripts/verify.mjs` (+ `npm run verify:site <url>`): dependency-free checks against a running site (critical routes render, auth gates behave, page structure = title + h1, internal-link crawl, key assets), machine-readable pass/fail + exit code, optional QA-ledger reporting (`--client --key --report-to`). This is the QA agent's tool + a regression guard for Deneb4 itself; points at a client staging URL later. (done)
+  - **It immediately caught a real, pre-existing bug** (see note below).
+- [ ] **[Claude]** Per-module test suites (needs the module catalog / template)
+- [ ] **[Claude]** Browser-dependent checks: real contrast/accessibility + visual regression (needs Playwright)
+
+> **⚠ FINDING (2026-07-08, from the harness): Keystatic content is silently half-broken on the live site.** Only entries whose on-disk format Keystatic recognizes are served. The featured **Eagle Engineering case study** (`/work/eagle-engineering` → 404, and it's the only work entry, so `/work` shows the "Your project here" placeholder) and **2 of 3 articles** are stored as `index.yaml` + `body.mdoc`, a format this Keystatic setup does not list, so they're dropped. The one article that loads is stored differently (`body.mdoc` only). Two home/services CTAs ("See the Eagle Engineering build →") lead to the 404. **Root cause: inconsistent Keystatic entry format.** Recommended fix (deliberate, not a blind script edit): re-create/re-save the affected entries through the Keystatic CMS at `/keystatic` so they're written in the correct format, or a careful one-time content migration after confirming the exact expected format. Not yet fixed, flagged for a decision.
 
 ## Phase 4: Infrastructure and credentials
 
@@ -60,6 +63,7 @@
 - [ ] **[Claude]** Production deploy + DNS handover automation
 - [ ] **[Ridhi]** Re-enable CMS auth (delete `CMS_AUTH_DISABLED` from `.env.local`) when testing ends
 - [ ] **[Claude]** Scoped agent credentials, secrets store, rotation policy (Google, Hostinger, Wave, CMS, git)
+- [ ] **[Both]** Hook up Supabase (noted 2026-07-08 by Ridhi; scope/purpose not yet defined, e.g. replacing flat YAML storage for clients/leads/tasks/ledger, or something else — clarify before building)
 
 ## Phase 5: Agent system and shared workspace
 
