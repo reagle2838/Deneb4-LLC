@@ -37,7 +37,7 @@ export default function MessagesView({
               Open command center →
             </button>
           </div>
-          <MessageThread slug={c.slug} clientName={c.name} initial={c.feedback} />
+          <MessageThread slug={c.slug} clientName={c.name} initial={c.feedback} initialDrafts={c.draftReplies} />
         </div>
       ))}
     </div>

@@ -24,3 +24,8 @@ staging:
   password: ""
   status: building
   notes: ""
+feedbackOpen: false
+feedback: []
+widgetKey: f540f52ec0875d080c
+lastSeenByClient: ""
+pipeline: building

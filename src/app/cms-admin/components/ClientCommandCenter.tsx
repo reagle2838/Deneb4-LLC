@@ -82,7 +82,7 @@ export default function ClientCommandCenter({
             <h3 className="text-xs font-spec font-semibold tracking-widest uppercase mb-3" style={{ color: 'var(--text-muted)' }}>
               Messages
             </h3>
-            <MessageThread slug={client.slug} clientName={client.name} initial={client.feedback} />
+            <MessageThread slug={client.slug} clientName={client.name} initial={client.feedback} initialDrafts={client.draftReplies} />
           </div>
 
           <div className="card p-5">

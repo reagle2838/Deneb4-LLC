@@ -66,7 +66,9 @@
 - [x] **[Claude]** Shared per-client agent ledger + Agents tab in Workspace + `/api/agents/ledger` (done)
 - [x] **[Claude]** Per-client pipeline state machine: 9 stages in `src/lib/pipeline.ts`, `pipeline` field on Client, single-writer `/api/agents/pipeline` (idempotent, every transition auto-logged to the client's ledger channel), PipelinePanel in the command center + roster labels (done)
 - [x] **[Ridhi]** Agent contracts in `docs/agents.md` APPROVED 2026-07-08
-- [x] **[Claude]** Agent heartbeat: `/api/agents/tick` (POST = run all sensing duties, GET = run history). Duties run isolated (one failure never sinks the rest), each run recorded to a run log (`agent-runs.yaml`), once-per-day dedup via `agent-state.yaml`. Live duties: calendar digest + client worklist (unread messages + projects at a gate). form-received/payment-received stubbed pending Drive/Wave. Heartbeat status + last-run duties shown on the Agents tab. (done)
+- [x] **[Claude]** Agent heartbeat: `/api/agents/tick` (POST = run all sensing duties, GET = run history). Duties run isolated (one failure never sinks the rest), each run recorded to a run log (`agent-runs.yaml`), once-per-day dedup via `agent-state.yaml`. Live duties: calendar digest + client worklist (unread messages + pending drafts + projects at a gate). form-received/payment-received stubbed pending Drive/Wave. Agents tab is now a control surface: heartbeat status + per-duty outcomes, a "Run heartbeat now" button, and a readiness strip (Email/Calendar/Agent-key wired vs pending, plus a CMS-auth-disabled warning). (done)
+
+> **Functional verification (2026-07-08):** the whole agent system + portal + workspace was exercised against a real `npm run build` production server: all marketing routes 200, portal/portal-feedback gate correctly (307), cms-admin renders, and every agent flow works end to end (ledger, pipeline transitions, heartbeat + worklist, draft-reply gate with verified portal/widget non-leak + approve, onboarding + welcome email, alert escalation). All three notification emails fired (console fallback) with zero runtime errors in the prod log.
 - [ ] **[Both]** Point a scheduler at `POST /api/agents/tick` (Hostinger cron / Task Scheduler / cloud agent), same decision as the calendar trigger
 - [x] **[Claude]** Escalation, part 1: any agent posting a `kind: alert` ledger entry emails Ridhi immediately (the alert-and-stop rule from docs/agents.md) (done)
 - [x] **[Claude]** Error handling, part 2: tick duties are failure-isolated and every run is logged; any duty error escalates to Ridhi's inbox (done)
@@ -80,7 +82,8 @@
 - [ ] **[Claude]** Provisioning, part 2: Drive folder creation + intake doc sharing (needs Google Drive API credentials)
 - [ ] **[Claude]** Intake delivery, collection, parse into compiler config
 - [ ] **[Claude]** Build orchestration loop: config, assemble, verify, pass or escalate
-- [ ] **[Claude]** Daily comment triage + drafted replies + change-list (draft-then-Ridhi-sends until copy gate relaxes)
+- [x] **[Claude]** Draft-reply gate (the copy-review human gate): agents propose replies via `/api/clients/feedback` action `draft` (x-agent-key allowed); they live in a separate `draftReplies` array that never reaches the portal or widget; Ridhi approves/edits/rejects in the Workspace MessageThread; approving sends the reply + emails the client. Agents can propose but only Ridhi (CMS session) can approve. Pending drafts surface in the daily worklist. (done)
+- [ ] **[Claude]** Comms agent that actually drafts the replies + change-lists from client comments (the headless side that fills the gate above; needs the build loop)
 - [ ] **[Claude]** Change-implementation loop: apply, verify, ship or escalate
 - [ ] **[Claude]** Approval, sign-off docs, final Wave invoice, payment detection
 - [ ] **[Claude]** Credential documentation + secure delivery ("rotate before use" enforced) + handoff checklist execution

@@ -5,7 +5,7 @@ import type { Client, ClientData } from '@/lib/clients';
 import type { Lead } from '@/lib/leads';
 import type { Task } from '@/lib/tasks';
 import type { QuickLink } from '@/lib/quick-links';
-import type { LedgerEntry, AgentRun } from '@/lib/agent-roster';
+import type { LedgerEntry, AgentRun, AgentReadiness } from '@/lib/agent-roster';
 import Link from 'next/link';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
@@ -32,6 +32,7 @@ export default function Workspace({
   quickLinks,
   agentLedgers,
   agentRuns,
+  agentReadiness,
   initialTab,
   initialClient,
 }: {
@@ -42,6 +43,7 @@ export default function Workspace({
   quickLinks: QuickLink[];
   agentLedgers: Record<string, LedgerEntry[]>;
   agentRuns: AgentRun[];
+  agentReadiness: AgentReadiness;
   initialTab?: string;
   initialClient?: string;
 }) {
@@ -181,7 +183,7 @@ export default function Workspace({
         )
       )}
       {tab === 'messages' && <MessagesView clients={clients} onOpenClient={openCommandCenter} />}
-      {tab === 'agents' && <AgentSpace initialLedgers={agentLedgers} clients={clientList} runs={agentRuns} />}
+      {tab === 'agents' && <AgentSpace initialLedgers={agentLedgers} clients={clientList} runs={agentRuns} readiness={agentReadiness} />}
       {tab === 'leads' && <LeadsTab initialLeads={leads} />}
       {tab === 'tasks' && <TasksTab tasks={tasks} onChange={setTasks} clients={clientList} />}
       {tab === 'notes' && <NotesTab initialNotes={notes} />}

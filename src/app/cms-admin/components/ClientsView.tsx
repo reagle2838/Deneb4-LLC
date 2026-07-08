@@ -73,6 +73,7 @@ export default function ClientsView({
           widgetKey: data.widgetKey ?? '',
           lastSeenByClient: '',
           pipeline: 'onboarding',
+          draftReplies: [],
         };
         onCreated(newClient, data.password);
         setPassword({ slug: data.slug, name: newClient.name, value: data.password, welcomed: data.welcomed === true });

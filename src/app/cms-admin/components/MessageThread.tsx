@@ -1,29 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import type { ClientFeedback } from '@/lib/clients';
+import type { ClientFeedback, DraftReply } from '@/lib/clients';
+import { agentLabel } from '@/lib/agent-roster';
 import { inputStyle } from './fields';
 
 /**
  * Owner-side message thread for one client: reply, mark read, resolve,
- * edit/delete own messages. Used by both the Messages inbox and the
+ * edit/delete own messages, and approve/edit/reject agent-proposed draft
+ * replies (the copy-review gate). Used by both the Messages inbox and the
  * per-client command center.
  */
 export default function MessageThread({
   slug,
   clientName,
   initial,
+  initialDrafts = [],
 }: {
   slug: string;
   clientName: string;
   initial: ClientFeedback[];
+  initialDrafts?: DraftReply[];
 }) {
   const [thread, setThread] = useState<ClientFeedback[]>(initial);
+  const [drafts, setDrafts] = useState<DraftReply[]>(initialDrafts);
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [draftEditId, setDraftEditId] = useState<string | null>(null);
+  const [draftEditText, setDraftEditText] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
 
   async function post(payload: Record<string, unknown>) {
@@ -33,6 +40,38 @@ export default function MessageThread({
       body: JSON.stringify({ slug, ...payload }),
     });
     return (await res.json()) as { ok?: boolean; entry?: ClientFeedback; error?: string };
+  }
+
+  async function approveDraft(id: string) {
+    setBusy(true);
+    setError('');
+    const data = await post({ action: 'draftApprove', id });
+    if (data.ok && data.entry) {
+      setDrafts((ds) => ds.filter((d) => d.id !== id));
+      setThread((t) => [...t.map((m) => ({ ...m, read: true })), data.entry as ClientFeedback]);
+    } else {
+      setError(data.error ?? 'Could not send the draft.');
+    }
+    setBusy(false);
+  }
+
+  async function saveDraftEdit(id: string) {
+    const text = draftEditText.trim();
+    if (!text) return;
+    const data = await post({ action: 'draftEdit', id, message: text });
+    if (data.ok) {
+      setDrafts((ds) => ds.map((d) => (d.id === id ? { ...d, message: text } : d)));
+      setDraftEditId(null);
+    } else {
+      setError(data.error ?? 'Could not save.');
+    }
+  }
+
+  async function rejectDraft(id: string) {
+    if (!window.confirm('Discard this proposed reply? The client never sees it.')) return;
+    const data = await post({ action: 'draftDelete', id });
+    if (data.ok) setDrafts((ds) => ds.filter((d) => d.id !== id));
+    else setError(data.error ?? 'Could not discard.');
   }
 
   async function sendReply() {
@@ -172,6 +211,47 @@ export default function MessageThread({
         <div className="space-y-2 mb-3">{active.map((m) => bubble(m, true))}</div>
       ) : (
         <p className="text-sm mb-3" style={{ color: 'var(--text-faint)' }}>No open messages.</p>
+      )}
+
+      {/* Proposed replies awaiting your approval (never sent until you approve). */}
+      {drafts.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {drafts.map((d) => {
+            const editing = draftEditId === d.id;
+            return (
+              <div
+                key={d.id}
+                className="px-3 py-2 rounded-sm text-sm"
+                style={{ background: 'rgba(180,83,9,0.06)', border: '1px dashed #b45309', color: 'var(--text-primary)' }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: '#b45309' }}>
+                    Draft reply · proposed by {agentLabel(d.createdBy)}
+                  </span>
+                  {d.page && <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>· {d.page}</span>}
+                </div>
+                {editing ? (
+                  <div>
+                    <textarea value={draftEditText} onChange={(e) => setDraftEditText(e.target.value)} rows={3} className="w-full px-2 py-1 rounded-sm text-sm outline-none" style={{ ...inputStyle, resize: 'vertical' }} />
+                    <div className="flex gap-3 mt-1">
+                      <button onClick={() => saveDraftEdit(d.id)} className="text-[11px] font-spec" style={{ color: 'var(--accent-light)' }}>Save</button>
+                      <button onClick={() => setDraftEditId(null)} className="text-[11px] font-spec" style={{ color: 'var(--text-faint)' }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="leading-relaxed whitespace-pre-wrap">{d.message}</p>
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      <button onClick={() => approveDraft(d.id)} disabled={busy} className="text-[11px] font-spec font-semibold" style={{ color: '#15803d' }}>Approve &amp; send</button>
+                      <button onClick={() => { setDraftEditId(d.id); setDraftEditText(d.message); }} className="text-[11px] font-spec" style={{ color: 'var(--text-faint)' }}>Edit</button>
+                      <button onClick={() => rejectDraft(d.id)} className="text-[11px] font-spec" style={{ color: '#e40014' }}>Reject</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <div className="flex items-end gap-2">

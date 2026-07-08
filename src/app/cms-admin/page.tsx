@@ -29,6 +29,12 @@ export default async function CmsAdminPage({
   const quickLinks = getQuickLinks();
   const agentLedgers = getAllLedgers();
   const agentRuns = getRecentRuns(20);
+  const readiness = {
+    resend: Boolean(process.env.RESEND_API_KEY),
+    calendar: Boolean(process.env.GOOGLE_CALENDAR_ICS_URL),
+    agentKey: Boolean(process.env.AGENT_API_KEY),
+    cmsAuthDisabled: process.env.CMS_AUTH_DISABLED === "true",
+  };
 
   return (
     <div style={{ background: "var(--bg-base)", minHeight: "100vh" }}>
@@ -46,6 +52,7 @@ export default async function CmsAdminPage({
           quickLinks={quickLinks}
           agentLedgers={agentLedgers}
           agentRuns={agentRuns}
+          agentReadiness={readiness}
           initialTab={tab}
           initialClient={client}
         />

@@ -62,6 +62,20 @@ export interface ClientFeedback {
   resolved: boolean; // archived to history once the issue is handled
 }
 
+/**
+ * A proposed owner reply awaiting Ridhi's approval (the copy-review gate).
+ * Kept in a SEPARATE array from `feedback` so it can never leak to the
+ * client: the portal and widget only ever read `feedback`. On approval a
+ * draft becomes a real `feedback` reply and the client is emailed.
+ */
+export interface DraftReply {
+  id: string;
+  message: string;
+  page: string;
+  createdBy: string; // agent id that proposed it ('comms', 'ridhi', ...)
+  date: string; // ISO timestamp
+}
+
 export { BUILD_STAGES } from './stages';
 
 export interface Client {
@@ -83,6 +97,7 @@ export interface Client {
   widgetKey: string; // per-client key embedded in the staging-site feedback widget
   lastSeenByClient: string; // ISO timestamp: when the client last viewed the thread
   pipeline: string; // internal pipeline stage id (see lib/pipeline.ts); '' = legacy/unset
+  draftReplies: DraftReply[]; // proposed replies awaiting Ridhi's approval (never sent to client)
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -170,6 +185,13 @@ function parseFile(slug: string): Client | null {
     widgetKey: str(data.widgetKey),
     lastSeenByClient: str(data.lastSeenByClient),
     pipeline: str(data.pipeline),
+    draftReplies: asArray(data.draftReplies).map((d) => ({
+      id: str(d.id),
+      message: str(d.message),
+      page: str(d.page),
+      createdBy: str(d.createdBy) || 'comms',
+      date: str(d.date),
+    })),
   };
 }
 
@@ -245,6 +267,7 @@ export function writeClient(
     widgetKey: data.widgetKey ?? '',
     lastSeenByClient: data.lastSeenByClient ?? '',
     pipeline: data.pipeline ?? '',
+    draftReplies: data.draftReplies ?? [],
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }
@@ -320,6 +343,88 @@ export function resolveFeedback(slug: string): boolean {
   data.feedback = data.feedback.map((m) => ({ ...m, resolved: true, read: true }));
   writeClient(slug, { data, passwordHash: c.passwordHash });
   return true;
+}
+
+/** Propose a reply for Ridhi to approve. Returns the created draft or null. */
+export function addDraftReply(
+  slug: string,
+  input: { message: string; page?: string; createdBy?: string }
+): DraftReply | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const draft: DraftReply = {
+    id: crypto.randomUUID(),
+    message: input.message,
+    page: input.page ?? '',
+    createdBy: input.createdBy || 'comms',
+    date: new Date().toISOString(),
+  };
+  const data = clientToData(c);
+  data.draftReplies = [...data.draftReplies, draft];
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return draft;
+}
+
+/** Edit a pending draft's text. */
+export function editDraftReply(slug: string, id: string, message: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  let found = false;
+  data.draftReplies = data.draftReplies.map((d) => {
+    if (d.id === id) {
+      found = true;
+      return { ...d, message };
+    }
+    return d;
+  });
+  if (!found) return false;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Reject/discard a pending draft. */
+export function deleteDraftReply(slug: string, id: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  const before = data.draftReplies.length;
+  data.draftReplies = data.draftReplies.filter((d) => d.id !== id);
+  if (data.draftReplies.length === before) return false;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/**
+ * Approve a draft: remove it from drafts, append it to the thread as a real
+ * Deneb4 reply, and mark client messages read. Returns { client, entry } so
+ * the route can email the client, or null if the draft doesn't exist.
+ */
+export function approveDraftReply(slug: string, id: string): { client: Client; entry: ClientFeedback } | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const draft = c.draftReplies.find((d) => d.id === id);
+  if (!draft) return null;
+  const entry: ClientFeedback = {
+    id: crypto.randomUUID(),
+    author: 'deneb4',
+    message: draft.message,
+    page: '',
+    date: new Date().toISOString(),
+    read: true,
+    resolved: false,
+  };
+  const data = clientToData(c);
+  data.draftReplies = data.draftReplies.filter((d) => d.id !== id);
+  data.feedback = [...data.feedback.map((m) => ({ ...m, read: true })), entry];
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  const updated = parseFile(slug);
+  return updated ? { client: updated, entry } : null;
+}
+
+/** Count of pending draft replies across a client (drives the worklist). */
+export function countPendingDrafts(client: Client): number {
+  return client.draftReplies.length;
 }
 
 /**

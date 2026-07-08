@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
         // Pipeline moves only through /api/agents/pipeline (so every
         // transition is logged); portal saves never touch it.
         pipeline: existing.pipeline,
+        // Draft replies are managed through the feedback route only.
+        draftReplies: existing.draftReplies,
       },
     });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   agentLabel,
   STUDIO_CHANNEL,
@@ -8,6 +9,7 @@ import {
   type LedgerKind,
   type AgentRun,
   type DutyStatus,
+  type AgentReadiness,
 } from '@/lib/agent-roster';
 import { inputStyle } from './fields';
 
@@ -40,17 +42,42 @@ export default function AgentSpace({
   initialLedgers,
   clients,
   runs,
+  readiness,
 }: {
   initialLedgers: Record<string, LedgerEntry[]>;
   clients: { slug: string; name: string }[];
   runs: AgentRun[];
+  readiness: AgentReadiness;
 }) {
+  const router = useRouter();
   const [ledgers, setLedgers] = useState(initialLedgers);
   const [channel, setChannel] = useState(STUDIO_CHANNEL);
   const [note, setNote] = useState('');
   const [kind, setKind] = useState<LedgerKind>('message');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [running, setRunning] = useState(false);
+  const [runMsg, setRunMsg] = useState('');
+
+  async function runHeartbeat() {
+    setRunning(true);
+    setRunMsg('');
+    try {
+      const res = await fetch('/api/agents/tick?trigger=manual', { method: 'POST' });
+      const data = (await res.json()) as { ok?: boolean; run?: AgentRun; error?: string };
+      if (data.ok && data.run) {
+        const done = data.run.duties.map((d) => `${d.name}: ${d.status}`).join(', ');
+        setRunMsg(`Ran just now. ${done}`);
+        router.refresh();
+      } else {
+        setRunMsg(data.error ?? 'Could not run.');
+      }
+    } catch {
+      setRunMsg('Server error, try again.');
+    } finally {
+      setRunning(false);
+    }
+  }
 
   const channels = useMemo(() => {
     const known = new Map<string, string>();
@@ -96,7 +123,7 @@ export default function AgentSpace({
 
   return (
     <div className="space-y-5">
-      {/* Heartbeat status */}
+      {/* Heartbeat status + controls */}
       <div className="card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -116,14 +143,37 @@ export default function AgentSpace({
               </p>
             </div>
           </div>
-          {lastRun && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {lastRun.duties.map((d) => (
-                <span key={d.name} className="font-spec text-[10px] tracking-widest uppercase" style={{ color: DUTY_COLOR[d.status] }} title={d.summary}>
-                  {d.name}: {d.status}
-                </span>
-              ))}
-            </div>
+          <button onClick={runHeartbeat} disabled={running} className="btn-outline text-xs flex-shrink-0">
+            {running ? 'Running...' : 'Run heartbeat now'}
+          </button>
+        </div>
+
+        {lastRun && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
+            {lastRun.duties.map((d) => (
+              <span key={d.name} className="font-spec text-[10px] tracking-widest uppercase" style={{ color: DUTY_COLOR[d.status] }} title={d.summary}>
+                {d.name}: {d.status}
+              </span>
+            ))}
+          </div>
+        )}
+        {runMsg && <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{runMsg}</p>}
+
+        {/* Config readiness: what's actually wired */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
+          {[
+            { label: 'Email (Resend)', on: readiness.resend, offText: 'console fallback' },
+            { label: 'Calendar', on: readiness.calendar, offText: 'no iCal URL' },
+            { label: 'Agent key', on: readiness.agentKey, offText: 'not set' },
+          ].map((r) => (
+            <span key={r.label} className="font-spec text-[10px] tracking-widest uppercase" style={{ color: r.on ? '#15803d' : 'var(--text-faint)' }}>
+              {r.on ? '● ' : '○ '}{r.label}{r.on ? '' : `: ${r.offText}`}
+            </span>
+          ))}
+          {readiness.cmsAuthDisabled && (
+            <span className="font-spec text-[10px] tracking-widest uppercase" style={{ color: '#b45309' }} title="CMS_AUTH_DISABLED is set: the /cms-admin gate and agent-vs-owner boundaries are off. Remove it before production.">
+              ⚠ CMS auth disabled
+            </span>
           )}
         </div>
       </div>

@@ -1,31 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { verifySession } from '@/lib/cms-auth';
-import { addFeedback, markFeedbackRead, editFeedback, deleteFeedback, resolveFeedback, getClientBySlug, type ClientFeedback } from '@/lib/clients';
+import {
+  addFeedback,
+  markFeedbackRead,
+  editFeedback,
+  deleteFeedback,
+  resolveFeedback,
+  getClientBySlug,
+  addDraftReply,
+  editDraftReply,
+  deleteDraftReply,
+  approveDraftReply,
+  type ClientFeedback,
+} from '@/lib/clients';
 import { notifyClientOfReply } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
+type Action =
+  | 'reply'
+  | 'markRead'
+  | 'edit'
+  | 'delete'
+  | 'resolve'
+  | 'draft'
+  | 'draftEdit'
+  | 'draftDelete'
+  | 'draftApprove';
+
+// Only proposing a draft is open to headless agents (via x-agent-key).
+// Everything else, including approving a draft (which sends to the client),
+// requires Ridhi's CMS session. This enforces "agents propose, Ridhi
+// disposes" from docs/agents.md.
+const AGENT_ALLOWED: Action[] = ['draft'];
+
+async function hasCmsSession(req: NextRequest): Promise<boolean> {
+  return verifySession(req.cookies.get('cms_auth')?.value);
+}
+function hasAgentKey(req: NextRequest): boolean {
+  const key = process.env.AGENT_API_KEY;
+  return Boolean(key && req.headers.get('x-agent-key') === key);
+}
+
 export async function POST(req: NextRequest) {
-  if (!(await verifySession(req.cookies.get('cms_auth')?.value))) {
+  let body: { slug?: string; action?: Action; id?: string; message?: string; page?: string; agent?: string };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 });
+  }
+
+  const action: Action = body.action ?? 'reply';
+  const cms = await hasCmsSession(req);
+  const authorized = cms || (AGENT_ALLOWED.includes(action) && hasAgentKey(req));
+  if (!authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const body = (await req.json()) as { slug?: string; action?: 'reply' | 'markRead' | 'edit' | 'delete' | 'resolve'; id?: string; message?: string };
     const slug = body.slug;
     if (!slug) {
       return NextResponse.json({ error: 'Missing slug.' }, { status: 400 });
     }
 
-    if (body.action === 'markRead') {
+    // ── Draft replies (the copy-review gate) ──────────────────────────
+    if (action === 'draft') {
+      const message = (body.message ?? '').trim();
+      if (!message) return NextResponse.json({ error: 'Message is required.' }, { status: 400 });
+      const draft = addDraftReply(slug, {
+        message,
+        page: body.page,
+        // Agents identify via `agent`; Ridhi's own drafts are attributed to her.
+        createdBy: cms && !body.agent ? 'ridhi' : body.agent || 'comms',
+      });
+      if (!draft) return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
+      return NextResponse.json({ ok: true, draft });
+    }
+
+    if (action === 'draftEdit') {
+      const message = (body.message ?? '').trim();
+      if (!body.id || !message) return NextResponse.json({ error: 'Missing id or message.' }, { status: 400 });
+      if (!editDraftReply(slug, body.id, message)) {
+        return NextResponse.json({ error: 'Draft not found.' }, { status: 404 });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'draftDelete') {
+      if (!body.id) return NextResponse.json({ error: 'Missing id.' }, { status: 400 });
+      if (!deleteDraftReply(slug, body.id)) {
+        return NextResponse.json({ error: 'Draft not found.' }, { status: 404 });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'draftApprove') {
+      if (!body.id) return NextResponse.json({ error: 'Missing id.' }, { status: 400 });
+      const result = approveDraftReply(slug, body.id);
+      if (!result) return NextResponse.json({ error: 'Draft not found.' }, { status: 404 });
+      await notifyClientOfReply(result.client, result.entry);
+      return NextResponse.json({ ok: true, entry: result.entry });
+    }
+
+    // ── Existing owner actions ────────────────────────────────────────
+    if (action === 'markRead') {
       if (!markFeedbackRead(slug)) {
         return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
       }
       return NextResponse.json({ ok: true });
     }
 
-    if (body.action === 'resolve') {
+    if (action === 'resolve') {
       if (!resolveFeedback(slug)) {
         return NextResponse.json({ error: 'Client not found.' }, { status: 404 });
       }
@@ -33,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Deneb4 may only edit/delete its own (author: 'deneb4') messages.
-    if (body.action === 'edit') {
+    if (action === 'edit') {
       const message = (body.message ?? '').trim();
       if (!body.id || !message) return NextResponse.json({ error: 'Missing id or message.' }, { status: 400 });
       if (!editFeedback(slug, body.id, message, 'deneb4')) {
@@ -41,7 +127,7 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ ok: true });
     }
-    if (body.action === 'delete') {
+    if (action === 'delete') {
       if (!body.id) return NextResponse.json({ error: 'Missing id.' }, { status: 400 });
       if (!deleteFeedback(slug, body.id, 'deneb4')) {
         return NextResponse.json({ error: 'Message not found.' }, { status: 404 });
@@ -49,7 +135,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Default: reply
+    // Default: reply (sends immediately)
     const message = (body.message ?? '').trim();
     if (!message) {
       return NextResponse.json({ error: 'Message is required.' }, { status: 400 });

@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
         widgetKey,
         lastSeenByClient: '',
         pipeline: 'onboarding',
+        draftReplies: [],
       },
     });
 

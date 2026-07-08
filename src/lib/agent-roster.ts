@@ -52,3 +52,11 @@ export interface AgentRun {
   durationMs: number;
   duties: DutyResult[];
 }
+
+/** What's actually wired vs pending, shown on the Agents tab. */
+export interface AgentReadiness {
+  resend: boolean; // emails send for real (vs console fallback)
+  calendar: boolean; // GOOGLE_CALENDAR_ICS_URL set
+  agentKey: boolean; // AGENT_API_KEY set (headless agents can authenticate)
+  cmsAuthDisabled: boolean; // WARNING: /cms-admin gate is off
+}
