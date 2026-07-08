@@ -64,8 +64,8 @@
 ## Phase 5: Agent system and shared workspace
 
 - [x] **[Claude]** Shared per-client agent ledger + Agents tab in Workspace + `/api/agents/ledger` (done)
-- [ ] **[Claude]** Per-client pipeline state machine (stage field + idempotent steps)
-- [ ] **[Both]** Define the agents and their handoff contracts (working set: Concierge, Builder, QA, Comms, Billing, Maintenance)
+- [x] **[Claude]** Per-client pipeline state machine: 9 stages in `src/lib/pipeline.ts`, `pipeline` field on Client, single-writer `/api/agents/pipeline` (idempotent, every transition auto-logged to the client's ledger channel), PipelinePanel in the command center + roster labels (done)
+- [ ] **[Ridhi]** Approve/edit the agent contracts in `docs/agents.md` (drafted)
 - [ ] **[Claude]** Scheduling and triggers: calendar poll, form-received, new-comment, payment-received
 - [ ] **[Claude]** Error handling, escalation, alerting (what happens when a step fails at 2am)
 

@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
         feedback: existing.feedback,
         widgetKey: existing.widgetKey,
         lastSeenByClient: existing.lastSeenByClient,
+        pipeline: existing.pipeline,
       },
     });
 

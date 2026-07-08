@@ -82,6 +82,7 @@ export interface Client {
   feedback: ClientFeedback[];
   widgetKey: string; // per-client key embedded in the staging-site feedback widget
   lastSeenByClient: string; // ISO timestamp: when the client last viewed the thread
+  pipeline: string; // internal pipeline stage id (see lib/pipeline.ts); '' = legacy/unset
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -168,6 +169,7 @@ function parseFile(slug: string): Client | null {
     })),
     widgetKey: str(data.widgetKey),
     lastSeenByClient: str(data.lastSeenByClient),
+    pipeline: str(data.pipeline),
   };
 }
 
@@ -242,6 +244,7 @@ export function writeClient(
     feedback: data.feedback ?? [],
     widgetKey: data.widgetKey ?? '',
     lastSeenByClient: data.lastSeenByClient ?? '',
+    pipeline: data.pipeline ?? '',
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }
@@ -317,6 +320,22 @@ export function resolveFeedback(slug: string): boolean {
   data.feedback = data.feedback.map((m) => ({ ...m, resolved: true, read: true }));
   writeClient(slug, { data, passwordHash: c.passwordHash });
   return true;
+}
+
+/**
+ * Move a client to a new pipeline stage. Returns { from, to } on success,
+ * null if the client doesn't exist. Idempotent: setting the current stage
+ * again succeeds without a write. Stage validity is the API route's job.
+ */
+export function setPipelineStage(slug: string, stage: string): { from: string; to: string } | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const from = c.pipeline;
+  if (from === stage) return { from, to: stage };
+  const data = clientToData(c);
+  data.pipeline = stage;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return { from, to: stage };
 }
 
 /** Record that the client has viewed the message thread just now. */

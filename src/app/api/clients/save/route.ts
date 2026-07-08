@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
         feedback: existing.feedback,
         widgetKey: existing.widgetKey || generateWidgetKey(),
         lastSeenByClient: existing.lastSeenByClient,
+        // Pipeline moves only through /api/agents/pipeline (so every
+        // transition is logged); portal saves never touch it.
+        pipeline: existing.pipeline,
       },
     });
 

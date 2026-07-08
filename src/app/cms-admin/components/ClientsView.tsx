@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Client } from '@/lib/clients';
+import { pipelineLabel } from '@/lib/pipeline';
 import { inputClass, inputStyle, labelClass, labelStyle } from './fields';
 
 function lastActivity(c: Client): string {
@@ -70,6 +71,7 @@ export default function ClientsView({
           feedback: [],
           widgetKey: data.widgetKey ?? '',
           lastSeenByClient: '',
+          pipeline: 'onboarding',
         };
         onCreated(newClient, data.password);
         setPassword({ slug: data.slug, name: newClient.name, value: data.password });
@@ -168,7 +170,10 @@ export default function ClientsView({
             </div>
             <div className="flex items-center gap-4 flex-shrink-0">
               <div className="text-right">
-                <p className="font-spec text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
+                <p className="font-spec text-[10px] tracking-widest uppercase" style={{ color: 'var(--accent-light)' }}>
+                  {pipelineLabel(c.pipeline)}
+                </p>
+                <p className="font-spec text-[10px] mt-0.5 tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
                   {c.stage || 'Not started'}
                 </p>
                 {last && (

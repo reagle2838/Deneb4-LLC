@@ -97,7 +97,19 @@ export default function Workspace({
   const current = openClient ? clients.find((c) => c.slug === openClient) ?? null : null;
 
   function handleSaved(slug: string, draft: ClientData) {
-    setClients((prev) => prev.map((c) => (c.slug === slug ? { ...c, ...draft } : c)));
+    // Mirror the server's preserve semantics: these fields have their own
+    // writer paths and must not be clobbered by a (possibly stale) draft.
+    setClients((prev) =>
+      prev.map((c) =>
+        c.slug === slug
+          ? { ...c, ...draft, pipeline: c.pipeline, feedback: c.feedback, lastSeenByClient: c.lastSeenByClient }
+          : c
+      )
+    );
+  }
+
+  function handlePipelineChange(slug: string, stage: string) {
+    setClients((prev) => prev.map((c) => (c.slug === slug ? { ...c, pipeline: stage } : c)));
   }
 
   function handleDeleted(slug: string) {
@@ -160,6 +172,7 @@ export default function Workspace({
             onBack={closeCommandCenter}
             onSaved={handleSaved}
             onDeleted={handleDeleted}
+            onPipelineChange={handlePipelineChange}
           />
         ) : (
           <ClientsView clients={clients} onOpen={openCommandCenter} onCreated={handleCreated} />

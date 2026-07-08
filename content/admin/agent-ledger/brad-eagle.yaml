@@ -1,0 +1,8 @@
+- id: 6a594400-383d-4a19-a01c-8fa41996adb5
+  date: "2026-07-08T02:08:07.617Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Not set → Client review"
+  data:
+    from: (unset)
+    to: client-review

@@ -32,6 +32,7 @@ export function toData(c: Client): ClientData {
     feedback: c.feedback,
     widgetKey: c.widgetKey,
     lastSeenByClient: c.lastSeenByClient,
+    pipeline: c.pipeline,
   };
 }
 

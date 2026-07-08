@@ -6,6 +6,7 @@ import TasksTab from '../TasksTab';
 import MessageThread from './MessageThread';
 import QuickActions from './QuickActions';
 import StagePanel from './StagePanel';
+import PipelinePanel from './PipelinePanel';
 import DangerZone from './DangerZone';
 import { useClientDraft } from './useClientDraft';
 import {
@@ -28,6 +29,7 @@ export default function ClientCommandCenter({
   onBack,
   onSaved,
   onDeleted,
+  onPipelineChange,
 }: {
   client: Client;
   tasks: Task[];
@@ -35,6 +37,7 @@ export default function ClientCommandCenter({
   onBack: () => void;
   onSaved: (slug: string, draft: ClientData) => void;
   onDeleted: (slug: string) => void;
+  onPipelineChange: (slug: string, stage: string) => void;
 }) {
   const d = useClientDraft(client, (draft) => onSaved(client.slug, draft));
 
@@ -67,6 +70,11 @@ export default function ClientCommandCenter({
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
         {/* Left: live status + communication */}
         <div className="lg:col-span-2 space-y-5">
+          <PipelinePanel
+            slug={client.slug}
+            initialStage={client.pipeline}
+            onChanged={(stage) => onPipelineChange(client.slug, stage)}
+          />
           <StagePanel d={d} />
           <QuickActions slug={client.slug} d={d} />
 
