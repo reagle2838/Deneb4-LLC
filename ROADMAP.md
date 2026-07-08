@@ -71,7 +71,9 @@
 
 ## Phase 6: Pipeline stages (ops layer; many independent quick wins)
 
-- [ ] **[Claude]** Calendar check + daily appointment alert (good first quick win)
+- [x] **[Claude]** Calendar check endpoint: `/api/agents/calendar-check` (GET preview, POST = email digest + Studio ledger entry; reads the calendar's secret iCal address, no OAuth) (done)
+- [ ] **[Ridhi]** Paste the calendar's "secret address in iCal format" into `GOOGLE_CALENDAR_ICS_URL` in `.env.local` (instructions in the file)
+- [ ] **[Both]** Pick the daily trigger: Hostinger cron hitting the endpoint in production, Windows Task Scheduler locally, or a scheduled cloud agent
 - [ ] **[Claude]** Approval-gated provisioning: Drive folder + share intake docs + portal client + credentials email
 - [ ] **[Claude]** Intake delivery, collection, parse into compiler config
 - [ ] **[Claude]** Build orchestration loop: config, assemble, verify, pass or escalate

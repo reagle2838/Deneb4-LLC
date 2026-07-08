@@ -35,3 +35,7 @@ next-env.d.ts
 # uploaded client files (kept on the server, not in git)
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# Claude Code local settings + personal hooks (not shared)
+.claude/settings.local.json
+.claude/hooks/
