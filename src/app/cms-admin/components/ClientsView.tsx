@@ -30,7 +30,8 @@ export default function ClientsView({
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', email: '', projectName: '' });
-  const [password, setPassword] = useState<{ slug: string; name: string; value: string } | null>(null);
+  const [sendWelcome, setSendWelcome] = useState(true);
+  const [password, setPassword] = useState<{ slug: string; name: string; value: string; welcomed: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -49,9 +50,9 @@ export default function ClientsView({
       const res = await fetch('/api/clients/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify({ ...addForm, sendWelcome }),
       });
-      const data = (await res.json()) as { slug?: string; password?: string; widgetKey?: string; error?: string };
+      const data = (await res.json()) as { slug?: string; password?: string; widgetKey?: string; welcomed?: boolean; error?: string };
       if (data.slug && data.password) {
         const newClient: Client = {
           slug: data.slug,
@@ -74,7 +75,7 @@ export default function ClientsView({
           pipeline: 'onboarding',
         };
         onCreated(newClient, data.password);
-        setPassword({ slug: data.slug, name: newClient.name, value: data.password });
+        setPassword({ slug: data.slug, name: newClient.name, value: data.password, welcomed: data.welcomed === true });
         setAddForm({ name: '', email: '', projectName: '' });
         setAddOpen(false);
       } else {
@@ -115,6 +116,10 @@ export default function ClientsView({
                 onChange={(e) => setAddForm({ ...addForm, projectName: e.target.value })} placeholder="Acme Website" />
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <input type="checkbox" checked={sendWelcome} onChange={(e) => setSendWelcome(e.target.checked)} />
+            Email the client their portal link and password (welcome email)
+          </label>
           <button type="submit" disabled={busy} className="btn-primary text-sm">
             {busy ? 'Creating...' : 'Create + Generate Password'}
           </button>
@@ -133,6 +138,11 @@ export default function ClientsView({
             <button onClick={() => copy(password.value)} className="btn-outline text-xs flex-shrink-0">{copied ? 'Copied!' : 'Copy'}</button>
             <button onClick={() => setPassword(null)} className="text-xs font-spec" style={{ color: 'var(--text-faint)' }}>Dismiss</button>
           </div>
+          <p className="text-xs mt-2" style={{ color: password.welcomed ? '#15803d' : '#b45309' }}>
+            {password.welcomed
+              ? 'Welcome email with these credentials was sent to the client.'
+              : 'No email went out (not requested or email is not configured). Share the password with them yourself.'}
+          </p>
         </div>
       )}
 

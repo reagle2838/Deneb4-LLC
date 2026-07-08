@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
 import { getClientBySlug, writeClient } from '@/lib/clients';
 import { generateClientPassword, hashPassword } from '@/lib/portal-auth';
+import { notifyClientCredentials } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as { slug?: string };
+    const body = (await req.json()) as { slug?: string; emailClient?: boolean };
     const slug = body.slug;
+    const emailClient = body.emailClient === true;
     if (!slug) {
       return NextResponse.json({ error: 'Missing slug.' }, { status: 400 });
     }
@@ -45,7 +47,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ password });
+    let emailed = false;
+    if (emailClient) {
+      emailed = await notifyClientCredentials(existing, password, 'reset');
+    }
+
+    return NextResponse.json({ password, emailed });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

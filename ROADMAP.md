@@ -65,16 +65,18 @@
 
 - [x] **[Claude]** Shared per-client agent ledger + Agents tab in Workspace + `/api/agents/ledger` (done)
 - [x] **[Claude]** Per-client pipeline state machine: 9 stages in `src/lib/pipeline.ts`, `pipeline` field on Client, single-writer `/api/agents/pipeline` (idempotent, every transition auto-logged to the client's ledger channel), PipelinePanel in the command center + roster labels (done)
-- [ ] **[Ridhi]** Approve/edit the agent contracts in `docs/agents.md` (drafted)
+- [x] **[Ridhi]** Agent contracts in `docs/agents.md` APPROVED 2026-07-08
 - [ ] **[Claude]** Scheduling and triggers: calendar poll, form-received, new-comment, payment-received
-- [ ] **[Claude]** Error handling, escalation, alerting (what happens when a step fails at 2am)
+- [x] **[Claude]** Escalation, part 1: any agent posting a `kind: alert` ledger entry emails Ridhi immediately (the alert-and-stop rule from docs/agents.md) (done)
+- [ ] **[Claude]** Error handling, part 2: retry policy + failure states for scheduled agent runs (what happens when a step fails at 2am)
 
 ## Phase 6: Pipeline stages (ops layer; many independent quick wins)
 
 - [x] **[Claude]** Calendar check endpoint: `/api/agents/calendar-check` (GET preview, POST = email digest + Studio ledger entry; reads the calendar's secret iCal address, no OAuth) (done)
 - [ ] **[Ridhi]** Paste the calendar's "secret address in iCal format" into `GOOGLE_CALENDAR_ICS_URL` in `.env.local` (instructions in the file)
 - [ ] **[Both]** Pick the daily trigger: Hostinger cron hitting the endpoint in production, Windows Task Scheduler locally, or a scheduled cloud agent
-- [ ] **[Claude]** Approval-gated provisioning: Drive folder + share intake docs + portal client + credentials email
+- [x] **[Claude]** Provisioning, part 1: client creation posts a birth record to the ledger, and portal credentials can be emailed to the client on create and on password reset (opt-in checkboxes; falls back to shown-once + manual share until Resend is configured) (done)
+- [ ] **[Claude]** Provisioning, part 2: Drive folder creation + intake doc sharing (needs Google Drive API credentials)
 - [ ] **[Claude]** Intake delivery, collection, parse into compiler config
 - [ ] **[Claude]** Build orchestration loop: config, assemble, verify, pass or escalate
 - [ ] **[Claude]** Daily comment triage + drafted replies + change-list (draft-then-Ridhi-sends until copy gate relaxes)

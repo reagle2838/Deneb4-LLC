@@ -8,6 +8,7 @@ import {
   LEDGER_KINDS,
   type LedgerKind,
 } from '@/lib/agent-ledger';
+import { notifyOwnerOfAgentAlert } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,14 @@ export async function POST(req: NextRequest) {
     if (!entry) {
       return NextResponse.json({ error: 'Could not write to ledger.' }, { status: 500 });
     }
+
+    // Escalation rule (docs/agents.md): an alert means the agent stopped
+    // and is waiting on Ridhi, so it goes straight to her inbox. Ridhi's
+    // own posts don't email herself.
+    if (kind === 'alert' && agent !== 'ridhi') {
+      await notifyOwnerOfAgentAlert(channel, agent, entry.message);
+    }
+
     return NextResponse.json({ ok: true, entry });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

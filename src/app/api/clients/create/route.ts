@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
-import { slugify, clientExists, writeClient, EMPTY_STAGING, generateWidgetKey } from '@/lib/clients';
+import { slugify, clientExists, writeClient, getClientBySlug, EMPTY_STAGING, generateWidgetKey } from '@/lib/clients';
 import { generateClientPassword, hashPassword } from '@/lib/portal-auth';
+import { appendLedger } from '@/lib/agent-ledger';
+import { notifyClientCredentials } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +13,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as { name?: string; email?: string; projectName?: string };
+    const body = (await req.json()) as { name?: string; email?: string; projectName?: string; sendWelcome?: boolean };
     const name = (body.name ?? '').trim();
     const email = (body.email ?? '').trim();
     const projectName = (body.projectName ?? '').trim();
+    const sendWelcome = body.sendWelcome === true;
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
@@ -54,7 +57,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ slug, password, widgetKey });
+    // Birth record on the client's agent channel.
+    appendLedger(slug, {
+      agent: 'concierge',
+      kind: 'event',
+      message: `Client created and portal provisioned for ${name}. Pipeline starts at Onboarding.`,
+      data: { email, projectName },
+    });
+
+    let welcomed = false;
+    if (sendWelcome) {
+      const client = await getClientBySlug(slug);
+      if (client) welcomed = await notifyClientCredentials(client, password, 'welcome');
+    }
+
+    return NextResponse.json({ slug, password, widgetKey, welcomed });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }

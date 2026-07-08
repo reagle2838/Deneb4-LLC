@@ -1,6 +1,6 @@
-# Deneb4 Agent Roster and Handoff Contracts: DRAFT for Ridhi's approval
+# Deneb4 Agent Roster and Handoff Contracts
 
-**Status: DRAFT.** Defines each agent's mission, the pipeline stages it owns, what it consumes and produces, and how work moves between agents. The pipeline stages live in `src/lib/pipeline.ts`; stage transitions happen only through `/api/agents/pipeline`, and every agent writes what it did to the client's channel on the Agents tab (`/api/agents/ledger`).
+**Status: APPROVED** (2026-07-08). Defines each agent's mission, the pipeline stages it owns, what it consumes and produces, and how work moves between agents. Revisit and re-approve if the roster or contracts change. The pipeline stages live in `src/lib/pipeline.ts`; stage transitions happen only through `/api/agents/pipeline`, and every agent writes what it did to the client's channel on the Agents tab (`/api/agents/ledger`).
 
 **Ground rules for every agent**
 - Read the client's ledger channel before acting; write an entry after acting.
@@ -85,4 +85,4 @@
 
 ---
 
-**Ridhi's action:** adjust missions, ownership, or escalation rules, then mark APPROVED. These contracts become the spec each agent is built against (ROADMAP Phase 5).
+Approved by Ridhi on 2026-07-08. These contracts are the spec each agent is built against (ROADMAP Phase 5).

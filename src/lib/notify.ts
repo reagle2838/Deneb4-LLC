@@ -95,6 +95,75 @@ export async function notifyClientOfReply(client: Client, entry: ClientFeedback)
   }
 }
 
+/**
+ * Welcome / new-credentials email: sends the client their portal login.
+ * Returns whether it was actually delivered (false = no RESEND_API_KEY,
+ * payload logged to console) so the UI can tell Ridhi to share manually.
+ */
+export async function notifyClientCredentials(
+  client: Client,
+  password: string,
+  variant: 'welcome' | 'reset'
+): Promise<boolean> {
+  if (!client.email) return false;
+  try {
+    const result = await sendEmail({
+      to: client.email,
+      subject:
+        variant === 'welcome'
+          ? client.projectName
+            ? `Your project portal is ready: ${client.projectName}`
+            : 'Your Deneb4 project portal is ready'
+          : 'Your new portal password',
+      html: template({
+        eyebrow: variant === 'welcome' ? 'Welcome' : 'Password reset',
+        heading:
+          variant === 'welcome'
+            ? `Hello ${client.name.split(' ')[0]}, your project portal is ready.`
+            : 'Here is your new portal password.',
+        lines: [
+          variant === 'welcome'
+            ? 'This is where you will see progress, preview your website, send us messages, and approve each phase.'
+            : 'Your old password no longer works.',
+          `Sign in with: <strong>${escapeHtml(client.email)}</strong>`,
+          `Password: <strong style="font-family:'Courier New',monospace;">${escapeHtml(password)}</strong>`,
+        ],
+        cta: { label: 'Open your portal', href: `${SITE_URL}/login` },
+      }),
+    });
+    return result.delivered;
+  } catch (err) {
+    console.error('[deneb4] credentials email failed:', err);
+    return false;
+  }
+}
+
+/** An agent posted a kind:'alert' ledger entry: escalate to Ridhi's inbox. */
+export async function notifyOwnerOfAgentAlert(
+  channel: string,
+  agent: string,
+  message: string
+): Promise<void> {
+  try {
+    await sendEmail({
+      to: OWNER_EMAIL,
+      subject: `Agent alert (${agent}): ${channel}`,
+      html: template({
+        eyebrow: 'Agent alert',
+        heading: `${agent} raised an alert on ${channel}.`,
+        lines: ['The agent stopped and is waiting on you.'],
+        quote: message,
+        cta: {
+          label: 'Open the Agents tab',
+          href: `${SITE_URL}/cms-admin?tab=agents`,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error('[deneb4] agent alert email failed:', err);
+  }
+}
+
 /** A client approved a phase from their portal. */
 export async function notifyOwnerOfApproval(client: Client, phase: string): Promise<void> {
   try {

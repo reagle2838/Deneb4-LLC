@@ -9,7 +9,8 @@ import type { ClientDraft } from './useClientDraft';
  */
 export default function QuickActions({ slug, d }: { slug: string; d: ClientDraft }) {
   const [origin, setOrigin] = useState('');
-  const [password, setPassword] = useState<string | null>(null);
+  const [password, setPassword] = useState<{ value: string; emailed: boolean } | null>(null);
+  const [emailOnReset, setEmailOnReset] = useState(true);
   const [busy, setBusy] = useState(false);
   const [widgetBusy, setWidgetBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -28,10 +29,10 @@ export default function QuickActions({ slug, d }: { slug: string; d: ClientDraft
       const res = await fetch('/api/clients/password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify({ slug, emailClient: emailOnReset }),
       });
-      const data = (await res.json()) as { password?: string; error?: string };
-      if (data.password) setPassword(data.password);
+      const data = (await res.json()) as { password?: string; emailed?: boolean; error?: string };
+      if (data.password) setPassword({ value: data.password, emailed: data.emailed === true });
       else d.setError(data.error ?? 'Failed to generate password.');
     } catch {
       d.setError('Server error, try again.');
@@ -77,6 +78,10 @@ export default function QuickActions({ slug, d }: { slug: string; d: ClientDraft
         <button onClick={newPassword} disabled={busy} className="btn-outline text-xs">
           {busy ? '...' : 'New password'}
         </button>
+        <label className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-faint)' }}>
+          <input type="checkbox" checked={emailOnReset} onChange={(e) => setEmailOnReset(e.target.checked)} />
+          email it to the client
+        </label>
         {embed && (
           <button onClick={() => copy('embed', embed)} className="btn-outline text-xs">
             {copied === 'embed' ? 'Copied!' : 'Copy widget embed'}
@@ -93,13 +98,17 @@ export default function QuickActions({ slug, d }: { slug: string; d: ClientDraft
       {password && (
         <div className="mt-3 p-3 rounded-sm" style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)' }}>
           <p className="text-[10px] font-spec font-semibold tracking-widest uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>
-            New password. Copy and send to the client:
+            New password (shown once):
           </p>
           <div className="flex items-center gap-3">
-            <code className="font-spec text-base tracking-widest flex-1" style={{ color: 'var(--text-heading)' }}>{password}</code>
-            <button onClick={() => copy('pw', password)} className="btn-outline text-xs flex-shrink-0">{copied === 'pw' ? 'Copied!' : 'Copy'}</button>
+            <code className="font-spec text-base tracking-widest flex-1" style={{ color: 'var(--text-heading)' }}>{password.value}</code>
+            <button onClick={() => copy('pw', password.value)} className="btn-outline text-xs flex-shrink-0">{copied === 'pw' ? 'Copied!' : 'Copy'}</button>
           </div>
-          <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-faint)' }}>Shown once. Their old password no longer works.</p>
+          <p className="text-[11px] mt-1.5" style={{ color: password.emailed ? '#15803d' : '#b45309' }}>
+            {password.emailed
+              ? 'Emailed to the client. Their old password no longer works.'
+              : 'No email went out (not requested or email is not configured). Share it yourself; the old password no longer works.'}
+          </p>
         </div>
       )}
 
