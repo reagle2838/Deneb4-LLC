@@ -39,3 +39,7 @@ next-env.d.ts
 # Claude Code local settings + personal hooks (not shared)
 .claude/settings.local.json
 .claude/hooks/
+
+# Agent heartbeat run log + dedup state (ephemeral, regenerated at runtime)
+/content/admin/agent-runs.yaml
+/content/admin/agent-state.yaml

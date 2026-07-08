@@ -6,6 +6,8 @@ import {
   STUDIO_CHANNEL,
   type LedgerEntry,
   type LedgerKind,
+  type AgentRun,
+  type DutyStatus,
 } from '@/lib/agent-roster';
 import { inputStyle } from './fields';
 
@@ -15,6 +17,12 @@ const KIND_COLOR: Record<LedgerKind, string> = {
   handoff: '#7c3aed',
   alert: '#e40014',
   decision: '#15803d',
+};
+
+const DUTY_COLOR: Record<DutyStatus, string> = {
+  ok: '#15803d',
+  skipped: 'var(--text-faint)',
+  error: '#e40014',
 };
 
 function formatWhen(iso: string): string {
@@ -31,9 +39,11 @@ function formatWhen(iso: string): string {
 export default function AgentSpace({
   initialLedgers,
   clients,
+  runs,
 }: {
   initialLedgers: Record<string, LedgerEntry[]>;
   clients: { slug: string; name: string }[];
+  runs: AgentRun[];
 }) {
   const [ledgers, setLedgers] = useState(initialLedgers);
   const [channel, setChannel] = useState(STUDIO_CHANNEL);
@@ -82,8 +92,42 @@ export default function AgentSpace({
     }
   }
 
+  const lastRun = runs[0];
+
   return (
     <div className="space-y-5">
+      {/* Heartbeat status */}
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: lastRun ? (lastRun.duties.some((d) => d.status === 'error') ? '#e40014' : '#15803d') : 'var(--text-faint)' }}
+              aria-hidden
+            />
+            <div>
+              <p className="text-xs font-spec font-semibold tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>
+                Agent heartbeat
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                {lastRun
+                  ? `Last run ${new Date(lastRun.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} (${lastRun.trigger})`
+                  : 'Never run. A scheduler POSTs /api/agents/tick to sense calendar + worklist.'}
+              </p>
+            </div>
+          </div>
+          {lastRun && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {lastRun.duties.map((d) => (
+                <span key={d.name} className="font-spec text-[10px] tracking-widest uppercase" style={{ color: DUTY_COLOR[d.status] }} title={d.summary}>
+                  {d.name}: {d.status}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold" style={{ color: 'var(--text-heading)' }}>Agent workspace</h2>

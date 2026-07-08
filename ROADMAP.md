@@ -66,9 +66,10 @@
 - [x] **[Claude]** Shared per-client agent ledger + Agents tab in Workspace + `/api/agents/ledger` (done)
 - [x] **[Claude]** Per-client pipeline state machine: 9 stages in `src/lib/pipeline.ts`, `pipeline` field on Client, single-writer `/api/agents/pipeline` (idempotent, every transition auto-logged to the client's ledger channel), PipelinePanel in the command center + roster labels (done)
 - [x] **[Ridhi]** Agent contracts in `docs/agents.md` APPROVED 2026-07-08
-- [ ] **[Claude]** Scheduling and triggers: calendar poll, form-received, new-comment, payment-received
+- [x] **[Claude]** Agent heartbeat: `/api/agents/tick` (POST = run all sensing duties, GET = run history). Duties run isolated (one failure never sinks the rest), each run recorded to a run log (`agent-runs.yaml`), once-per-day dedup via `agent-state.yaml`. Live duties: calendar digest + client worklist (unread messages + projects at a gate). form-received/payment-received stubbed pending Drive/Wave. Heartbeat status + last-run duties shown on the Agents tab. (done)
+- [ ] **[Both]** Point a scheduler at `POST /api/agents/tick` (Hostinger cron / Task Scheduler / cloud agent), same decision as the calendar trigger
 - [x] **[Claude]** Escalation, part 1: any agent posting a `kind: alert` ledger entry emails Ridhi immediately (the alert-and-stop rule from docs/agents.md) (done)
-- [ ] **[Claude]** Error handling, part 2: retry policy + failure states for scheduled agent runs (what happens when a step fails at 2am)
+- [x] **[Claude]** Error handling, part 2: tick duties are failure-isolated and every run is logged; any duty error escalates to Ridhi's inbox (done)
 
 ## Phase 6: Pipeline stages (ops layer; many independent quick wins)
 

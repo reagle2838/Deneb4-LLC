@@ -35,3 +35,20 @@ export interface LedgerEntry {
   /** Small structured payload: refs, URLs, task ids. Strings only. */
   data: Record<string, string>;
 }
+
+/** One agent-heartbeat run (see /api/agents/tick + lib/agent-runs.ts). */
+export type DutyStatus = 'ok' | 'skipped' | 'error';
+
+export interface DutyResult {
+  name: string;
+  status: DutyStatus;
+  summary: string;
+}
+
+export interface AgentRun {
+  id: string;
+  date: string; // ISO timestamp
+  trigger: string; // 'cron' | 'manual' | ...
+  durationMs: number;
+  duties: DutyResult[];
+}
