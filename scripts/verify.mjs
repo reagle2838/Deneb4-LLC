@@ -16,9 +16,13 @@
  *   node scripts/verify.mjs http://localhost:3005
  *   node scripts/verify.mjs https://staging.client.com \
  *     --client acme --key <AGENT_API_KEY> --report-to https://deneb4.com
+ *   # template-aware (Builder): drive the checks from an assembled routes.json
+ *   node scripts/verify.mjs http://localhost:4180 --manifest builds/acme/routes.json
  *
  * Exit code 0 = all checks passed, 1 = one or more failed.
  */
+
+import fs from 'node:fs';
 
 const args = process.argv.slice(2);
 const base = (args.find((a) => !a.startsWith('--')) || '').replace(/\/$/, '');
@@ -37,18 +41,36 @@ if (!base) {
   process.exit(2);
 }
 
-// Critical public routes that must render. Kept in sync with the site map.
-const PUBLIC_ROUTES = [
+// Route lists. Default = Deneb4's own site map (keystone regression guard).
+// With --manifest <path>, they are sourced from an assembled routes.json so
+// the harness can QA an arbitrary template/client build (the Builder's QA).
+let PUBLIC_ROUTES = [
   '/', '/services', '/process', '/work', '/articles', '/about',
   '/contact', '/start', '/industries', '/faq', '/privacy', '/terms',
 ];
-// Routes with an expected non-200 status (auth gates, redirects).
-const GATED_ROUTES = [
+let GATED_ROUTES = [
   { path: '/portal', expect: [307, 302] },
   { path: '/portal-feedback', expect: [307, 302] },
   { path: '/cms-login', expect: [200] },
 ];
-const ASSETS = ['/logo.png', '/widget.js'];
+let ASSETS = ['/logo.png', '/widget.js'];
+
+const manifestPath = opt('manifest');
+if (manifestPath) {
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+  } catch (err) {
+    console.error(`Could not read --manifest ${manifestPath}: ${err instanceof Error ? err.message : err}`);
+    process.exit(2);
+  }
+  // gated entries may be plain strings (default expect [200]) or { path, expect }.
+  PUBLIC_ROUTES = Array.isArray(manifest.public) ? manifest.public : ['/'];
+  GATED_ROUTES = Array.isArray(manifest.gated)
+    ? manifest.gated.map((g) => (typeof g === 'string' ? { path: g, expect: [200] } : g))
+    : [];
+  ASSETS = Array.isArray(manifest.assets) ? manifest.assets : [];
+}
 
 async function fetchStatus(url, { redirect = 'manual' } = {}) {
   const ctrl = new AbortController();

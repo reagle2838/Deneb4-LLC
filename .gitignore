@@ -43,3 +43,6 @@ next-env.d.ts
 # Agent heartbeat run log + dedup state (ephemeral, regenerated at runtime)
 /content/admin/agent-runs.yaml
 /content/admin/agent-state.yaml
+
+# Builder: per-client assembled build artifacts (regenerated from configs)
+/builds/

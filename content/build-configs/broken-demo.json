@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "client": "broken-demo",
+  "siteName": "Broken Co",
+  "template": { "id": "starter" },
+  "modules": { "hero": true, "services": true, "blog": true },
+  "theme": { "preset": "slate-teal" },
+  "copy": {
+    "headline": "We make things"
+  }
+}

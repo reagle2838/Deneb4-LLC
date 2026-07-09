@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "verify:site": "node scripts/verify.mjs"
+    "verify:site": "node scripts/verify.mjs",
+    "builder": "node scripts/build-client.mjs",
+    "builder:assemble": "node scripts/build-client.mjs --assemble-only"
   },
   "dependencies": {
     "@keystatic/core": "^0.5.33",
