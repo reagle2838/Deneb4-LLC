@@ -8,6 +8,27 @@
 
 ---
 
+## Architecture decision (2026-07-09): git-native, incremental Builder
+
+Confirmed by Ridhi, supersedes the "regenerate from a config" model that Builder v1 proved:
+
+- **Each client's website lives in its own GitHub repo**, not a local `builds/<slug>/` folder that gets deleted and regenerated. The repo IS the site; git history IS the project's daily progress log.
+- **The Builder does not build from scratch.** For a website request, it clones/pulls the **existing template repo** (name TBD, Ridhi to provide) and builds on top of it per the client's spec, the template repo is the real starting point, not `templates/starter/` (which only proved the assembly mechanics on a placeholder).
+- **Work incrementally, like a person would:** pull the current state of the client's repo → see what's already there, including any manual edits Ridhi made → make the specific change being asked for → commit → push. Never a blind wipe-and-regenerate. This is also what fixes the "Ridhi hand-edits something and it survives" problem: a manual edit is just a commit, and the next agent run starts from that commit, not from a fresh copy.
+- **"Continue work each day until finished"**: an agent resuming a project just means pulling that client's repo, checking progress against the pipeline stage + ledger, and continuing. Same durable-state pattern already used for conversations (the ledger) and project stage (the pipeline), now extended to the actual code.
+- **Consequence for QA (Phase 3):** the verification harness will need to handle whatever the real template's build/serve story is (this is unknown until the template repo is shared — could be a static build, could need `next build`/`next start`, etc.), not only the static-stub model `verify.mjs --manifest` was proven against.
+- **Blocked on:** the template repo (name/access, Ridhi to provide — see Phase 1), and a GitHub API credential so agents can create/clone/commit/push per-client repos (see Phase 4). Builder v1's deterministic engine (module toggles, theme, fact-slot copy, QA handoff, escalation) is not wasted, it's the config layer that will sit on top of the git workflow once both land.
+
+## Architecture decision (2026-07-09): Google Workspace intake
+
+Confirmed by Ridhi: client specs come from a **Google Form** plus several supporting **Google Docs** the client fills out, not a custom-built form on the Deneb4 site. Agents (and/or Claude Cowork) need read access to the form responses and the associated docs. This replaces the earlier "60-question checkbox form built in-house" framing in Phase 2 below. Ridhi will provide the specific form/docs and Google Workspace access details later.
+
+## Note: Claude Cowork's role in the flow
+
+Confirmed by Ridhi: Claude Cowork (a supervised, interactive Claude Code session, not an unattended agent) is the designated path for anything the deterministic agents can't or shouldn't handle on their own: **structural requests** (already a permanent human gate per Phase 0), **one-off manual overrides** Ridhi wants to make herself, debugging something QA didn't anticipate, and building out new template modules for the catalog. It works directly against a client's real repo once that exists (see the git-native Builder decision above). This formalizes what was already implicit: agents handle the repeatable work, Claude Cowork handles the judgment calls. (To do later: reflect this explicitly in `docs/agents.md` as the structural-request escalation path.)
+
+---
+
 ## Phase 0: Decisions (owner: Ridhi)
 
 | # | Decision | Status |
@@ -33,19 +54,21 @@
 
 ## Phase 1: Product core (the moat)
 
-- [ ] **[Ridhi]** Provide the template website (where does it live? repo/folder) so it can be audited and versioned
+- [ ] **[Ridhi]** Provide the template website **as a GitHub repo** (name/access — Ridhi to give this later) so agents can clone/pull it and build on top of it directly; this is the real Builder foundation, not the `templates/starter/` stub
 - [ ] **[Claude]** Harden the base template to production grade; make it the versioned foundation
 - [ ] **[Ridhi]** Approve/edit the module menu in `docs/module-catalog.md`
 - [ ] **[Claude]** Build each approved module as a pre-tested, versioned, toggleable component
 - [ ] **[Claude]** Menu-driven design system: pre-designed layout/theme variants so "design" = choosing from a menu
 - [ ] **[Claude]** Fact-slot copy templates; enforce "only assert facts the client supplied"
 
-## Phase 2: Form-to-build compiler
+## Phase 2: Intake-to-build compiler
 
-- [ ] **[Both]** Design the 60-question checkbox form; every answer maps to a concrete, testable build operation
-- [ ] **[Claude]** Config schema + answer-to-config mapping rules
+- [x] **[Ridhi]** Intake mechanism decided: a **Google Form** plus several supporting **Google Docs** the client fills out (not a custom in-house form). Specific form/docs + Google Workspace access — Ridhi to provide later.
+- [ ] **[Claude]** Google Workspace read access for agents/Claude Cowork (Forms responses + Docs) — see Phase 4
+- [ ] **[Both]** Answer-to-config mapping rules: every form/doc field maps to a concrete, testable build operation
+- [ ] **[Claude]** Config schema (extends the Builder v1 `BuildConfig` shape already proven)
 - [ ] **[Claude]** Brand ingestion (palette, fonts, logo from client's existing site)
-- [ ] **[Claude]** The compiler: config in, assembled site out
+- [ ] **[Claude]** The compiler: parsed intake in, build config out, feeding the git-native Builder (see architecture decision above)
 
 ## Phase 3: Verification harness (keystone)
 
@@ -53,6 +76,7 @@
   - **It immediately caught a real, pre-existing bug** (see note below).
 - [ ] **[Claude]** Per-module test suites (needs the module catalog / template)
 - [ ] **[Claude]** Browser-dependent checks: real contrast/accessibility + visual regression (needs Playwright)
+- [ ] **[Claude]** Adapt QA to the real template's build/serve story once the template repo lands (unknown today whether it's static, needs `next build`, etc. — see git-native Builder decision above)
 
 > **⚠ FINDING (2026-07-08, from the harness): Keystatic content is silently half-broken on the live site.** Only entries whose on-disk format Keystatic recognizes are served. The featured **Eagle Engineering case study** (`/work/eagle-engineering` → 404, and it's the only work entry, so `/work` shows the "Your project here" placeholder) and **2 of 3 articles** are stored as `index.yaml` + `body.mdoc`, a format this Keystatic setup does not list, so they're dropped. The one article that loads is stored differently (`body.mdoc` only). Two home/services CTAs ("See the Eagle Engineering build →") lead to the 404. **Root cause: inconsistent Keystatic entry format.** Recommended fix (deliberate, not a blind script edit): re-create/re-save the affected entries through the Keystatic CMS at `/keystatic` so they're written in the correct format, or a careful one-time content migration after confirming the exact expected format. Not yet fixed, flagged for a decision.
 
@@ -63,6 +87,8 @@
 - [ ] **[Claude]** Production deploy + DNS handover automation
 - [ ] **[Ridhi]** Re-enable CMS auth (delete `CMS_AUTH_DISABLED` from `.env.local`) when testing ends
 - [ ] **[Claude]** Scoped agent credentials, secrets store, rotation policy (Google, Hostinger, Wave, CMS, git)
+- [ ] **[Ridhi]** GitHub credential for agents: a token (or GitHub App) that can create/clone/commit/push **per-client repos**. Also decide where those repos live — a dedicated org, or Ridhi's personal account for now (open question from 2026-07-08 chat).
+- [ ] **[Ridhi]** Google Workspace credential for agents/Claude Cowork: read access to the intake Google Form's responses and the supporting Google Docs (Ridhi has Google Workspace; specifics to follow)
 - [ ] **[Both]** Hook up Supabase (noted 2026-07-08 by Ridhi; scope/purpose not yet defined, e.g. replacing flat YAML storage for clients/leads/tasks/ledger, or something else — clarify before building)
 
 ## Phase 5: Agent system and shared workspace
@@ -85,9 +111,10 @@
 - [x] **[Claude]** Provisioning, part 1: client creation posts a birth record to the ledger, and portal credentials can be emailed to the client on create and on password reset (opt-in checkboxes; falls back to shown-once + manual share until Resend is configured) (done)
 - [ ] **[Claude]** Provisioning, part 2: Drive folder creation + intake doc sharing (needs Google Drive API credentials)
 - [ ] **[Claude]** Intake delivery, collection, parse into compiler config
-- [x] **[Claude]** Build orchestration loop (BUILDER AGENT v1, on a STUB template): deterministic assembly engine (`scripts/builder/*.mjs`) + runner (`scripts/build-client.mjs`, `npm run builder`). Takes a hand-authored build config (`content/build-configs/<slug>.json`), assembles a static site from `templates/starter/` into `builds/<slug>/` (config-level: toggle modules, apply theme, inject supplied facts; fact-slot rule enforced, never fabricates), serves it locally, runs the template-aware QA harness (`verify.mjs --manifest`), and on green writes a change summary to the client ledger + advances pipeline to `internal-review` and STOPS at Ridhi's gate; on validation/QA/exception failure it escalates (alert email) and stays at `building`. Hybrid: optional key-gated LLM copy layer (`ANTHROPIC_API_KEY`) that only rephrases supplied copy. Verified end-to-end (green, gated-stage refusal, both escalation paths, idempotency, regression-safe QA edit, tsc clean). (done)
-  - **Swappable stub:** `templates/starter/` + `template.json` is a placeholder proving the loop. The real client template replacing it is still the Phase 1 blocker.
+- [x] **[Claude]** Build orchestration loop, engine proof (BUILDER AGENT v1, on a STUB template): deterministic assembly engine (`scripts/builder/*.mjs`) + runner (`scripts/build-client.mjs`, `npm run builder`). Takes a hand-authored build config (`content/build-configs/<slug>.json`), assembles a static site from `templates/starter/` into `builds/<slug>/` (config-level: toggle modules, apply theme, inject supplied facts; fact-slot rule enforced, never fabricates), serves it locally, runs the template-aware QA harness (`verify.mjs --manifest`), and on green writes a change summary to the client ledger + advances pipeline to `internal-review` and STOPS at Ridhi's gate; on validation/QA/exception failure it escalates (alert email) and stays at `building`. Hybrid: optional key-gated LLM copy layer (`ANTHROPIC_API_KEY`) that only rephrases supplied copy. Verified end-to-end (green, gated-stage refusal, both escalation paths, idempotency, regression-safe QA edit, tsc clean). (done)
+  - **Swappable stub:** `templates/starter/` + `template.json` is a placeholder proving the assembly mechanics (config validation, module toggling, theme, fact-slot copy, ledger/pipeline/escalation wiring). Those mechanics carry forward.
   - To run the demo: create a client at pipeline `building`, then `npm run builder -- <slug> --report-to http://localhost:3005` (example configs: `content/build-configs/acme-demo.json` valid, `broken-demo.json` invalid).
+- [ ] **[Claude]** BUILDER AGENT v2, git-native (supersedes the regenerate-from-scratch model above per the 2026-07-09 architecture decision): clone/pull the real template repo and each client's own repo, work incrementally (see current state including manual edits → make the requested change → commit → push), never wipe-and-regenerate. Blocked on the template repo + a GitHub credential (Phase 1 + Phase 4).
 - [x] **[Claude]** Draft-reply gate (the copy-review human gate): agents propose replies via `/api/clients/feedback` action `draft` (x-agent-key allowed); they live in a separate `draftReplies` array that never reaches the portal or widget; Ridhi approves/edits/rejects in the Workspace MessageThread; approving sends the reply + emails the client. Agents can propose but only Ridhi (CMS session) can approve. Pending drafts surface in the daily worklist. (done)
 - [ ] **[Claude]** Comms agent that actually drafts the replies + change-lists from client comments (the headless side that fills the gate above; needs the build loop)
 - [ ] **[Claude]** Change-implementation loop: apply, verify, ship or escalate
