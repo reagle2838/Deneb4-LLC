@@ -1,0 +1,44 @@
+- id: 842eee4c-c960-4b66-90fa-2af2a8f78a0e
+  date: "2026-07-09T23:17:51.160Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 4 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: 0d14ddc1-9a98-49dd-9d40-dbb3a58115bc
+  date: "2026-07-09T23:17:51.486Z"
+  agent: builder
+  kind: event
+  message: "Assembled acme-demo from the d4 templates (commit 0482094). Modules: d4-site-template, d4-cms-core, d4-careers-portal, d4-gallery-editor. Routes: /, /about, /careers, /contact, /gallery (+/admin). QA skipped (need content/session): /admin/dashboard, /admin/setup-2fa. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: "0482094"
+    templates: d4-site-builder@3017b42, d4-site-template@7106067, d4-cms-core@231cbb6, d4-careers-portal@4d46582, d4-insights-blog@a3c48ed, d4-catalog@f2ffde5, d4-gallery-editor@fdd0e7a
+    routes: /,/about,/careers,/contact,/gallery
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: 13e88217-36e4-4976-8061-0e17dd2f43b8
+  date: "2026-07-09T23:17:52.270Z"
+  agent: builder
+  kind: handoff
+  message: "Pipeline stage: Building → Internal review. Assembled from the d4 templates + QA green; ready for design + copy review."
+  data:
+    from: building
+    to: internal-review
+- id: cc6d896f-14e8-4bb1-a42e-d6c96e7c42a6
+  date: "2026-07-09T23:18:43.629Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Internal review → Building. reset for retest"
+  data:
+    from: internal-review
+    to: building
+- id: 0b53c70a-6e8b-4840-a739-41f44d4d840e
+  date: "2026-07-09T23:18:56.251Z"
+  agent: builder
+  kind: alert
+  message: "Builder failed before QA: builds/acme-demo already exists. Existing builds are never wiped (git-native); incremental changes come through the change loop. Remove the directory only if you mean to start over."
+  data:
+    phase: assemble

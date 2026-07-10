@@ -1,16 +1,11 @@
 {
-  "schemaVersion": 1,
-  "client": "acme-demo",
+  "$comment": "d4-site-builder format. The Builder runner injects `output` itself (always builds/<slug>).",
   "siteName": "Acme Fabrication",
-  "template": { "id": "starter" },
-  "modules": { "hero": true, "services": true, "contact": true },
-  "theme": { "preset": "slate-teal", "accent": "#006b8f", "layout": "standard" },
-  "copy": {
-    "headline": "Precision metal fabrication for demanding industries",
-    "subhead": "Family-run since 1987, serving aerospace and heavy equipment manufacturers across the Midwest.",
-    "services_intro": "Custom sheet metal, welding, and CNC machining built to your spec sheet.",
-    "service_items": "Laser cutting, press brake forming, MIG and TIG welding, powder coating.",
-    "contact_email": "quotes@acmefab.example",
-    "contact_blurb": "Send us your drawings and we will return a quote within two business days."
-  }
+  "tagline": "Precision metal fabrication for the Midwest.",
+  "description": "Acme Fabrication delivers custom metal work for industrial clients across the region, from one-off prototypes to production runs.",
+  "contactEmail": "quotes@acmefab.example",
+  "phone": "(555) 555-0100",
+  "address": "100 Industrial Way, Springfield",
+  "themePreset": "slate-teal",
+  "modules": ["d4-cms-core", "d4-careers-portal", "d4-gallery-editor"]
 }

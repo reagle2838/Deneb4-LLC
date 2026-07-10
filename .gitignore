@@ -44,5 +44,8 @@ next-env.d.ts
 /content/admin/agent-runs.yaml
 /content/admin/agent-state.yaml
 
-# Builder: per-client assembled build artifacts (regenerated from configs)
+# Builder: per-client assembled build artifacts (each is its own git repo)
 /builds/
+
+# Local mirror of the d4 template ecosystem (cloned/pulled by the Builder)
+/vendor/d4/

@@ -1,0 +1,23 @@
+name: Acme Fabrication
+email: test@example.com
+projectName: Acme Website
+active: true
+passwordHash: ""
+stage: Design
+driveFolder: ""
+updates: []
+files: []
+revisions: []
+invoices: []
+staging:
+  url: ""
+  username: ""
+  password: ""
+  status: building
+  notes: ""
+feedbackOpen: false
+feedback: []
+widgetKey: acmedemokey12345678
+lastSeenByClient: ""
+pipeline: building
+draftReplies: []

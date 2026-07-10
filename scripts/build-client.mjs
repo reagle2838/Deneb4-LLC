@@ -1,38 +1,45 @@
 #!/usr/bin/env node
 /**
- * The Builder agent runner (ROADMAP: "Build orchestration loop: config,
- * assemble, verify, pass or escalate").
+ * The Builder agent, v2: git-native, driving Ridhi's real d4-site-builder
+ * ecosystem (github.com/deneb4admin).
  *
- * Flow: read the client's pipeline stage (read-before-acting) -> assemble
- * deterministically -> serve the build locally -> run the QA harness against
- * it -> on green, write a change summary to the client's ledger and advance
- * the pipeline to `internal-review` (Ridhi's gate) and STOP -> on any
- * failure, escalate (alert -> Ridhi's inbox) and stop.
+ * Flow: read the client's pipeline stage (read-before-acting; refuse past a
+ * gate) -> mirror the d4 repos (recording exact SHAs) -> assemble via
+ * d4-site-builder -> generate ADMIN_PASSWORD env -> git init + initial
+ * commit (each client site is its own repo) -> token-gated GitHub push ->
+ * npm install -> next build -> next start -> QA harness against the real
+ * app -> green: change summary to the client's ledger + advance pipeline to
+ * internal-review (Ridhi's gate) and STOP -> any failure: escalate (alert
+ * email) and stay at `building`.
  *
- * All agent interactions go over HTTP with x-agent-key (same as verify.mjs),
- * because the escalation email and the auto-logged handoff entry only fire
- * through the API routes, not the bare lib functions.
+ * All agent interactions go over HTTP with x-agent-key, because the
+ * escalation email and auto-logged handoff only fire through the API routes.
  *
  * Usage:
- *   node scripts/build-client.mjs <slug> --report-to http://localhost:3005 [--port 4180]
- *   node scripts/build-client.mjs <slug> --assemble-only        # no server/QA/HTTP
+ *   node scripts/build-client.mjs <slug> --report-to http://localhost:3005 [--port 4181]
+ *   node scripts/build-client.mjs <slug> --assemble-only     # mirror+assemble+git only
  *
- * Exit 0 = assembled + QA green + advanced to gate; non-zero = refused/failed.
+ * Exit 0 = built + QA green + advanced to gate; non-zero = refused/failed.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { runBuild } from './builder/index.mjs';
-import { startStaticServer } from './builder/serve.mjs';
-import { BuildValidationError } from './builder/config.mjs';
+import {
+  REPO_ROOT,
+  ensureMirror,
+  loadBuildConfig,
+  assemble,
+  deriveQaManifest,
+  writeEnvLocal,
+  gitInitCommit,
+  maybePushToGitHub,
+} from './builder/d4.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(HERE, '..');
 
-// Load .env.local into process.env (AGENT_API_KEY for HTTP, ANTHROPIC_API_KEY
-// for the optional copy layer) so the runner works without manual exports.
+// Load .env.local (AGENT_API_KEY, optional GITHUB_TOKEN/GITHUB_OWNER).
 function loadEnvLocal() {
   const file = path.join(REPO_ROOT, '.env.local');
   if (!fs.existsSync(file)) return;
@@ -47,12 +54,12 @@ const args = process.argv.slice(2);
 const slug = args.find((a) => !a.startsWith('--'));
 const optOf = (n) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : undefined; };
 const reportTo = (optOf('report-to') || '').replace(/\/$/, '');
-const port = Number(optOf('port')) || 4180;
+const port = Number(optOf('port')) || 4181;
 const assembleOnly = args.includes('--assemble-only');
 const agentKey = process.env.AGENT_API_KEY || '';
 
 if (!slug) {
-  console.error('Usage: node scripts/build-client.mjs <slug> --report-to <origin> [--port 4180] [--assemble-only]');
+  console.error('Usage: node scripts/build-client.mjs <slug> --report-to <origin> [--port 4181] [--assemble-only]');
   process.exit(2);
 }
 
@@ -75,7 +82,7 @@ async function readStage() {
   });
   if (res.status === 404) return { notFound: true };
   if (!res.ok) throw new Error(`pipeline GET ${res.status}`);
-  return res.json(); // { ok, client, stage, label, gated, stages }
+  return res.json();
 }
 
 async function advanceToGate() {
@@ -86,131 +93,182 @@ async function advanceToGate() {
       client: slug,
       stage: 'internal-review',
       agent: 'builder',
-      note: 'Assembled + QA green; ready for design + copy review.',
+      note: 'Assembled from the d4 templates + QA green; ready for design + copy review.',
     }),
   });
   return res.json();
 }
 
-async function main() {
-  // Assemble-only shortcut: no HTTP, no server, no QA.
-  if (assembleOnly) {
-    const result = await runBuild(slug);
-    console.log(result.summary);
-    console.log('Output:', result.outDir);
-    return 0;
-  }
+/** Run a command to completion, streaming output. Resolves to exit code. */
+function run(cmd, cmdArgs, opts = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, cmdArgs, { stdio: 'inherit', ...opts });
+    child.on('close', (code) => resolve(code ?? 1));
+    child.on('error', (err) => {
+      console.error(`${cmd} failed to start:`, err.message);
+      resolve(1);
+    });
+  });
+}
 
-  if (!reportTo) {
-    console.error('Missing --report-to <origin> (needed for ledger/pipeline). Use --assemble-only to skip.');
-    return 2;
-  }
-  if (!agentKey) {
-    console.error('AGENT_API_KEY not found (checked env + .env.local).');
-    return 2;
-  }
-
-  // 1. Read before acting: confirm the client exists and is safe to build.
-  let stageInfo;
-  try {
-    stageInfo = await readStage();
-  } catch (err) {
-    console.error('Could not read pipeline:', err instanceof Error ? err.message : err);
-    return 2;
-  }
-  if (stageInfo.notFound) {
-    console.error(`Client "${slug}" not found. Create it (and set stage to "building") first.`);
-    return 2;
-  }
-  if (stageInfo.gated) {
-    console.error(`Refusing: "${slug}" is at a gated stage (${stageInfo.label}). The Builder never acts past a gate.`);
-    return 1;
-  }
-  if (stageInfo.stage !== 'building') {
-    console.error(`Refusing: "${slug}" is at "${stageInfo.stage}", not "building". Move it to building first.`);
-    return 1;
-  }
-
-  // 2. Assemble (validation failure or exception -> escalate).
-  let result;
-  try {
-    result = await runBuild(slug);
-    // Test affordance: corrupt the assembled build so QA fails, to exercise
-    // the QA-red escalation path end to end. Never used in real runs.
-    if (args.includes('--inject-fault')) {
-      const victim = result.routes.public.find((r) => r !== '/');
-      if (victim) fs.rmSync(path.join(result.outDir, `${victim.replace(/^\//, '')}.html`));
+/** Poll until the started site answers, or time out. */
+async function waitForServer(url, timeoutMs = 60000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(url, { redirect: 'manual' });
+      if (res.status > 0) return true;
+    } catch {
+      /* not up yet */
     }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return false;
+}
+
+async function main() {
+  // 1. Guard (skipped in assemble-only mode, which does no HTTP).
+  if (!assembleOnly) {
+    if (!reportTo) {
+      console.error('Missing --report-to <origin>. Use --assemble-only to skip agent wiring.');
+      return 2;
+    }
+    if (!agentKey) {
+      console.error('AGENT_API_KEY not found (checked env + .env.local).');
+      return 2;
+    }
+    let stageInfo;
+    try {
+      stageInfo = await readStage();
+    } catch (err) {
+      console.error('Could not read pipeline:', err instanceof Error ? err.message : err);
+      return 2;
+    }
+    if (stageInfo.notFound) {
+      console.error(`Client "${slug}" not found. Create it (and set pipeline to "building") first.`);
+      return 2;
+    }
+    if (stageInfo.gated) {
+      console.error(`Refusing: "${slug}" is at a gated stage (${stageInfo.label}). The Builder never acts past a gate.`);
+      return 1;
+    }
+    if (stageInfo.stage !== 'building') {
+      console.error(`Refusing: "${slug}" is at "${stageInfo.stage}", not "building". Move it to building first.`);
+      return 1;
+    }
+  }
+
+  // 2. Mirror + assemble + env + git (failures here escalate).
+  let outDir;
+  let shas;
+  let qa;
+  let commitSha;
+  let pushResult;
+  try {
+    console.log('Mirroring d4 template repos...');
+    shas = ensureMirror();
+    const cfg = loadBuildConfig(slug);
+    console.log(`Assembling "${cfg.siteName}" (modules: ${cfg.modules.join(', ')})...`);
+    outDir = await assemble(slug, cfg);
+    writeEnvLocal(outDir);
+    qa = deriveQaManifest(outDir);
+    commitSha = gitInitCommit(outDir, `Initial assembly: ${cfg.siteName} (${cfg.modules.join(', ')})`);
+    console.log(`Client repo initialized at builds/${slug} (commit ${commitSha}).`);
+    pushResult = await maybePushToGitHub(slug, outDir);
+    console.log(pushResult.detail);
   } catch (err) {
-    const msg = err instanceof BuildValidationError
-      ? `Build config invalid, cannot assemble:\n- ${err.errors.join('\n- ')}`
-      : `Builder crashed while assembling: ${err instanceof Error ? err.message : String(err)}`;
+    const msg = `Builder failed before QA: ${err instanceof Error ? err.message : String(err)}`;
     console.error(msg);
     await ledger('alert', msg, { phase: 'assemble' });
     return 1;
   }
-  console.log(result.summary);
 
-  // 3. Serve + 4. QA harness against the assembled build.
+  if (assembleOnly) {
+    console.log('Assemble-only: skipping install/build/QA/agent wiring.');
+    console.log(`Output: ${outDir}`);
+    return 0;
+  }
+
+  // 3. Install + build + serve + QA (the real Next app).
   let server;
   try {
-    server = await startStaticServer(result.outDir, port);
-    // Async spawn (NOT spawnSync): the static server runs in THIS process, so
-    // the event loop must stay free to answer QA's requests.
-    const qaCode = await new Promise((resolve) => {
-      const child = spawn(
-        'node',
-        [
-          path.join(HERE, 'verify.mjs'),
-          server.url,
-          '--manifest', path.join(result.outDir, 'routes.json'),
-          '--client', slug,
-          '--key', agentKey,
-          '--report-to', reportTo,
-        ],
-        { stdio: 'inherit' }
-      );
-      child.on('close', (code) => resolve(code ?? 1));
-      child.on('error', () => resolve(1));
-    });
+    const buildEnv = { ...process.env, NODE_OPTIONS: '--use-system-ca' };
+
+    console.log('\nnpm install (this takes a few minutes on first run)...');
+    const installCode = await run('npm', ['install', '--no-audit', '--no-fund'], { cwd: outDir, env: buildEnv, shell: true });
+    if (installCode !== 0) throw new Error(`npm install failed (exit ${installCode}).`);
+
+    console.log('\nnext build...');
+    const nextBin = path.join(outDir, 'node_modules', 'next', 'dist', 'bin', 'next');
+    const buildCode = await run('node', [nextBin, 'build'], { cwd: outDir, env: buildEnv });
+    if (buildCode !== 0) throw new Error(`next build failed (exit ${buildCode}).`);
+
+    console.log(`\nStarting the site on :${port} for QA...`);
+    server = spawn('node', [nextBin, 'start', '-p', String(port)], { cwd: outDir, env: buildEnv, stdio: 'ignore' });
+    const up = await waitForServer(`http://127.0.0.1:${port}/`);
+    if (!up) throw new Error('Assembled site did not start within 60s.');
+
+    const qaCode = await run('node', [
+      path.join(HERE, 'verify.mjs'),
+      `http://127.0.0.1:${port}`,
+      '--manifest', qa.file,
+      '--client', slug,
+      '--key', agentKey,
+      '--report-to', reportTo,
+    ]);
 
     if (qaCode === 0) {
-      // GREEN: change summary to the ledger, advance to Ridhi's gate, STOP.
-      await ledger('event', result.summary, {
-        modules: result.enabledModules.join(','),
-        preset: result.preset,
-        accent: result.accent || '',
-        buildPath: path.relative(REPO_ROOT, result.outDir),
-        routes: result.routes.public.join(','),
+      // npm install produced the lockfile after the initial commit; it
+      // belongs in the client repo for reproducible installs.
+      try {
+        const { execFileSync } = await import('node:child_process');
+        execFileSync('git', ['add', 'package-lock.json'], { cwd: outDir });
+        execFileSync(
+          'git',
+          ['-c', 'user.name=Deneb4 Builder', '-c', 'user.email=agents@deneb4.com', 'commit', '--quiet', '-m', 'Add npm lockfile from first install'],
+          { cwd: outDir }
+        );
+      } catch {
+        /* nothing to commit is fine */
+      }
+      const moduleList = Object.entries(shas).map(([n, s]) => `${n}@${s.slice(0, 7)}`).join(', ');
+      const summary =
+        `Assembled ${slug} from the d4 templates (commit ${commitSha}). ` +
+        `Modules: ${qa.record.siteName ? '' : ''}${Object.keys(qa.record.modules).join(', ')}. ` +
+        `Routes: ${qa.manifest.public.join(', ')} (+/admin). ` +
+        (qa.skipped.length ? `QA skipped (need content/session): ${qa.skipped.join(', ')}. ` : '') +
+        pushResult.detail;
+      await ledger('event', summary, {
+        commit: commitSha,
+        templates: moduleList,
+        routes: qa.manifest.public.join(','),
+        pushed: String(pushResult.pushed),
+        ...(pushResult.url ? { repoUrl: pushResult.url } : {}),
+        buildPath: path.relative(REPO_ROOT, outDir),
       });
       const moved = await advanceToGate();
       console.log(`\nHanded off to internal-review (Ridhi's gate). Pipeline: ${moved.stage || 'internal-review'}.`);
       return 0;
     }
 
-    // RED: QA already posted its own alert via --report-to (that's the
-    // escalation email). The Builder logs that it stopped; it does NOT advance.
-    await ledger('event', 'QA verification failed; build not advanced. See the QA alert above for specifics.', {
+    await ledger('event', 'QA verification failed; build not advanced. See the QA alert for specifics.', {
       qaExit: String(qaCode),
-      buildPath: path.relative(REPO_ROOT, result.outDir),
+      buildPath: path.relative(REPO_ROOT, outDir),
     });
     console.error('\nQA failed. Pipeline left at "building"; QA alert sent to Ridhi.');
     return 1;
   } catch (err) {
-    const msg = `Builder crashed during serve/QA: ${err instanceof Error ? err.message : String(err)}`;
+    const msg = `Builder crashed during install/build/QA: ${err instanceof Error ? err.message : String(err)}`;
     console.error(msg);
-    await ledger('alert', msg, { phase: 'qa' });
+    await ledger('alert', msg, { phase: 'build-qa' });
     return 1;
   } finally {
-    if (server) await server.close();
+    if (server) server.kill();
   }
 }
 
 main()
   .then((code) => {
-    // Set the exit code and let the loop drain naturally (avoids a Windows
-    // libuv assertion from process.exit force-closing keep-alive sockets).
-    // A short unref'd timer force-exits only if something keeps us alive.
     process.exitCode = code;
     setTimeout(() => process.exit(code), 4000).unref();
   })
