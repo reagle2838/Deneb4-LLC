@@ -41,9 +41,11 @@ export default function PhaseStack() {
             const phase = PHASES[phaseIdx];
             const isFront = depth === 0;
             const isFlying = phaseIdx === flying;
+            // Fan offset shrinks on narrow viewports so back cards never push
+            // the page into horizontal scroll on phones.
             const transform = isFlying
               ? 'translate(-72px, -88px) scale(1.05) rotate(-5deg)'
-              : `translate(${depth * 32}px, ${depth * 20}px) scale(${1 - depth * 0.02})`;
+              : `translate(min(${depth * 32}px, ${depth * 2}vw), ${depth * 20}px) scale(${1 - depth * 0.02})`;
             return (
               <div
                 key={phaseIdx}

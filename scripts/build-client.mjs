@@ -158,10 +158,13 @@ async function buildAndQa(outDir, qaManifestFile, { install }) {
     throw new Error('Assembled site did not start within 60s.');
   }
 
+  // Browser QA artifacts (screenshots, baselines, diffs) live OUTSIDE the
+  // client repo so they never pollute its git history.
   const qaCode = await run('node', [
     path.join(HERE, 'verify.mjs'),
     `http://127.0.0.1:${port}`,
     '--manifest', qaManifestFile,
+    '--qa-dir', path.join(BUILDS_DIR, '.qa', slug),
     '--client', slug,
     '--key', agentKey,
     '--report-to', reportTo,

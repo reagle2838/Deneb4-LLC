@@ -157,3 +157,44 @@
     commit: e2c4d6e
     revertedBy: cd39657
     buildPath: builds\acme-demo
+- id: 5491fa46-3833-42e5-a606-a6e76b94222d
+  date: "2026-07-11T04:01:27.875Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 8 checks passed. Visual changes vs last good build: /, /about, /contact, /gallery, /insights.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: a2d9a2b4-090c-4abd-bf9c-83729fe921e8
+  date: "2026-07-11T04:01:28.222Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: updated src/config/site.ts. QA green; committed as a9b2986. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: a9b2986
+    changedFiles: "1"
+    modulesAdded: ""
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: 38e3ef94-1d19-4a2a-a4e3-b833f8e1e5a9
+  date: "2026-07-11T10:45:03.249Z"
+  agent: qa
+  kind: alert
+  message: |-
+    Verification FAILED for http://127.0.0.1:4181.
+    3/8 checks failed: routes render, page structure, browser errors. Visual changes vs last good build: /, /about, /contact, /gallery, /insights.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "false"
+- id: f97b1409-9bda-45ab-b274-5645c6497b41
+  date: "2026-07-11T10:45:03.653Z"
+  agent: builder
+  kind: event
+  message: Change was applied (c92c74d) but QA failed, so it was reverted (f8817ed). The site is back at its last good state. See the QA alert for specifics.
+  data:
+    commit: c92c74d
+    revertedBy: f8817ed
+    buildPath: builds\acme-demo
