@@ -42,3 +42,118 @@
   message: "Builder failed before QA: builds/acme-demo already exists. Existing builds are never wiped (git-native); incremental changes come through the change loop. Remove the directory only if you mean to start over."
   data:
     phase: assemble
+- id: 6cf0ccb7-848f-4f6a-bf8d-065700a006ba
+  date: "2026-07-10T17:54:21.112Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Building → Client review. staging shared with client; change loop active"
+  data:
+    from: building
+    to: client-review
+- id: 2782ac8f-02ff-4c72-ba9a-2ee4e7a23ff4
+  date: "2026-07-10T17:57:18.778Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 4 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: 6f764e40-5595-49de-8ac2-90194965da03
+  date: "2026-07-10T17:57:19.134Z"
+  agent: builder
+  kind: event
+  message: "Synced repo to build config (first change-loop run): no differences found. QA green; committed as fe65952. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: fe65952
+    changedFiles: "0"
+    modulesAdded: ""
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: 04f9bd83-6358-48b6-943d-cb6bfb9b2c3c
+  date: "2026-07-10T18:05:45.778Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 4 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: 9d38a6a4-62b3-449c-a2a5-5af5c2aabbf5
+  date: "2026-07-10T18:05:46.112Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: updated src/config/site.ts. QA green; committed as 30e0310. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: 30e0310
+    changedFiles: "1"
+    modulesAdded: ""
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: ffc91993-3979-46dd-b419-6860257aa73a
+  date: "2026-07-10T18:07:37.802Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 4 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: e2b00562-0547-45bf-8e3a-b660f1c55970
+  date: "2026-07-10T18:07:38.078Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: added d4-insights-blog; updated src/config/nav.generated.ts, src/config/admin-panels.generated.tsx, d4.assembly.json. QA green; committed as 2b96dcd. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: 2b96dcd
+    changedFiles: "4"
+    modulesAdded: d4-insights-blog
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: a2fa5a32-f39f-4641-8b72-b7c65737b5c1
+  date: "2026-07-10T18:09:27.663Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 4 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: 88feae77-a0dd-4959-917f-e4bf7a5301ae
+  date: "2026-07-10T18:09:27.955Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: removed d4-careers-portal; updated src/config/nav.generated.ts, src/config/admin-panels.generated.tsx, d4.assembly.json. QA green; committed as 0935ebc. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: 0935ebc
+    changedFiles: "11"
+    modulesAdded: ""
+    modulesRemoved: d4-careers-portal
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: 89f82480-276a-4abb-95b4-087e250d8521
+  date: "2026-07-10T18:23:49.316Z"
+  agent: qa
+  kind: alert
+  message: |-
+    Verification FAILED for http://127.0.0.1:4181.
+    2/4 checks failed: routes render, page structure.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "false"
+- id: 681362d0-2841-4be6-93a2-e5a7a206390e
+  date: "2026-07-10T18:23:50.024Z"
+  agent: builder
+  kind: event
+  message: Change was applied (e2c4d6e) but QA failed, so it was reverted (cd39657). The site is back at its last good state. See the QA alert for specifics.
+  data:
+    commit: e2c4d6e
+    revertedBy: cd39657
+    buildPath: builds\acme-demo

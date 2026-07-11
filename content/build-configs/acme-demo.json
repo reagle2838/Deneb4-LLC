@@ -1,11 +1,15 @@
 {
   "$comment": "d4-site-builder format. The Builder runner injects `output` itself (always builds/<slug>).",
   "siteName": "Acme Fabrication",
-  "tagline": "Precision metal fabrication for the Midwest.",
+  "tagline": "Precision fabrication, on spec and on time.",
   "description": "Acme Fabrication delivers custom metal work for industrial clients across the region, from one-off prototypes to production runs.",
   "contactEmail": "quotes@acmefab.example",
   "phone": "(555) 555-0100",
   "address": "100 Industrial Way, Springfield",
   "themePreset": "slate-teal",
-  "modules": ["d4-cms-core", "d4-careers-portal", "d4-gallery-editor"]
+  "modules": [
+    "d4-cms-core",
+    "d4-gallery-editor",
+    "d4-insights-blog"
+  ]
 }

@@ -85,4 +85,19 @@
 
 ---
 
-Approved by Ridhi on 2026-07-08. These contracts are the spec each agent is built against (ROADMAP Phase 5).
+## Claude Cowork (the escalation path, not an agent)
+
+Confirmed by Ridhi 2026-07-09: **structural requests and manual overrides route to a supervised Claude Code session against the client's repo, not to an agent.** Anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog are Cowork work. Cowork is interactive and supervised; agents run unattended within these contracts. Manual edits made this way are ordinary commits in the client's repo, and the Builder's change loop is built to respect them.
+
+## Amendment (2026-07-10): how the Builder actually operates
+
+Implementation facts, consistent with the approved contract above:
+
+- Each client's site is its **own git repository** (`builds/<slug>` locally; pushed to GitHub as `d4-client-<slug>` once the GitHub credential is configured). First build = assemble via `d4-site-builder` + initial commit. The Builder never wipes an existing repo.
+- The **build config** (`content/build-configs/<slug>.json`) is the single source of truth for structure, identity, and theme. A "change" = edit the config, re-run the Builder: it applies only the delta (generated artifacts + module payload adds/removes), commits it with a descriptive message, and QAs. Manual edits elsewhere in the repo survive untouched.
+- **QA-rejected changes are automatically reverted** (git revert), returning the site to its last good state, then escalated. Changes never advance the pipeline; only first builds hand off to `internal-review`.
+- The Builder runs at `building` (first build + changes) and `client-review` (changes), and refuses to act at any gated stage.
+
+---
+
+Core contracts approved by Ridhi on 2026-07-08 (the spec each agent is built against, ROADMAP Phase 5). Cowork role confirmed 2026-07-09; Builder amendment recorded 2026-07-10.

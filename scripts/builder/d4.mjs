@@ -155,6 +155,212 @@ export function writeEnvLocal(outDir) {
   return { envFile: path.join(outDir, '.env.local') };
 }
 
+/* ── The incremental change loop ─────────────────────────────────────────
+ * A "change" = editing content/build-configs/<slug>.json (the single source
+ * of truth for structure + identity + theme), then re-running the Builder.
+ * The Builder assembles the NEW config into a temp dir using Ridhi's real
+ * assembler (so all generation stays hers, nothing re-implemented), then
+ * syncs only the config-owned artifacts and module payload deltas into the
+ * client's existing repo. Everything else (manual edits, data/, uploads/)
+ * is untouched. d4.applied-config.json in the client repo records what has
+ * been applied, so an unchanged config is a clean no-op.
+ */
+
+/** Config-owned artifacts the assembler generates; synced on change. */
+const SYNCED_ARTIFACTS = [
+  'src/config/site.ts',
+  'src/config/nav.generated.ts',
+  'src/config/admin-panels.generated.tsx',
+  'src/app/theme.css',
+  '.env.example',
+];
+const APPLIED_CONFIG_FILE = 'd4.applied-config.json';
+
+/** Strip fields that don't affect the build (comments, runner-owned output). */
+export function normalizeConfig(cfg) {
+  const { $comment, output, ...rest } = cfg;
+  return rest;
+}
+
+export function readAppliedConfig(outDir) {
+  const file = path.join(outDir, APPLIED_CONFIG_FILE);
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+export function writeAppliedConfig(outDir, cfg) {
+  fs.writeFileSync(
+    path.join(outDir, APPLIED_CONFIG_FILE),
+    JSON.stringify(normalizeConfig(cfg), null, 2) + '\n'
+  );
+}
+
+/** All payload file paths (relative to site root) a module contributes. */
+function listPayloadFiles(moduleName) {
+  const filesDir = path.join(VENDOR_DIR, moduleName, 'files');
+  /** @type {string[]} */
+  const out = [];
+  const walk = (dir, rel) => {
+    for (const name of fs.readdirSync(dir)) {
+      const full = path.join(dir, name);
+      const r = rel ? `${rel}/${name}` : name;
+      if (fs.statSync(full).isDirectory()) walk(full, r);
+      else out.push(r);
+    }
+  };
+  if (fs.existsSync(filesDir)) walk(filesDir, '');
+  return out;
+}
+
+function readModuleManifest(moduleName) {
+  return JSON.parse(fs.readFileSync(path.join(VENDOR_DIR, moduleName, 'manifest.json'), 'utf-8'));
+}
+
+/** Compare two d4.assembly.json contents ignoring the assembledAt timestamp. */
+function assemblyEqual(aRaw, bRaw) {
+  try {
+    const a = { ...JSON.parse(aRaw), assembledAt: '' };
+    const b = { ...JSON.parse(bRaw), assembledAt: '' };
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Apply a config change to an existing client repo.
+ * @returns {Promise<{ noop: boolean, summary: string, changed: string[], added: string[], removed: string[], pkgChanged: boolean }>}
+ */
+export async function applyChange(slug, cfg) {
+  const outDir = path.join(BUILDS_DIR, slug);
+  const applied = readAppliedConfig(outDir);
+  const migration = applied === null;
+
+  if (!migration && JSON.stringify(normalizeConfig(cfg)) === JSON.stringify(applied)) {
+    return { noop: true, summary: 'Config unchanged; nothing to change.', changed: [], added: [], removed: [], pkgChanged: false };
+  }
+
+  // Assemble the NEW config into a temp dir with Ridhi's assembler.
+  const tmpOut = path.join(BUILDS_DIR, `.tmp-change-${slug}`);
+  fs.rmSync(tmpOut, { recursive: true, force: true });
+  const tmpCfgFile = path.join(BUILDS_DIR, `.tmp-${slug}-change-config.json`);
+  fs.writeFileSync(tmpCfgFile, JSON.stringify({ ...normalizeConfig(cfg), output: tmpOut }, null, 2));
+  const assembler = path.join(VENDOR_DIR, 'd4-site-builder', 'bin', 'assemble.mjs');
+  try {
+    const code = await new Promise((resolve) => {
+      const child = spawn('node', [assembler, '--config', tmpCfgFile, '--modules-dir', VENDOR_DIR], {
+        cwd: REPO_ROOT,
+        stdio: 'inherit',
+      });
+      child.on('close', (c) => resolve(c ?? 1));
+      child.on('error', () => resolve(1));
+    });
+    if (code !== 0) throw new Error(`d4-site-builder assemble failed (exit ${code}).`);
+
+    // Module delta from the EXPANDED lists (assembler resolves requires).
+    const newAssembly = JSON.parse(fs.readFileSync(path.join(tmpOut, 'd4.assembly.json'), 'utf-8'));
+    const oldAssembly = JSON.parse(fs.readFileSync(path.join(outDir, 'd4.assembly.json'), 'utf-8'));
+    const newMods = Object.keys(newAssembly.modules);
+    const oldMods = Object.keys(oldAssembly.modules);
+    const addedMods = newMods.filter((m) => !oldMods.includes(m));
+    const removedMods = oldMods.filter((m) => !newMods.includes(m));
+
+    const changed = [];
+
+    // Removed modules: delete their payload files (manual edits to a removed
+    // module's files go with it, that is what removal means).
+    for (const mod of removedMods) {
+      for (const rel of listPayloadFiles(mod)) {
+        const target = path.join(outDir, rel);
+        if (fs.existsSync(target)) {
+          fs.rmSync(target);
+          changed.push(`${rel} (removed with ${mod})`);
+          // Prune now-empty parent directories, best effort.
+          let dir = path.dirname(target);
+          while (dir.startsWith(outDir) && dir !== outDir) {
+            try {
+              if (fs.readdirSync(dir).length) break;
+              fs.rmdirSync(dir);
+              dir = path.dirname(dir);
+            } catch {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Added modules: copy their payloads in, same as the assembler does.
+    for (const mod of addedMods) {
+      const filesDir = path.join(VENDOR_DIR, mod, 'files');
+      fs.cpSync(filesDir, outDir, { recursive: true });
+      changed.push(`payload of ${mod} (added)`);
+    }
+
+    // Sync config-owned artifacts, content-compared so untouched ones stay put.
+    for (const rel of SYNCED_ARTIFACTS) {
+      const from = path.join(tmpOut, rel);
+      const to = path.join(outDir, rel);
+      if (!fs.existsSync(from)) continue;
+      const fresh = fs.readFileSync(from);
+      if (!fs.existsSync(to) || !fresh.equals(fs.readFileSync(to))) {
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.writeFileSync(to, fresh);
+        changed.push(rel);
+      }
+    }
+
+    // d4.assembly.json: compare ignoring the timestamp.
+    const newAssemblyRaw = fs.readFileSync(path.join(tmpOut, 'd4.assembly.json'), 'utf-8');
+    const oldAssemblyRaw = fs.readFileSync(path.join(outDir, 'd4.assembly.json'), 'utf-8');
+    if (!assemblyEqual(newAssemblyRaw, oldAssemblyRaw)) {
+      fs.writeFileSync(path.join(outDir, 'd4.assembly.json'), newAssemblyRaw);
+      changed.push('d4.assembly.json');
+    }
+
+    // package.json: keep the repo's file (preserves manual additions), take
+    // the fresh name, drop removed modules' deps, merge in the fresh deps.
+    let pkgChanged = false;
+    const pkgPath = path.join(outDir, 'package.json');
+    const repoPkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    const tmpPkg = JSON.parse(fs.readFileSync(path.join(tmpOut, 'package.json'), 'utf-8'));
+    const before = JSON.stringify(repoPkg);
+    repoPkg.name = tmpPkg.name;
+    for (const mod of removedMods) {
+      const m = readModuleManifest(mod);
+      for (const dep of Object.keys(m.npmDependencies ?? {})) delete repoPkg.dependencies?.[dep];
+      for (const dep of Object.keys(m.npmDevDependencies ?? {})) delete repoPkg.devDependencies?.[dep];
+    }
+    repoPkg.dependencies = { ...(repoPkg.dependencies ?? {}), ...(tmpPkg.dependencies ?? {}) };
+    repoPkg.devDependencies = { ...(repoPkg.devDependencies ?? {}), ...(tmpPkg.devDependencies ?? {}) };
+    if (JSON.stringify(repoPkg) !== before) {
+      fs.writeFileSync(pkgPath, JSON.stringify(repoPkg, null, 2) + '\n');
+      changed.push('package.json');
+      pkgChanged = true;
+    }
+
+    writeAppliedConfig(outDir, cfg);
+
+    const parts = [];
+    if (addedMods.length) parts.push(`added ${addedMods.join(', ')}`);
+    if (removedMods.length) parts.push(`removed ${removedMods.join(', ')}`);
+    const artifactOnly = changed.filter((c) => !c.includes('(added)') && !c.includes('(removed'));
+    if (artifactOnly.length) parts.push(`updated ${artifactOnly.join(', ')}`);
+    const summary = migration
+      ? `Synced repo to build config (first change-loop run): ${parts.join('; ') || 'no differences found'}.`
+      : `Applied config change: ${parts.join('; ') || 'no file differences'}.`;
+
+    return { noop: changed.length === 0 && !migration, summary, changed, added: addedMods, removed: removedMods, pkgChanged };
+  } finally {
+    fs.rmSync(tmpOut, { recursive: true, force: true });
+    fs.rmSync(tmpCfgFile, { force: true });
+  }
+}
+
 /** Initialize the client repo and make the first commit. Returns short sha. */
 export function gitInitCommit(outDir, message) {
   git(['init', '-b', 'main', '--quiet'], outDir);
@@ -168,6 +374,44 @@ export function gitInitCommit(outDir, message) {
     outDir
   );
   return git(['rev-parse', '--short', 'HEAD'], outDir);
+}
+
+/** True if the client repo has uncommitted changes. */
+export function gitIsDirty(outDir) {
+  return git(['status', '--porcelain'], outDir).length > 0;
+}
+
+/** Commit everything currently changed in the client repo. Returns short sha. */
+export function gitCommitAll(outDir, message) {
+  git(['add', '-A'], outDir);
+  git(
+    ['-c', 'user.name=Deneb4 Builder', '-c', 'user.email=agents@deneb4.com', 'commit', '--quiet', '-m', message],
+    outDir
+  );
+  return git(['rev-parse', '--short', 'HEAD'], outDir);
+}
+
+/** Revert the latest commit (used when QA rejects an applied change). */
+export function gitRevertHead(outDir) {
+  git(
+    ['-c', 'user.name=Deneb4 Builder', '-c', 'user.email=agents@deneb4.com', 'revert', '--no-edit', 'HEAD'],
+    outDir
+  );
+  return git(['rev-parse', '--short', 'HEAD'], outDir);
+}
+
+/** Pull latest from origin if a remote exists (picks up remote-side edits). */
+export function gitPullIfRemote(outDir) {
+  try {
+    const remotes = git(['remote'], outDir);
+    if (!remotes.split(/\r?\n/).includes('origin')) {
+      return { pulled: false, detail: 'No remote configured; using the local repo as-is.' };
+    }
+    git(['pull', '--ff-only', '--quiet'], outDir);
+    return { pulled: true, detail: 'Pulled latest from origin.' };
+  } catch (err) {
+    throw new Error(`Could not pull from origin (diverged or offline): ${err instanceof Error ? err.message : err}`);
+  }
 }
 
 /**
