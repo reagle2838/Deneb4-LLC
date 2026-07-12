@@ -8,6 +8,7 @@ import QuickActions from './QuickActions';
 import StagePanel from './StagePanel';
 import PipelinePanel from './PipelinePanel';
 import ChangeProposalsPanel from './ChangeProposalsPanel';
+import HandoffPanel from './HandoffPanel';
 import DangerZone from './DangerZone';
 import { useClientDraft } from './useClientDraft';
 import {
@@ -77,6 +78,7 @@ export default function ClientCommandCenter({
             onChanged={(stage) => onPipelineChange(client.slug, stage)}
           />
           <ChangeProposalsPanel slug={client.slug} />
+          <HandoffPanel slug={client.slug} pipeline={client.pipeline} />
           <StagePanel d={d} />
           <QuickActions slug={client.slug} d={d} />
 

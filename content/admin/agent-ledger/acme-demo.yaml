@@ -291,3 +291,75 @@
     modulesRemoved: ""
     pushed: "false"
     buildPath: builds\acme-demo
+- id: 2dd600f5-9e51-4260-8f17-59fb02936c2a
+  date: "2026-07-12T12:34:54.287Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Client review → Final approval"
+  data:
+    from: client-review
+    to: approval
+- id: 83e8a52d-3258-43b9-b452-77754911308c
+  date: "2026-07-12T12:35:00.331Z"
+  agent: comms
+  kind: event
+  message: "Sign-off requested: \"Final approval\" is waiting in the client's portal with an Approve button. No email went out (email not configured); the portal item is live."
+  data:
+    emailed: "false"
+- id: 6f80c74c-9467-4941-9fd4-a5c4f57e9a16
+  date: "2026-07-12T12:39:14.364Z"
+  agent: comms
+  kind: decision
+  message: "CLIENT SIGNED OFF: Acme Fabrication approved \"Final approval\" from their portal. The final-approval gate criterion is met — advance the pipeline to Payment when you're ready."
+  data:
+    signedAt: "2026-07-12T12:39:14.361Z"
+- id: 0ceff0ed-d0f8-42d9-8d0d-d4fd03ce34a8
+  date: "2026-07-12T13:49:32.851Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Final approval → Payment"
+  data:
+    from: approval
+    to: payment
+- id: 0adc7f66-db41-44b2-b2f3-433576761a88
+  date: "2026-07-12T13:49:37.394Z"
+  agent: billing
+  kind: alert
+  message: Acme Fabrication is at the Payment stage but has no invoice recorded. Add the final invoice in their portal editor (Wave automation comes later; until then the record here is what Billing watches).
+  data: {}
+- id: 1208f44f-710a-4df2-a90b-62bc23565f3c
+  date: "2026-07-12T13:49:38.829Z"
+  agent: billing
+  kind: alert
+  message: "Acme Fabrication: invoice \"Final build invoice\" ($3,800) was due 2026-07-01 and is still pending. Consider marking it overdue and following up."
+  data: {}
+- id: d8dabba6-6d3b-4546-933c-b3fe47d545cd
+  date: "2026-07-12T13:49:40.457Z"
+  agent: billing
+  kind: decision
+  message: "Acme Fabrication: every invoice is marked paid. The payment gate criterion is met — advance the pipeline to Handoff when you're ready."
+  data: {}
+- id: 95b6da61-1cb5-4750-8d92-6a326d3c08e5
+  date: "2026-07-12T13:52:05.771Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Payment → Handoff"
+  data:
+    from: payment
+    to: handoff
+- id: 85127f66-7103-45bc-9536-b605b2c3713e
+  date: "2026-07-12T13:52:06.048Z"
+  agent: concierge
+  kind: handoff
+  message: Handoff package generated and the site admin password was ROTATED (build-time credential retired). The doc (credentials + checklist) is at content/admin/handoffs/acme-demo.md — gitignored, never committed. Review it, deliver it to the client on a channel you trust, and work the checklist; leaving Handoff stays your gate.
+  data:
+    rotated: "true"
+    modules: d4-site-template,d4-cms-core,d4-careers-portal,d4-insights-blog,d4-gallery-editor
+- id: 4e147809-83c7-4ec6-908d-707fb4b59077
+  date: "2026-07-12T13:54:13.211Z"
+  agent: concierge
+  kind: handoff
+  message: Handoff package generated and the site admin password was ROTATED (build-time credential retired). The doc (credentials + checklist) is at content/admin/handoffs/acme-demo.md — gitignored, never committed. Review it, deliver it to the client on a channel you trust, and work the checklist; leaving Handoff stays your gate.
+  data:
+    rotated: "true"
+    modules: d4-site-template,d4-cms-core,d4-careers-portal,d4-insights-blog,d4-gallery-editor

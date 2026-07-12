@@ -43,6 +43,8 @@ next-env.d.ts
 # Agent heartbeat run log + dedup state (ephemeral, regenerated at runtime)
 /content/admin/agent-runs.yaml
 /content/admin/agent-state.yaml
+# Handoff packages contain live credentials; never commit them.
+/content/admin/handoffs/
 
 # Builder: per-client assembled build artifacts (each is its own git repo)
 /builds/

@@ -164,6 +164,35 @@ export async function notifyOwnerOfAgentAlert(
   }
 }
 
+/**
+ * Ask the client for final sign-off (fixed wording; sent when Ridhi moves
+ * the project to the approval stage). Returns whether an email went out.
+ */
+export async function notifyClientOfSignoffRequest(client: Client): Promise<boolean> {
+  if (!client.email) return false;
+  try {
+    const result = await sendEmail({
+      to: client.email,
+      replyTo: OWNER_EMAIL,
+      subject: `${client.projectName || 'Your site'} is ready for your final approval`,
+      html: template({
+        eyebrow: 'Final approval',
+        heading: `${client.projectName || 'Your site'} is ready for your review.`,
+        lines: [
+          `Hi ${escapeHtml(client.name)},`,
+          'The finished site is up on your staging link for a last look. When everything is the way you want it, open your portal and click Approve on the "Final approval" item.',
+          'If anything still needs a tweak, just tell us in Messages — nothing moves forward until you say so.',
+        ],
+        cta: { label: 'Review & approve', href: `${SITE_URL}/portal` },
+      }),
+    });
+    return result.delivered;
+  } catch (err) {
+    console.error('[deneb4] sign-off request email failed:', err);
+    return false;
+  }
+}
+
 /** A client approved a phase from their portal. */
 export async function notifyOwnerOfApproval(client: Client, phase: string): Promise<void> {
   try {

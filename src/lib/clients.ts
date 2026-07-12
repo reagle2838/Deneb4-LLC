@@ -285,6 +285,16 @@ function clientToData(c: Client): ClientData {
   return rest;
 }
 
+/** Append one update to a client's portal timeline. */
+export function appendUpdate(slug: string, update: ClientUpdate): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.updates = [...data.updates, update];
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
 /** Append one feedback message to a client's thread. */
 export function addFeedback(slug: string, entry: ClientFeedback): boolean {
   const c = parseFile(slug);

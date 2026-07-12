@@ -20,3 +20,17 @@
     drafts: "1"
     proposals: "1"
     gated: "0"
+- id: 5da0cd41-ce6e-4225-a698-4390d115dd59
+  date: "2026-07-12T12:35:00.377Z"
+  agent: concierge
+  kind: event
+  message: |-
+    Daily worklist.
+    Unread client messages: Acme Fabrication (4).
+    Draft replies awaiting your approval: Acme Fabrication (1).
+    Waiting on your gate: Acme Fabrication at Final approval.
+  data:
+    unread: "1"
+    drafts: "1"
+    proposals: "0"
+    gated: "1"

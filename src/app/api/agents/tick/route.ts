@@ -9,6 +9,8 @@ import { getState, setState, ownerToday } from '@/lib/agent-state';
 import { getPipelineStage } from '@/lib/pipeline';
 import { notifyOwnerOfAgentAlert } from '@/lib/notify';
 import { commsTriageDuty, countPendingProposals } from '@/lib/comms';
+import { signoffRequestDuty } from '@/lib/signoff';
+import { billingWatchDuty } from '@/lib/billing';
 import type { DutyResult } from '@/lib/agent-roster';
 
 export const dynamic = 'force-dynamic';
@@ -134,7 +136,7 @@ async function worklistDuty(): Promise<DutyResult> {
 function stubbedDuties(): DutyResult[] {
   return [
     { name: 'form-received', status: 'skipped', summary: 'Needs Google Drive API (Provisioning part 2).' },
-    { name: 'payment-received', status: 'skipped', summary: 'Needs Wave integration (Billing).' },
+    { name: 'payment-received', status: 'skipped', summary: 'Wave API detection pending credentials; billing-watch covers manually-tracked invoices meanwhile.' },
   ];
 }
 
@@ -161,6 +163,8 @@ export async function POST(req: NextRequest) {
     // in the same tick's worklist. Per-message dedup, so it's safe on any
     // cron frequency.
     await runDuty(commsTriageDuty, 'comms-triage'),
+    await runDuty(signoffRequestDuty, 'signoff-request'),
+    await runDuty(billingWatchDuty, 'billing-watch'),
     await runDuty(worklistDuty, 'worklist'),
     ...stubbedDuties(),
   ];

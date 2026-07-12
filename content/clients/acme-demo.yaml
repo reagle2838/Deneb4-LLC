@@ -2,13 +2,21 @@ name: Acme Fabrication
 email: test@example.com
 projectName: Acme Website
 active: true
-passwordHash: ""
+passwordHash: 90ea907a3f2ae22be65d28a93c795768:f497563f8cb685cbd872245782c5696e59679a44d915473515494444665e4e5eb6978717204d11d2d0a28edb01645a1cfc81541c776d4c5e397226ca8c285a56
 stage: Design
 driveFolder: ""
-updates: []
+updates:
+  - phase: Final approval
+    status: complete
+    notes: The finished site is ready for your final review. Take a look at the staging link, and when everything is the way you want it, approve here to move to launch. Anything that still needs a tweak — just tell us in Messages instead.
+    date: "2026-07-12"
 files: []
 revisions: []
-invoices: []
+invoices:
+  - description: Final build invoice
+    amount: $3,800
+    status: paid
+    dueDate: "2026-07-01"
 staging:
   url: ""
   username: ""
@@ -45,9 +53,16 @@ feedback:
     date: "2026-07-11T15:15:40.832Z"
     read: false
     resolved: false
+  - id: 31639e1b-2141-4d6b-abf9-9a421495442f
+    author: client
+    message: "Approved: Final approval"
+    page: ""
+    date: "2026-07-12T12:39:14.352Z"
+    read: false
+    resolved: false
 widgetKey: acmedemokey12345678
 lastSeenByClient: ""
-pipeline: client-review
+pipeline: handoff
 draftReplies:
   - id: 3a6515f9-ee06-4db9-b3a8-fc9753f3827e
     message: |-

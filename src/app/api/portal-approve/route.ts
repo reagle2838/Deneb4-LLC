@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { verifyPortalSession } from '@/lib/portal-auth';
 import { approveUpdate, addFeedback, type ClientFeedback } from '@/lib/clients';
 import { notifyOwnerOfApproval } from '@/lib/notify';
+import { recordClientSignoff } from '@/lib/signoff';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest) {
       resolved: false,
     };
     addFeedback(clientSlug, note);
+
+    // If this was the final-approval item, record the sign-off (the
+    // approval gate's exit criterion; Ridhi still advances the stage).
+    recordClientSignoff(client, body.phase);
 
     await notifyOwnerOfApproval(client, body.phase);
 
