@@ -6,3 +6,17 @@
   data:
     roadmap: ROADMAP.md
     api: /api/agents/ledger
+- id: 20a9c49b-c40d-4898-98a1-406c6e3ac643
+  date: "2026-07-11T15:16:28.525Z"
+  agent: concierge
+  kind: event
+  message: |-
+    Daily worklist.
+    Unread client messages: Acme Fabrication (4).
+    Draft replies awaiting your approval: Acme Fabrication (1).
+    Change proposals awaiting your approval: Acme Fabrication (1).
+  data:
+    unread: "1"
+    drafts: "1"
+    proposals: "1"
+    gated: "0"

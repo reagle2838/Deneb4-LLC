@@ -137,7 +137,16 @@ async function waitForServer(url, timeoutMs = 60000) {
 
 /** Shared: install (optionally), build, serve, QA. Returns { qaCode, server }. */
 async function buildAndQa(outDir, qaManifestFile, { install }) {
+  // When the Builder is spawned FROM the running Next dev server (the
+  // BUILDER_AUTORUN path on proposal approval), the child inherits Next's
+  // own env (NODE_ENV=development, __NEXT_PRIVATE_*, PORT), which breaks a
+  // nested `next build`. Strip those so the client build runs clean.
   const buildEnv = { ...process.env, NODE_OPTIONS: '--use-system-ca' };
+  for (const key of Object.keys(buildEnv)) {
+    if (/^(__NEXT|NEXT_|TURBOPACK)/i.test(key)) delete buildEnv[key];
+  }
+  delete buildEnv.NODE_ENV;
+  delete buildEnv.PORT;
 
   if (install) {
     console.log('\nnpm install...');

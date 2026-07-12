@@ -7,6 +7,7 @@ import MessageThread from './MessageThread';
 import QuickActions from './QuickActions';
 import StagePanel from './StagePanel';
 import PipelinePanel from './PipelinePanel';
+import ChangeProposalsPanel from './ChangeProposalsPanel';
 import DangerZone from './DangerZone';
 import { useClientDraft } from './useClientDraft';
 import {
@@ -75,6 +76,7 @@ export default function ClientCommandCenter({
             initialStage={client.pipeline}
             onChanged={(stage) => onPipelineChange(client.slug, stage)}
           />
+          <ChangeProposalsPanel slug={client.slug} />
           <StagePanel d={d} />
           <QuickActions slug={client.slug} d={d} />
 

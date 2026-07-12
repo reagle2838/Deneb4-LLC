@@ -8,6 +8,7 @@ import { recordRun, getRecentRuns } from '@/lib/agent-runs';
 import { getState, setState, ownerToday } from '@/lib/agent-state';
 import { getPipelineStage } from '@/lib/pipeline';
 import { notifyOwnerOfAgentAlert } from '@/lib/notify';
+import { commsTriageDuty, countPendingProposals } from '@/lib/comms';
 import type { DutyResult } from '@/lib/agent-roster';
 
 export const dynamic = 'force-dynamic';
@@ -103,8 +104,11 @@ async function worklistDuty(): Promise<DutyResult> {
   const drafts = clients
     .map((c) => ({ name: c.name, n: countPendingDrafts(c) }))
     .filter((x) => x.n > 0);
+  const proposals = clients
+    .map((c) => ({ name: c.name, n: countPendingProposals(c.slug) }))
+    .filter((x) => x.n > 0);
 
-  if (unread.length === 0 && gated.length === 0 && drafts.length === 0) {
+  if (unread.length === 0 && gated.length === 0 && drafts.length === 0 && proposals.length === 0) {
     setState('lastWorklistDate', today);
     return { name: 'worklist', status: 'ok', summary: 'Nothing needs Ridhi today.' };
   }
@@ -112,16 +116,17 @@ async function worklistDuty(): Promise<DutyResult> {
   const parts: string[] = [];
   if (unread.length) parts.push(`Unread client messages: ${unread.map((u) => `${u.name} (${u.n})`).join(', ')}.`);
   if (drafts.length) parts.push(`Draft replies awaiting your approval: ${drafts.map((d) => `${d.name} (${d.n})`).join(', ')}.`);
+  if (proposals.length) parts.push(`Change proposals awaiting your approval: ${proposals.map((p) => `${p.name} (${p.n})`).join(', ')}.`);
   if (gated.length) parts.push(`Waiting on your gate: ${gated.map((g) => `${g.name} at ${g.stage}`).join(', ')}.`);
 
   appendLedger(STUDIO_CHANNEL, {
     agent: 'concierge',
     kind: 'event',
     message: `Daily worklist.\n${parts.join('\n')}`,
-    data: { unread: String(unread.length), drafts: String(drafts.length), gated: String(gated.length) },
+    data: { unread: String(unread.length), drafts: String(drafts.length), proposals: String(proposals.length), gated: String(gated.length) },
   });
   setState('lastWorklistDate', today);
-  return { name: 'worklist', status: 'ok', summary: `${unread.length} unread, ${drafts.length} draft(s), ${gated.length} at a gate.` };
+  return { name: 'worklist', status: 'ok', summary: `${unread.length} unread, ${drafts.length} draft(s), ${proposals.length} proposal(s), ${gated.length} at a gate.` };
 }
 
 // Integrations that need external credentials Ridhi hasn't provided yet.
@@ -152,6 +157,10 @@ export async function POST(req: NextRequest) {
 
   const duties: DutyResult[] = [
     await runDuty(calendarDuty, 'calendar'),
+    // Comms triage runs first so freshly created drafts/proposals show up
+    // in the same tick's worklist. Per-message dedup, so it's safe on any
+    // cron frequency.
+    await runDuty(commsTriageDuty, 'comms-triage'),
     await runDuty(worklistDuty, 'worklist'),
     ...stubbedDuties(),
   ];

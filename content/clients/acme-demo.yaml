@@ -16,8 +16,46 @@ staging:
   status: building
   notes: ""
 feedbackOpen: false
-feedback: []
+feedback:
+  - id: test-comms-1
+    author: client
+    message: Can you change the tagline to "Built to spec. Delivered on time."? Looks sharp otherwise.
+    page: /
+    date: "2026-07-11T15:15:37.832Z"
+    read: false
+    resolved: false
+  - id: test-comms-2
+    author: client
+    message: We are hiring soon - please add a careers page so people can apply.
+    page: ""
+    date: "2026-07-11T15:15:38.832Z"
+    read: false
+    resolved: false
+  - id: test-comms-3
+    author: client
+    message: Could we also get an online store with checkout on the site?
+    page: ""
+    date: "2026-07-11T15:15:39.832Z"
+    read: false
+    resolved: false
+  - id: test-comms-4
+    author: client
+    message: When will the site go live?
+    page: ""
+    date: "2026-07-11T15:15:40.832Z"
+    read: false
+    resolved: false
 widgetKey: acmedemokey12345678
 lastSeenByClient: ""
 pipeline: client-review
-draftReplies: []
+draftReplies:
+  - id: 3a6515f9-ee06-4db9-b3a8-fc9753f3827e
+    message: |-
+      Thanks for the notes! We've queued the following changes: tagline → "Built to spec. Delivered on time"; add d4-careers-portal. You'll see it on the staging site shortly after it clears our checks, and we'll confirm here when it's up.
+
+      Part of what you asked for goes beyond a quick settings change, so we're looking at the best way to do it properly and will come back to you with options.
+
+      On your question — good one. We're checking and will get back to you here shortly.
+    page: /
+    createdBy: comms
+    date: "2026-07-11T15:16:28.440Z"

@@ -1,0 +1,39 @@
+- id: 7b55338f-7991-47f7-a85c-2b9a81f13cfb
+  status: applied
+  summary: tagline → "Built to spec. Delivered on time"; add d4-careers-portal
+  patch:
+    set:
+      tagline: Built to spec. Delivered on time
+    addModules:
+      - d4-careers-portal
+  sourceMessageIds:
+    - test-comms-1
+    - test-comms-2
+  createdBy: comms
+  date: "2026-07-11T15:16:28.429Z"
+  resolvedDate: "2026-07-11T23:42:14.380Z"
+  note: Builder started in the background; its result will appear on this channel.
+- id: 76370e55-7c98-4a6a-b8bc-522993056770
+  status: rejected
+  summary: themePreset → "warm-sand"; add d4-catalog
+  patch:
+    set:
+      themePreset: warm-sand
+    addModules:
+      - d4-catalog
+  sourceMessageIds: []
+  createdBy: comms
+  date: "2026-07-11T23:42:35.199Z"
+  resolvedDate: "2026-07-11T23:42:54.753Z"
+  note: Client did not ask for this; test artifact.
+- id: e5f7f35b-0ba6-44c2-876d-00a710d8cbf7
+  status: applied
+  summary: Restore the trailing period the client wrote in their tagline
+  patch:
+    set:
+      tagline: Built to spec. Delivered on time.
+  sourceMessageIds: []
+  createdBy: comms
+  date: "2026-07-12T00:11:14.831Z"
+  resolvedDate: "2026-07-12T00:11:20.084Z"
+  note: Builder started in the background; its result will appear on this channel.

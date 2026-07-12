@@ -198,3 +198,96 @@
     commit: c92c74d
     revertedBy: f8817ed
     buildPath: builds\acme-demo
+- id: 8e4ef1c7-4d36-4238-8875-bf238f6d405b
+  date: "2026-07-11T15:16:28.446Z"
+  agent: comms
+  kind: event
+  message: |-
+    Triaged 4 new client messages.
+    - [change-request] "Can you change the tagline to "Built to spec. Delivered on time."? Looks sharp otherwise." — Config-level: tagline → "Built to spec. Delivered on time".
+    - [change-request] "We are hiring soon - please add a careers page so people can apply." — Config-level: add d4-careers-portal.
+    - [structural] "Could we also get an online store with checkout on the site?" — Asks for something off the module menu; needs Ridhi + Cowork.
+    - [question] "When will the site go live?" — A question; drafted an acknowledgment for Ridhi to complete.
+    Proposed change awaiting your approval: tagline → "Built to spec. Delivered on time"; add d4-careers-portal.
+    Draft reply queued for your approval in Messages.
+  data:
+    engine: heuristic
+    messages: "4"
+- id: ac35a5be-204a-4ec2-86bc-70ec4dcf5c16
+  date: "2026-07-11T15:16:28.474Z"
+  agent: comms
+  kind: alert
+  message: |-
+    1 message needs you:
+    [structural] "Could we also get an online store with checkout on the site?" — Asks for something off the module menu; needs Ridhi + Cowork.
+  data:
+    categories: structural
+- id: 37c24f5d-ee82-44e1-8404-500e9d5d710b
+  date: "2026-07-11T23:42:14.388Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved proposed change: tagline → \"Built to spec. Delivered on time\"; add d4-careers-portal. Build config updated (tagline → \"Built to spec. Delivered on time\"; add d4-careers-portal). Builder started in the background; its result will appear on this channel."
+  data: {}
+- id: 52959d56-cfba-448b-880c-433bb533932e
+  date: "2026-07-11T23:42:54.758Z"
+  agent: ridhi
+  kind: decision
+  message: "Rejected proposed change: themePreset → \"warm-sand\"; add d4-catalog. Note: Client did not ask for this; test artifact."
+  data: {}
+- id: 544efb58-9ddc-455b-9f8d-6aa279fa95c5
+  date: "2026-07-11T23:43:52.787Z"
+  agent: builder
+  kind: alert
+  message: "Builder crashed during change: next build failed (exit 1)."
+  data:
+    phase: change
+- id: b2f03a25-3245-48e5-ab87-53234e1ae9ac
+  date: "2026-07-11T23:48:10.035Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 8 checks passed. Visual changes vs last good build: /, /about, /contact, /gallery, /insights.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: a3b43605-f6f3-48a1-a737-7af1c2437adc
+  date: "2026-07-11T23:48:10.337Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: added d4-careers-portal; updated src/config/site.ts, src/config/nav.generated.ts, src/config/admin-panels.generated.tsx, d4.assembly.json. QA green; committed as 1cd27e1. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: 1cd27e1
+    changedFiles: "5"
+    modulesAdded: d4-careers-portal
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: a3040b51-094b-42f7-993d-788979f17542
+  date: "2026-07-12T00:11:20.089Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved proposed change: Restore the trailing period the client wrote in their tagline. Build config updated (tagline → \"Built to spec. Delivered on time.\"). Builder started in the background; its result will appear on this channel."
+  data: {}
+- id: ad8c99a3-76ce-4d10-89fc-20e1a459110d
+  date: "2026-07-12T00:12:53.944Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 8 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: cd162fb8-0b54-428c-b6ee-498eb116822e
+  date: "2026-07-12T00:12:55.535Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: updated src/config/site.ts. QA green; committed as b52fdc6. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: b52fdc6
+    changedFiles: "1"
+    modulesAdded: ""
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
