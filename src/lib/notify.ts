@@ -1,5 +1,7 @@
 import type { Client, ClientFeedback } from './clients';
 import { sendEmail } from './email';
+import { recordCost } from './costs';
+import { loadPricing } from './pricing';
 
 /**
  * Notification emails between the studio and clients.
@@ -11,6 +13,18 @@ import { sendEmail } from './email';
 
 const SITE_URL = process.env.SITE_URL || 'https://deneb4.com';
 const OWNER_EMAIL = process.env.CONTACT_TO_EMAIL || 'hello@deneb4.com';
+
+/**
+ * Log the real cost of one delivered email against the client's project.
+ * The static resendCostEstimate in pricing.yaml is the fallback until this
+ * has run at least once — actual send counts replace the guess, never the
+ * other way around (pricing.ts takes max(actual, estimate)).
+ */
+function recordEmailCost(slug: string, delivered: boolean, label: string): void {
+  if (!delivered) return; // console-fallback sends cost nothing
+  const rate = loadPricing().resendCostPerEmail;
+  if (rate > 0) recordCost(slug, { kind: 'resend', amount: rate, note: label });
+}
 
 function escapeHtml(s: string): string {
   return s
@@ -55,7 +69,7 @@ export async function notifyOwnerOfClientMessage(
 ): Promise<void> {
   try {
     const where = source === 'widget' ? 'from the staging site' : 'from the portal';
-    await sendEmail({
+    const result = await sendEmail({
       to: OWNER_EMAIL,
       subject: `New message from ${client.name}`,
       replyTo: client.email || undefined,
@@ -70,6 +84,7 @@ export async function notifyOwnerOfClientMessage(
         cta: { label: 'Open in Workspace', href: `${SITE_URL}/cms-admin?client=${client.slug}` },
       }),
     });
+    recordEmailCost(client.slug, result.delivered, 'Owner notified of client message');
   } catch (err) {
     console.error('[deneb4] notify owner of client message failed:', err);
   }
@@ -79,7 +94,7 @@ export async function notifyOwnerOfClientMessage(
 export async function notifyClientOfReply(client: Client, entry: ClientFeedback): Promise<void> {
   if (!client.email) return;
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: client.email,
       subject: `New update on ${client.projectName || 'your project'}`,
       html: template({
@@ -90,6 +105,7 @@ export async function notifyClientOfReply(client: Client, entry: ClientFeedback)
         cta: { label: 'Open your portal', href: `${SITE_URL}/portal` },
       }),
     });
+    recordEmailCost(client.slug, result.delivered, 'Client notified of reply');
   } catch (err) {
     console.error('[deneb4] notify client of reply failed:', err);
   }
@@ -131,6 +147,7 @@ export async function notifyClientCredentials(
         cta: { label: 'Open your portal', href: `${SITE_URL}/login` },
       }),
     });
+    recordEmailCost(client.slug, result.delivered, `Client credentials (${variant})`);
     return result.delivered;
   } catch (err) {
     console.error('[deneb4] credentials email failed:', err);
@@ -186,6 +203,7 @@ export async function notifyClientOfSignoffRequest(client: Client): Promise<bool
         cta: { label: 'Review & approve', href: `${SITE_URL}/portal` },
       }),
     });
+    recordEmailCost(client.slug, result.delivered, 'Sign-off request');
     return result.delivered;
   } catch (err) {
     console.error('[deneb4] sign-off request email failed:', err);
@@ -193,10 +211,47 @@ export async function notifyClientOfSignoffRequest(client: Client): Promise<bool
   }
 }
 
+/** Send the client an itemized invoice (only after Ridhi approves the send). */
+export async function notifyClientOfInvoice(
+  client: Client,
+  invoice: { description: string; amount: string; dueDate: string },
+  lines: { label: string; amount: string }[]
+): Promise<boolean> {
+  if (!client.email) return false;
+  const rows = lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:6px 0;color:#4e606f;font-size:14px;">${escapeHtml(l.label)}</td><td style="padding:6px 0;color:#18222e;font-size:14px;text-align:right;white-space:nowrap;">${escapeHtml(l.amount)}</td></tr>`
+    )
+    .join('');
+  try {
+    const result = await sendEmail({
+      to: client.email,
+      replyTo: OWNER_EMAIL,
+      subject: `Invoice: ${invoice.description} — ${invoice.amount}`,
+      html: template({
+        eyebrow: 'Invoice',
+        heading: `${invoice.description}: ${invoice.amount}`,
+        lines: [
+          `Hi ${escapeHtml(client.name)},`,
+          `<table style="width:100%;border-collapse:collapse;margin:6px 0;">${rows}<tr><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;">Amount due</td><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;text-align:right;">${escapeHtml(invoice.amount)}</td></tr></table>`,
+          `Due ${escapeHtml(invoice.dueDate)}. Payment details are in your portal — reply here with any questions.`,
+        ],
+        cta: { label: 'View in your portal', href: `${SITE_URL}/portal` },
+      }),
+    });
+    recordEmailCost(client.slug, result.delivered, `Invoice: ${invoice.description}`);
+    return result.delivered;
+  } catch (err) {
+    console.error('[deneb4] invoice email failed:', err);
+    return false;
+  }
+}
+
 /** A client approved a phase from their portal. */
 export async function notifyOwnerOfApproval(client: Client, phase: string): Promise<void> {
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: OWNER_EMAIL,
       subject: `${client.name} approved: ${phase}`,
       replyTo: client.email || undefined,
@@ -210,6 +265,7 @@ export async function notifyOwnerOfApproval(client: Client, phase: string): Prom
         cta: { label: 'Open in Workspace', href: `${SITE_URL}/cms-admin?client=${client.slug}` },
       }),
     });
+    recordEmailCost(client.slug, result.delivered, `Owner notified: approved ${phase}`);
   } catch (err) {
     console.error('[deneb4] notify owner of approval failed:', err);
   }

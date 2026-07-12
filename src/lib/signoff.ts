@@ -1,5 +1,5 @@
 import type { Client } from './clients';
-import { getAllClients, appendUpdate } from './clients';
+import { getAllClients, appendUpdate, setPipelineStage } from './clients';
 import { appendLedger } from './agent-ledger';
 import { getState, setState } from './agent-state';
 import { notifyClientOfSignoffRequest } from './notify';
@@ -65,10 +65,13 @@ export async function signoffRequestDuty(): Promise<DutyResult> {
 
 /**
  * Called by the portal-approve route when a client approves an update.
- * If it's the final-approval item on an approval-stage client, record the
- * sign-off: the gate criterion is met, but only Ridhi advances the stage.
+ * If it's the final-approval item on an approval-stage client, the gate
+ * criterion is met BY the client's own action, so the pipeline advances to
+ * payment automatically and the final invoice is drafted for Ridhi's
+ * send-approval (amendment 2026-07-12: her human touches are internal
+ * review and approving invoice sends).
  */
-export function recordClientSignoff(client: Client, phase: string): boolean {
+export async function recordClientSignoff(client: Client, phase: string): Promise<boolean> {
   if (client.pipeline !== 'approval' || phase !== SIGNOFF_PHASE) return false;
   if (getState(signedKey(client.slug))) return true; // already recorded
   const now = new Date().toISOString();
@@ -76,8 +79,20 @@ export function recordClientSignoff(client: Client, phase: string): boolean {
   appendLedger(client.slug, {
     agent: 'comms',
     kind: 'decision',
-    message: `CLIENT SIGNED OFF: ${client.name} approved "${phase}" from their portal. The final-approval gate criterion is met — advance the pipeline to Payment when you're ready.`,
+    message: `CLIENT SIGNED OFF: ${client.name} approved "${phase}" from their portal — the final-approval gate criterion is met.`,
     data: { signedAt: now },
   });
+
+  setPipelineStage(client.slug, 'payment');
+  appendLedger(client.slug, {
+    agent: 'comms',
+    kind: 'handoff',
+    message: 'Pipeline stage: Final approval → Payment (client sign-off received; advanced automatically).',
+  });
+
+  // Draft the final invoice right away rather than waiting for a heartbeat.
+  const { proposeFinal, getProposedInvoices } = await import('./billing');
+  const already = getProposedInvoices(client.slug).some((p) => p.kind === 'final' && p.status !== 'rejected');
+  if (!already) await proposeFinal(client);
   return true;
 }

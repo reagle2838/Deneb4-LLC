@@ -121,6 +121,27 @@ function run(cmd, cmdArgs, opts = {}) {
   });
 }
 
+/**
+ * Opt-in (AUTO_DEPLOY_STAGING=true): after a green build, push the site to
+ * a staging URL and record it on the client's record. Spawned detached so
+ * it never blocks the Builder — the deploy script reports to the ledger
+ * itself. A brand-new build isn't deployed until it clears Ridhi's internal
+ * review, so this only fires from change mode; first builds print the hint.
+ */
+function maybeDeployStaging() {
+  if (process.env.AUTO_DEPLOY_STAGING !== 'true') return false;
+  const deployArgs = [path.join(HERE, 'deploy-staging.mjs'), slug];
+  if (reportTo) deployArgs.push('--report-to', reportTo);
+  const child = spawn(process.execPath, deployArgs, {
+    cwd: REPO_ROOT,
+    detached: true,
+    stdio: 'ignore',
+    env: { ...process.env, NODE_OPTIONS: '--use-system-ca' },
+  });
+  child.unref();
+  return true;
+}
+
 async function waitForServer(url, timeoutMs = 60000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -241,6 +262,7 @@ async function firstBuild() {
         buildPath: path.relative(REPO_ROOT, outDir),
       });
       const moved = await advanceToGate();
+      if (maybeDeployStaging()) console.log('Auto-deploying to staging in the background so you can review it.');
       console.log(`\nHanded off to internal-review (Ridhi's gate). Pipeline: ${moved.stage || 'internal-review'}.`);
       return 0;
     }
@@ -325,6 +347,7 @@ async function changeBuild(outDir) {
           pushed: String(pushResult.pushed),
           buildPath: path.relative(REPO_ROOT, outDir),
         });
+        if (maybeDeployStaging()) console.log('Auto-deploying the change to staging in the background.');
         console.log('\nChange applied and verified. Pipeline stage unchanged (changes never advance stages).');
         return 0;
       }

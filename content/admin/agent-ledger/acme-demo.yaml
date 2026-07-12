@@ -363,3 +363,138 @@
   data:
     rotated: "true"
     modules: d4-site-template,d4-cms-core,d4-careers-portal,d4-insights-blog,d4-gallery-editor
+- id: d3cd70ac-9a00-4291-81ab-c8d8f0abc5b3
+  date: "2026-07-12T16:44:45.614Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved proposed change: Brand palette ingested from 127.0.0.1. Build config updated (custom brand palette (7 theme tokens)). Builder started in the background; its result will appear on this channel."
+  data: {}
+- id: 6e73e263-a0cf-44fd-950d-f4fffbdd1373
+  date: "2026-07-12T16:45:15.482Z"
+  agent: concierge
+  kind: event
+  message: "Content seed staged for review: 3 jobs parsed from acme-jobs.csv. Apply with: npm run seed -- acme-demo --apply"
+  data: {}
+- id: 9241fcb2-d140-46bd-88d9-b81c7c882604
+  date: "2026-07-12T16:45:19.353Z"
+  agent: concierge
+  kind: event
+  message: "Content seed staged for review: 3 products parsed from acme-products.json. Apply with: npm run seed -- acme-demo --apply"
+  data: {}
+- id: b1043865-49cc-4e34-96c5-76dccc272031
+  date: "2026-07-12T16:45:38.850Z"
+  agent: concierge
+  kind: event
+  message: "Content seed APPLIED after review: 3 jobs added (0 already present, skipped); 3 products added (0 already present, skipped). The client can refine everything through their /admin."
+  data: {}
+- id: ca332f9e-c70d-430b-8482-7088d4e9af0b
+  date: "2026-07-12T16:46:02.522Z"
+  agent: concierge
+  kind: event
+  message: "Content seed staged for review: 3 jobs parsed from acme-jobs.csv. Apply with: npm run seed -- acme-demo --apply"
+  data: {}
+- id: bdbb2b64-68a7-4ee8-9323-89a89efbf8c7
+  date: "2026-07-12T16:46:04.808Z"
+  agent: concierge
+  kind: event
+  message: "Content seed APPLIED after review: 0 jobs added (3 already present, skipped). The client can refine everything through their /admin."
+  data: {}
+- id: 955e5abf-f779-4461-8bf2-d95488d5a832
+  date: "2026-07-12T16:48:00.348Z"
+  agent: maintenance
+  kind: alert
+  message: Acme Fabrication's site is DOWN (http://127.0.0.1:4999 — fetch failed). Checked twice before raising this.
+  data: {}
+- id: 8b832540-fa61-44b5-9925-df04442840a2
+  date: "2026-07-12T16:48:01.978Z"
+  agent: maintenance
+  kind: event
+  message: Acme Fabrication's site recovered (http://127.0.0.1:3005 — HTTP 200).
+  data: {}
+- id: 6e882154-acc7-47db-98e8-9f01a4b5a923
+  date: "2026-07-12T16:55:14.158Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Handoff → Client review. Back to client review for continued demo work."
+  data:
+    from: handoff
+    to: client-review
+- id: f1603e50-ab31-401a-bbed-9602f439c791
+  date: "2026-07-12T16:57:11.064Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 8 checks passed. Visual changes vs last good build: /, /about, /careers, /contact, /gallery, /insights.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: 96c47dd8-9598-4dc1-9b02-6e22c7ae8be6
+  date: "2026-07-12T16:57:11.505Z"
+  agent: builder
+  kind: event
+  message: "Applied config change: updated src/app/theme.css. QA green; committed as ad181e0. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: ad181e0
+    changedFiles: "1"
+    modulesAdded: ""
+    modulesRemoved: ""
+    pushed: "false"
+    buildPath: builds\acme-demo
+- id: fc5e3a16-ed86-468c-852f-c0643c1b655a
+  date: "2026-07-12T17:08:02.727Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4183.
+    All 8 checks passed.
+  data:
+    target: http://127.0.0.1:4183
+    passed: "true"
+- id: 4046d549-d0ac-4d15-9694-8fe12a687548
+  date: "2026-07-12T17:08:07.120Z"
+  agent: maintenance
+  kind: event
+  message: "Maintenance patch shipped (d6e479a): dependencies updated, QA green. 2 issue(s) remain and need a breaking upgrade — flagged for you."
+  data: {}
+- id: 59ae67fa-9ba9-4286-a900-77b763879f76
+  date: "2026-07-12T18:01:06.936Z"
+  agent: builder
+  kind: event
+  message: "Staging updated: http://127.0.0.1:4248 — status ready. Local staging (this machine). Swap in STAGING_DEPLOY_CMD for a public host."
+  data:
+    url: http://127.0.0.1:4248
+    status: ready
+- id: cd72ba28-129b-4e68-8810-a90a05552ba0
+  date: "2026-07-12T18:06:25.281Z"
+  agent: builder
+  kind: event
+  message: "Staging updated: http://127.0.0.1:4248 — status down. Staging stopped."
+  data:
+    url: http://127.0.0.1:4248
+    status: down
+- id: c5ff8f6f-1e28-4ad2-b969-b6fba583bb66
+  date: "2026-07-12T18:18:45.281Z"
+  agent: comms
+  kind: event
+  message: |-
+    Triaged 1 new client message.
+    - [approval] "Approved: Final approval" — Reads like sign-off; Ridhi confirms before anything advances.
+  data:
+    engine: heuristic
+    messages: "1"
+- id: b2ec431a-1a96-43e4-9efc-e50e3c5d4880
+  date: "2026-07-12T18:18:45.305Z"
+  agent: comms
+  kind: alert
+  message: |-
+    1 message needs you:
+    [approval] "Approved: Final approval" — Reads like sign-off; Ridhi confirms before anything advances.
+  data:
+    categories: approval
+- id: 8dc74578-0308-4155-a7e2-f68769b57fac
+  date: "2026-07-12T18:45:50.860Z"
+  agent: billing
+  kind: event
+  message: Deposit invoice drafted ($1,800.00 of $3,600.00 total; cost floor $41.00, 87.8x margin). Waiting for your "Approve & send" on the Billing panel.
+  data: {}

@@ -1,0 +1,125 @@
+- id: d2aaf6c5-b537-4756-8e53-666615e9159f
+  date: "2026-07-12T18:12:23.827Z"
+  agent: concierge
+  kind: event
+  message: "Intake parsed into a build config (from intake-responses.csv). Modules: d4-cms-core, d4-careers-portal, d4-catalog. Ready to build."
+  data: {}
+- id: 5be331cc-31d0-4817-a0a1-785739a16cce
+  date: "2026-07-12T18:12:24.325Z"
+  agent: concierge
+  kind: event
+  message: Client created and portal provisioned for Meridian Tool & Die. Pipeline starts at Onboarding.
+  data:
+    email: quotes@meridiantool.example
+    projectName: Meridian site
+- id: 0d1b5329-b9b0-4218-b688-ee2dbff628cd
+  date: "2026-07-12T18:12:25.970Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Onboarding → Building"
+  data:
+    from: onboarding
+    to: building
+- id: ef0aec4c-6903-4bfa-b980-85664f135ad5
+  date: "2026-07-12T18:16:59.634Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4181.
+    All 8 checks passed.
+  data:
+    target: http://127.0.0.1:4181
+    passed: "true"
+- id: a9e55dff-e26e-4ac2-b3f5-1eb5ad6b4dae
+  date: "2026-07-12T18:17:00.407Z"
+  agent: builder
+  kind: event
+  message: "Assembled meridian-tool-and-die from the d4 templates (commit ebd2dcb). Modules: d4-site-template, d4-cms-core, d4-careers-portal, d4-catalog. Routes: /, /about, /careers, /catalog, /contact (+/admin). QA skipped (need content/session): /admin/dashboard, /admin/setup-2fa. Local repo only: GITHUB_TOKEN/GITHUB_OWNER not configured yet."
+  data:
+    commit: ebd2dcb
+    templates: d4-site-builder@3017b42, d4-site-template@7106067, d4-cms-core@231cbb6, d4-careers-portal@4d46582, d4-insights-blog@a3c48ed, d4-catalog@f2ffde5, d4-gallery-editor@fdd0e7a
+    routes: /,/about,/careers,/catalog,/contact
+    pushed: "false"
+    buildPath: builds\meridian-tool-and-die
+- id: 05e68395-b53b-4e06-a479-c6fedafd57d0
+  date: "2026-07-12T18:17:00.499Z"
+  agent: builder
+  kind: handoff
+  message: "Pipeline stage: Building → Internal review. Assembled from the d4 templates + QA green; ready for design + copy review."
+  data:
+    from: building
+    to: internal-review
+- id: ef110138-9923-429f-9d1b-ab7a3fe63d99
+  date: "2026-07-12T18:45:50.910Z"
+  agent: billing
+  kind: event
+  message: Deposit invoice drafted ($1,725.00 of $3,450.00 total; cost floor $41.00, 84.15x margin). Waiting for your "Approve & send" on the Billing panel.
+  data: {}
+- id: b83ccc0b-97c9-4e68-bdf6-4c08675e3e6a
+  date: "2026-07-12T18:46:12.026Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved & sent: Build deposit (50%), $1,725.00, due 2026-07-19. Recorded on the portal; email not configured, share it yourself."
+  data: {}
+- id: 27b9f42c-d3a7-46a7-b95c-dd52132dd5af
+  date: "2026-07-12T18:46:38.439Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Internal review → Client review"
+  data:
+    from: internal-review
+    to: client-review
+- id: 118d5212-8080-4546-875f-383646e0b71a
+  date: "2026-07-12T18:46:38.627Z"
+  agent: ridhi
+  kind: handoff
+  message: "Pipeline stage: Client review → Final approval"
+  data:
+    from: client-review
+    to: approval
+- id: dc05d0c4-d370-4ac3-8cc4-2544a1fb5ad8
+  date: "2026-07-12T18:46:39.015Z"
+  agent: comms
+  kind: event
+  message: "Sign-off requested: \"Final approval\" is waiting in the client's portal with an Approve button. No email went out (email not configured); the portal item is live."
+  data:
+    emailed: "false"
+- id: 893a0ae3-ff7d-4ac9-a328-d7690f866ac6
+  date: "2026-07-12T18:46:45.641Z"
+  agent: comms
+  kind: decision
+  message: "CLIENT SIGNED OFF: Meridian Tool & Die approved \"Final approval\" from their portal — the final-approval gate criterion is met."
+  data:
+    signedAt: "2026-07-12T18:46:45.631Z"
+- id: 567f4789-fb66-411f-b9b2-d38ec55b2f8e
+  date: "2026-07-12T18:46:45.726Z"
+  agent: comms
+  kind: handoff
+  message: "Pipeline stage: Final approval → Payment (client sign-off received; advanced automatically)."
+  data: {}
+- id: 85d84f2f-b826-48df-8732-2348999dc0f6
+  date: "2026-07-12T18:46:45.837Z"
+  agent: billing
+  kind: event
+  message: Final invoice drafted ($1,770.00; total $3,495.00 less deposit $1,725.00). Waiting for your "Approve & send" on the Billing panel.
+  data: {}
+- id: 2fca943f-5f0f-4d5c-8780-87f3291a26fb
+  date: "2026-07-12T18:47:06.752Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved & sent: Final balance at handoff, $1,770.00, due 2026-07-26. Recorded on the portal; email not configured, share it yourself."
+  data: {}
+- id: a830bce9-a1c5-4e19-8cce-ee1d8a0218c9
+  date: "2026-07-12T18:47:08.416Z"
+  agent: billing
+  kind: handoff
+  message: "Pipeline stage: Payment → Handoff (every invoice paid; advanced automatically)."
+  data: {}
+- id: b771610b-59ff-40f8-b499-c04e654e3817
+  date: "2026-07-12T18:47:08.431Z"
+  agent: concierge
+  kind: handoff
+  message: Handoff package generated and the site admin password was ROTATED (build-time credential retired). The doc (credentials + checklist) is at content/admin/handoffs/meridian-tool-and-die.md — gitignored, never committed. Review it, deliver it to the client on a channel you trust, and work the checklist; leaving Handoff stays your gate.
+  data:
+    rotated: "true"
+    modules: d4-site-template,d4-cms-core,d4-careers-portal,d4-catalog

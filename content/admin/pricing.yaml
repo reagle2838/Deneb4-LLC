@@ -1,0 +1,54 @@
+# Deneb4 pricing model. Ridhi edits THIS file to change pricing — the
+# billing agent reads it live. Two sides to every quote:
+#
+#   VALUE (what the client pays): the price book below. This is the value
+#   anchor — the ceiling. Clients are never charged above the price book;
+#   prices here should track what the deliverable is genuinely worth to an
+#   industrial client (a custom-built, fully-owned site with an admin
+#   dashboard, not a rented template).
+#
+#   COST (the floor): overhead amortized per client + per-project service
+#   costs. The agent verifies every quote clears cost x minMarginMultiplier
+#   and alerts Ridhi if it doesn't. Costs never appear on client invoices.
+#
+# Billing split: 50% deposit when the build starts, 50% balance at handoff
+# (plus any post-quote line items like extra consultations).
+
+# ── Cost side ────────────────────────────────────────────────────────────
+overheadMonthly: 50            # Claude $20/mo + Google Workspace $30/mo
+expectedClientsPerMonth: 2     # overhead is amortized over this many
+buildApiCostEstimate: 15       # FALLBACK ONLY: Anthropic $ per project before any real usage is
+                                # recorded. Every actual Comms/seeding API call now measures its own
+                                # real token usage and logs the real $ cost automatically (see
+                                # claudeRates below) — this number is just the floor until that data
+                                # exists for a given client, per pricing.ts's max(actual, estimate).
+resendCostEstimate: 1          # FALLBACK ONLY: same idea. Real per-email cost (resendCostPerEmail)
+                                # is now logged automatically on every client-facing send.
+consultationCost: 8            # ElevenLabs: no call feature is built yet (see ROADMAP), so this is
+                                # still a flat per-call guess, logged when a call is manually logged.
+
+# $ per million tokens, by model, for auto-costing every real Anthropic API
+# call Comms/seeding makes. VERIFY against https://www.anthropic.com/pricing
+# before trusting this for real invoicing decisions — these are Claude 4.5-
+# generation list figures as of this file's writing, not fetched live.
+# Unlisted/future models fall back to the haiku row (cheapest reasonable
+# assumption; never silently undercounts toward "free").
+claudeRates:
+  claude-haiku-4-5-20251001: { input: 1, output: 5 }
+  claude-sonnet-5: { input: 3, output: 15 }
+  claude-opus-4-8: { input: 15, output: 75 }
+
+resendCostPerEmail: 0.001      # ~Resend's real per-email rate; logged per client-facing send
+
+# ── Value side (the price book) ─────────────────────────────────────────
+basePrice: 2400                # base site: design, build, QA, staging, handoff, ownership
+modulePrices:
+  d4-careers-portal: 450       # careers page + applications + admin
+  d4-insights-blog: 400        # blog/news section + admin editor
+  d4-catalog: 600              # product catalog + filters + admin (incl. up to 50 seeded items)
+  d4-gallery-editor: 350       # photo galleries + upload/reorder admin
+catalogSeedOveragePerItem: 3   # per catalog item seeded beyond the included 50 (rule of 2026-07-07)
+consultationPrice: 45          # per scheduled 30-minute phone consultation
+
+# ── Guardrail ────────────────────────────────────────────────────────────
+minMarginMultiplier: 3         # quote must be >= total cost x this, or Billing alerts

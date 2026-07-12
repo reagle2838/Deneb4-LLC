@@ -110,7 +110,12 @@ export async function POST(req: NextRequest) {
   }
 
   let builderNote: string;
-  if (process.env.BUILDER_AUTORUN === 'true') {
+  const builderStages = ['building', 'client-review'];
+  if (!builderStages.includes(client.pipeline)) {
+    // The Builder refuses to act outside its stages (and silently, when
+    // spawned detached) — say so instead of launching a doomed run.
+    builderNote = `Config updated, but the pipeline is at "${client.pipeline || 'not set'}" and the Builder only applies changes during building/client-review. It will pick this change up on the next eligible run.`;
+  } else if (process.env.BUILDER_AUTORUN === 'true') {
     // Fire-and-forget: the Builder reports green/red to the ledger itself
     // and auto-reverts a change QA rejects.
     const child = spawn(

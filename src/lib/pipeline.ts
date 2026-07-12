@@ -58,16 +58,16 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   {
     id: 'approval',
     label: 'Final approval',
-    description: 'Sign-off requested from the client on the finished build.',
+    description: 'Sign-off requested from the client. Their portal Approve advances this automatically.',
     owner: 'comms',
     gated: true,
   },
   {
     id: 'payment',
     label: 'Payment',
-    description: 'Final invoice sent; waiting for payment. Ridhi confirms before handoff begins.',
+    description: 'Invoices are drafted automatically; Ridhi approves each send. All-paid auto-advances to handoff.',
     owner: 'billing',
-    gated: true,
+    gated: false,
   },
   {
     id: 'handoff',

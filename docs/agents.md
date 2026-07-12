@@ -89,6 +89,17 @@
 
 Confirmed by Ridhi 2026-07-09: **structural requests and manual overrides route to a supervised Claude Code session against the client's repo, not to an agent.** Anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog are Cowork work. Cowork is interactive and supervised; agents run unattended within these contracts. Manual edits made this way are ordinary commits in the client's repo, and the Builder's change loop is built to respect them.
 
+## Amendment (2026-07-12): the gate set narrowed, per Ridhi's instruction
+
+Ridhi's standing human-in-the-loop actions are now exactly: **internal review** (design + copy, unchanged), **approving each invoice before it is sent**, and the physically-unavoidable handoff delivery. Everything else automated:
+
+| Stage transition | Now |
+|---|---|
+| Final approval → Payment | **Automatic** on the client's own portal sign-off (their action IS the gate). The final invoice is drafted at that moment. |
+| Payment → Handoff | **Automatic** when every sent invoice is marked paid (Wave API will replace the manual marking; the flow stays). The handoff package is generated on arrival — credentials rotated — leaving only delivery to Ridhi. |
+| Invoices | Drafted automatically (deposit at build start, balance at sign-off) from `content/admin/pricing.yaml` (price book + amortized overhead + service costs + margin guardrail). **Nothing is sent until Ridhi clicks "Approve & send"** on the Billing panel. Quote ceiling = the price book (value-anchored); floor = cost × the configured margin multiplier, alerting when breached. |
+| Billing math | 50% deposit up front, 50% balance + post-quote items (e.g. ElevenLabs phone consultations, logged per 30-min call) at handoff. Costs tracked per client in `content/admin/costs/`. |
+
 ## Amendment (2026-07-10): how the Builder actually operates
 
 Implementation facts, consistent with the approved contract above:

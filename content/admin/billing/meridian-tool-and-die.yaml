@@ -1,0 +1,40 @@
+- id: 983cc4a8-606c-4a45-b80f-5667356f0a4e
+  kind: deposit
+  description: Build deposit (50%)
+  amount: 1725
+  dueDate: "2026-07-19"
+  lines:
+    - label: "Custom website: design, build, QA, staging, full ownership at handoff"
+      amount: $2,400.00
+    - label: Careers page + applications
+      amount: $450.00
+    - label: Product catalog (incl. up to 50 seeded items)
+      amount: $600.00
+    - label: Project total $3,450.00 — 50% deposit due now, balance at handoff
+      amount: $1,725.00
+  status: sent
+  date: "2026-07-12T18:45:50.908Z"
+  resolvedDate: "2026-07-12T18:46:12.022Z"
+  note: Recorded on the portal; email not configured, share it yourself.
+- id: 751e1639-9c43-461d-910d-91bc81f93d3b
+  kind: final
+  description: Final balance at handoff
+  amount: 1770
+  dueDate: "2026-07-26"
+  lines:
+    - label: "Custom website: design, build, QA, staging, full ownership at handoff"
+      amount: $2,400.00
+    - label: Careers page + applications
+      amount: $450.00
+    - label: Product catalog (incl. up to 50 seeded items)
+      amount: $600.00
+    - label: Phone consultations (1 × 30 min)
+      amount: $45.00
+    - label: Project total
+      amount: $3,495.00
+    - label: Less deposit received
+      amount: "-$1,725.00"
+  status: sent
+  date: "2026-07-12T18:46:45.826Z"
+  resolvedDate: "2026-07-12T18:47:06.750Z"
+  note: Recorded on the portal; email not configured, share it yourself.

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/cms-auth';
-import { getClientBySlug } from '@/lib/clients';
+import { getClientBySlug, setGithubUser } from '@/lib/clients';
 import { generateHandoffPackage, getHandoffDoc } from '@/lib/handoff';
+import { transferRepoToClient } from '@/lib/github-transfer';
+import { appendLedger } from '@/lib/agent-ledger';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!(await cmsOnly(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  let body: { slug?: string };
+  let body: { slug?: string; githubUser?: string; transfer?: boolean };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -41,6 +43,26 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
+
+  // Persist a GitHub username passed with the request (collected at handoff).
+  if (typeof body.githubUser === 'string' && body.githubUser.trim()) {
+    setGithubUser(client.slug, body.githubUser);
+    client.githubUser = body.githubUser.trim().replace(/^@/, '');
+  }
+
   const { doc, rotated } = generateHandoffPackage(client);
-  return NextResponse.json({ ok: true, doc, rotated });
+
+  // Optionally hand the repo to the client's GitHub account (dormant without
+  // the token). Off by default; the panel opts in explicitly.
+  let transfer = null;
+  if (body.transfer) {
+    transfer = await transferRepoToClient(client.slug, client.githubUser);
+    appendLedger(client.slug, {
+      agent: 'concierge',
+      kind: transfer.transferred ? 'handoff' : 'event',
+      message: `Repo transfer: ${transfer.detail}`,
+    });
+  }
+
+  return NextResponse.json({ ok: true, doc, rotated, transfer });
 }

@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         lastSeenByClient: '',
         pipeline: 'onboarding',
         draftReplies: [],
+        githubUser: '',
       },
     });
 

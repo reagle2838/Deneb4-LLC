@@ -1,0 +1,15 @@
+{
+  "$comment": "d4-site-builder format. Proposed by the intake parser; review before building.",
+  "siteName": "Meridian Tool & Die",
+  "tagline": "Precision tooling on demand.",
+  "description": "Custom dies, jigs, and fixtures for automotive suppliers.",
+  "contactEmail": "quotes@meridiantool.example",
+  "phone": "555-555-0142",
+  "address": "19 Precision Way, Detroit, MI",
+  "themePreset": "slate-teal",
+  "modules": [
+    "d4-cms-core",
+    "d4-careers-portal",
+    "d4-catalog"
+  ]
+}

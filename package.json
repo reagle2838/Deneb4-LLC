@@ -9,7 +9,12 @@
     "lint": "next lint",
     "verify:site": "node scripts/verify.mjs",
     "builder": "node scripts/build-client.mjs",
-    "builder:assemble": "node scripts/build-client.mjs --assemble-only"
+    "builder:assemble": "node scripts/build-client.mjs --assemble-only",
+    "brand": "node scripts/brand-ingest.mjs",
+    "seed": "node scripts/seed-content.mjs",
+    "maintain": "node scripts/maintain.mjs",
+    "deploy": "node scripts/deploy-staging.mjs",
+    "intake": "node scripts/parse-intake.mjs"
   },
   "dependencies": {
     "@keystatic/core": "^0.5.33",

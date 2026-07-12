@@ -44,9 +44,11 @@ export async function POST(req: NextRequest) {
     };
     addFeedback(clientSlug, note);
 
-    // If this was the final-approval item, record the sign-off (the
-    // approval gate's exit criterion; Ridhi still advances the stage).
-    recordClientSignoff(client, body.phase);
+    // If this was the final-approval item, record the sign-off: the gate
+    // criterion is the client's own action, so this also advances the
+    // pipeline to payment and drafts the final invoice for Ridhi's
+    // send-approval.
+    await recordClientSignoff(client, body.phase);
 
     await notifyOwnerOfApproval(client, body.phase);
 

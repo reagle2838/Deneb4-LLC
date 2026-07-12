@@ -6,11 +6,19 @@
   "contactEmail": "quotes@acmefab.example",
   "phone": "(555) 555-0100",
   "address": "100 Industrial Way, Springfield",
-  "themePreset": "slate-teal",
   "modules": [
     "d4-cms-core",
     "d4-gallery-editor",
     "d4-insights-blog",
     "d4-careers-portal"
-  ]
+  ],
+  "theme": {
+    "--accent": "0 107 143",
+    "--accent-strong": "0 84 111",
+    "--bg-base": "242 245 249",
+    "--bg-surface": "255 255 255",
+    "--text-heading": "0 0 0",
+    "--text-body": "0 62 85",
+    "--text-muted": "30 93 128"
+  }
 }

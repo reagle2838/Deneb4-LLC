@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
         pipeline: existing.pipeline,
         // Draft replies are managed through the feedback route only.
         draftReplies: existing.draftReplies,
+        // GitHub username is set at handoff, not through portal saves.
+        githubUser: existing.githubUser,
       },
     });
 

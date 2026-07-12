@@ -7,6 +7,8 @@ import { getAllClients, addDraftReply } from './clients';
 import { appendLedger } from './agent-ledger';
 import { getState, setState } from './agent-state';
 import { notifyOwnerOfAgentAlert } from './notify';
+import { recordCost } from './costs';
+import { computeAnthropicCost } from './pricing';
 import type { DutyResult } from './agent-roster';
 
 /**
@@ -41,8 +43,22 @@ export type PatchableField = (typeof PATCHABLE_FIELDS)[number];
 
 export const THEME_PRESETS = ['slate-teal', 'warm-sand', 'ink-indigo'];
 
+/** The template's theme tokens; values are space-separated RGB channels. */
+export const THEME_TOKENS = [
+  '--accent',
+  '--accent-strong',
+  '--bg-base',
+  '--bg-surface',
+  '--text-heading',
+  '--text-body',
+  '--text-muted',
+] as const;
+const RGB_CHANNELS_RE = /^\d{1,3} \d{1,3} \d{1,3}$/;
+
 export interface ConfigPatch {
   set?: Partial<Record<PatchableField, string>>;
+  /** Full custom palette (brand ingestion); overrides themePreset. */
+  theme?: Record<string, string>;
   addModules?: string[];
   removeModules?: string[];
 }
@@ -120,6 +136,24 @@ export function sanitizePatch(raw: unknown): { patch: ConfigPatch; dropped: stri
     }
     if (Object.keys(set).length) patch.set = set;
   }
+  if (r.theme && typeof r.theme === 'object') {
+    const theme: Record<string, string> = {};
+    for (const [k, v] of Object.entries(r.theme as Record<string, unknown>)) {
+      const value = typeof v === 'string' ? v.trim() : '';
+      if (!(THEME_TOKENS as readonly string[]).includes(k)) {
+        dropped.push(`theme ${k} (not a theme token)`);
+        continue;
+      }
+      if (!RGB_CHANNELS_RE.test(value) || value.split(' ').some((c) => Number(c) > 255)) {
+        dropped.push(`theme ${k} "${value}" (not "R G B" channels)`);
+        continue;
+      }
+      theme[k] = value;
+    }
+    // A partial palette would leave the site half-themed; all or nothing.
+    if (Object.keys(theme).length === THEME_TOKENS.length) patch.theme = theme;
+    else if (Object.keys(theme).length > 0) dropped.push(`theme (incomplete: ${Object.keys(theme).length}/${THEME_TOKENS.length} tokens)`);
+  }
   for (const key of ['addModules', 'removeModules'] as const) {
     if (!Array.isArray(r[key])) continue;
     const ok = (r[key] as unknown[]).filter((m): m is string => typeof m === 'string' && menu.includes(m));
@@ -131,7 +165,7 @@ export function sanitizePatch(raw: unknown): { patch: ConfigPatch; dropped: stri
 }
 
 export function patchIsEmpty(patch: ConfigPatch): boolean {
-  return !patch.set && !patch.addModules?.length && !patch.removeModules?.length;
+  return !patch.set && !patch.theme && !patch.addModules?.length && !patch.removeModules?.length;
 }
 
 /** Human-readable one-liner for a patch (ledger + client-facing draft). */
@@ -140,6 +174,7 @@ export function describePatch(patch: ConfigPatch): string {
   for (const [k, v] of Object.entries(patch.set ?? {})) {
     parts.push(`${k} → "${v.length > 60 ? v.slice(0, 57) + '...' : v}"`);
   }
+  if (patch.theme) parts.push('custom brand palette (7 theme tokens)');
   if (patch.addModules?.length) parts.push(`add ${patch.addModules.join(', ')}`);
   if (patch.removeModules?.length) parts.push(`remove ${patch.removeModules.join(', ')}`);
   return parts.join('; ');
@@ -209,6 +244,11 @@ export function applyPatchToBuildConfig(slug: string, patch: ConfigPatch): strin
   if (!fs.existsSync(file)) return null;
   const cfg = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>;
   for (const [k, v] of Object.entries(patch.set ?? {})) cfg[k] = v;
+  if (patch.theme) {
+    cfg.theme = patch.theme;
+    // A custom palette supersedes the preset; leaving both would be ambiguous.
+    delete cfg.themePreset;
+  }
   if (patch.addModules?.length || patch.removeModules?.length) {
     const modules = Array.isArray(cfg.modules) ? (cfg.modules as string[]) : [];
     const removed = new Set(patch.removeModules ?? []);
@@ -359,7 +399,13 @@ function heuristicTriage(messages: ClientFeedback[], configAvailable: boolean): 
 
 // ── LLM seam (key-gated; output clamped through the same validators) ─────
 
-const LLM_MODEL = process.env.COMMS_LLM_MODEL || 'claude-haiku-4-5-20251001';
+// This call drafts client-facing prose (the reply) as well as classifying,
+// so it defaults to Sonnet rather than Haiku: low volume (only fires on new
+// messages from comms-stage clients) and quality matters more here than in
+// bulk extraction — see seed-content.mjs's model choice for the contrast.
+// Override with COMMS_LLM_MODEL. Every call's real token cost is measured
+// and logged automatically (computeAnthropicCost below), never guessed.
+const LLM_MODEL = process.env.COMMS_LLM_MODEL || 'claude-sonnet-5';
 
 async function llmTriage(
   messages: ClientFeedback[],
@@ -406,7 +452,25 @@ async function llmTriage(
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`Anthropic API ${res.status}`);
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const data = (await res.json()) as {
+      content?: { type: string; text?: string }[];
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+
+    // Log the REAL cost of this call the moment it's known — before any
+    // parsing below can fail — so actual usage always reaches the cost
+    // ledger, whether or not the response turns out to be usable.
+    if (data.usage) {
+      const cost = computeAnthropicCost(LLM_MODEL, data.usage.input_tokens ?? 0, data.usage.output_tokens ?? 0);
+      if (cost > 0) {
+        recordCost(client.slug, {
+          kind: 'build-api',
+          amount: cost,
+          note: `Comms triage (${LLM_MODEL}): ${data.usage.input_tokens ?? 0} in / ${data.usage.output_tokens ?? 0} out tokens.`,
+        });
+      }
+    }
+
     const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
     const jsonText = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
     const parsed = JSON.parse(jsonText) as {

@@ -16,6 +16,7 @@ interface Proposal {
   summary: string;
   patch: {
     set?: Record<string, string>;
+    theme?: Record<string, string>;
     addModules?: string[];
     removeModules?: string[];
   };
@@ -103,6 +104,16 @@ export default function ChangeProposalsPanel({ slug }: { slug: string }) {
                 <li key={l} className="font-spec">{l}</li>
               ))}
             </ul>
+            {p.patch.theme && (
+              <div className="flex flex-wrap gap-1.5 mb-2" aria-label="Proposed palette">
+                {Object.entries(p.patch.theme).map(([token, rgb]) => (
+                  <span key={token} title={`${token}: ${rgb}`} className="inline-flex items-center gap-1 text-[10px] font-spec" style={{ color: 'var(--text-faint)' }}>
+                    <span className="inline-block w-4 h-4 rounded-sm" style={{ background: `rgb(${rgb.replace(/ /g, ',')})`, border: '1px solid var(--border-accent)' }} />
+                    {token.replace('--', '')}
+                  </span>
+                ))}
+              </div>
+            )}
             <p className="font-spec text-[10px] mb-2" style={{ color: 'var(--text-faint)' }}>
               Proposed by {p.createdBy} · {new Date(p.date).toLocaleString()}
             </p>

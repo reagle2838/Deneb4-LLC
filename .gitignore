@@ -45,6 +45,10 @@ next-env.d.ts
 /content/admin/agent-state.yaml
 # Handoff packages contain live credentials; never commit them.
 /content/admin/handoffs/
+# Staged content seeds are transient review state; applied or discarded, never committed.
+/content/admin/seeds/
+# Staged intake proposals are transient review state.
+/content/admin/intake/
 
 # Builder: per-client assembled build artifacts (each is its own git repo)
 /builds/

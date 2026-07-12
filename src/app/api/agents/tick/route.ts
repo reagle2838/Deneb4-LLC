@@ -10,7 +10,8 @@ import { getPipelineStage } from '@/lib/pipeline';
 import { notifyOwnerOfAgentAlert } from '@/lib/notify';
 import { commsTriageDuty, countPendingProposals } from '@/lib/comms';
 import { signoffRequestDuty } from '@/lib/signoff';
-import { billingWatchDuty } from '@/lib/billing';
+import { billingWatchDuty, countProposedInvoices } from '@/lib/billing';
+import { maintenanceWatchDuty } from '@/lib/maintenance';
 import type { DutyResult } from '@/lib/agent-roster';
 
 export const dynamic = 'force-dynamic';
@@ -109,8 +110,11 @@ async function worklistDuty(): Promise<DutyResult> {
   const proposals = clients
     .map((c) => ({ name: c.name, n: countPendingProposals(c.slug) }))
     .filter((x) => x.n > 0);
+  const invoices = clients
+    .map((c) => ({ name: c.name, n: countProposedInvoices(c.slug) }))
+    .filter((x) => x.n > 0);
 
-  if (unread.length === 0 && gated.length === 0 && drafts.length === 0 && proposals.length === 0) {
+  if (unread.length === 0 && gated.length === 0 && drafts.length === 0 && proposals.length === 0 && invoices.length === 0) {
     setState('lastWorklistDate', today);
     return { name: 'worklist', status: 'ok', summary: 'Nothing needs Ridhi today.' };
   }
@@ -119,6 +123,7 @@ async function worklistDuty(): Promise<DutyResult> {
   if (unread.length) parts.push(`Unread client messages: ${unread.map((u) => `${u.name} (${u.n})`).join(', ')}.`);
   if (drafts.length) parts.push(`Draft replies awaiting your approval: ${drafts.map((d) => `${d.name} (${d.n})`).join(', ')}.`);
   if (proposals.length) parts.push(`Change proposals awaiting your approval: ${proposals.map((p) => `${p.name} (${p.n})`).join(', ')}.`);
+  if (invoices.length) parts.push(`Invoices drafted, awaiting your send: ${invoices.map((i) => `${i.name} (${i.n})`).join(', ')}.`);
   if (gated.length) parts.push(`Waiting on your gate: ${gated.map((g) => `${g.name} at ${g.stage}`).join(', ')}.`);
 
   appendLedger(STUDIO_CHANNEL, {
@@ -165,6 +170,7 @@ export async function POST(req: NextRequest) {
     await runDuty(commsTriageDuty, 'comms-triage'),
     await runDuty(signoffRequestDuty, 'signoff-request'),
     await runDuty(billingWatchDuty, 'billing-watch'),
+    await runDuty(maintenanceWatchDuty, 'maintenance-watch'),
     await runDuty(worklistDuty, 'worklist'),
     ...stubbedDuties(),
   ];

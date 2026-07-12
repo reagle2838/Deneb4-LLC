@@ -34,6 +34,7 @@ export function toData(c: Client): ClientData {
     lastSeenByClient: c.lastSeenByClient,
     pipeline: c.pipeline,
     draftReplies: c.draftReplies,
+    githubUser: c.githubUser,
   };
 }
 

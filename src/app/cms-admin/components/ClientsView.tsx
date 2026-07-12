@@ -74,6 +74,7 @@ export default function ClientsView({
           lastSeenByClient: '',
           pipeline: 'onboarding',
           draftReplies: [],
+          githubUser: '',
         };
         onCreated(newClient, data.password);
         setPassword({ slug: data.slug, name: newClient.name, value: data.password, welcomed: data.welcomed === true });

@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         lastSeenByClient: existing.lastSeenByClient,
         pipeline: existing.pipeline,
         draftReplies: existing.draftReplies,
+        githubUser: existing.githubUser,
       },
     });
 

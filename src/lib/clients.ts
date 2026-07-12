@@ -98,6 +98,7 @@ export interface Client {
   lastSeenByClient: string; // ISO timestamp: when the client last viewed the thread
   pipeline: string; // internal pipeline stage id (see lib/pipeline.ts); '' = legacy/unset
   draftReplies: DraftReply[]; // proposed replies awaiting Ridhi's approval (never sent to client)
+  githubUser: string; // client's GitHub username, for repo transfer at handoff (optional)
 }
 
 /** Editable portion of a client (everything except slug + passwordHash). */
@@ -192,6 +193,7 @@ function parseFile(slug: string): Client | null {
       createdBy: str(d.createdBy) || 'comms',
       date: str(d.date),
     })),
+    githubUser: str(data.githubUser),
   };
 }
 
@@ -268,6 +270,7 @@ export function writeClient(
     lastSeenByClient: data.lastSeenByClient ?? '',
     pipeline: data.pipeline ?? '',
     draftReplies: data.draftReplies ?? [],
+    githubUser: data.githubUser ?? '',
   };
   fs.writeFileSync(clientPath(slug), yamlDump(out, { lineWidth: -1, quotingType: '"' }), 'utf-8');
 }
@@ -283,6 +286,36 @@ function clientToData(c: Client): ClientData {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { slug: _slug, passwordHash: _passwordHash, ...rest } = c;
   return rest;
+}
+
+/** Replace a client's invoice list (Billing agent, after Ridhi approves a send). */
+export function setInvoices(slug: string, invoices: ClientInvoice[]): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.invoices = invoices;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Set a client's GitHub username (for repo transfer at handoff). */
+export function setGithubUser(slug: string, githubUser: string): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.githubUser = githubUser.trim().replace(/^@/, '');
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
+/** Merge fields into a client's staging block (deploy automation). */
+export function setStaging(slug: string, patch: Partial<ClientStaging>): ClientStaging | null {
+  const c = parseFile(slug);
+  if (!c) return null;
+  const data = clientToData(c);
+  data.staging = { ...c.staging, ...patch };
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return data.staging;
 }
 
 /** Append one update to a client's portal timeline. */

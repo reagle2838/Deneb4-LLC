@@ -1,0 +1,18 @@
+- id: 02c780a4-143d-484e-8111-ae92e19a4e45
+  kind: deposit
+  description: Build deposit (50%)
+  amount: 1800
+  dueDate: "2026-07-19"
+  lines:
+    - label: "Custom website: design, build, QA, staging, full ownership at handoff"
+      amount: $2,400.00
+    - label: Photo galleries
+      amount: $350.00
+    - label: Blog / insights section
+      amount: $400.00
+    - label: Careers page + applications
+      amount: $450.00
+    - label: Project total $3,600.00 — 50% deposit due now, balance at handoff
+      amount: $1,800.00
+  status: proposed
+  date: "2026-07-12T18:45:50.851Z"

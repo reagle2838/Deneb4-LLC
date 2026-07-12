@@ -18,11 +18,11 @@ invoices:
     status: paid
     dueDate: "2026-07-01"
 staging:
-  url: ""
+  url: http://127.0.0.1:4248
   username: ""
   password: ""
-  status: building
-  notes: ""
+  status: down
+  notes: Staging stopped.
 feedbackOpen: false
 feedback:
   - id: test-comms-1
@@ -62,7 +62,7 @@ feedback:
     resolved: false
 widgetKey: acmedemokey12345678
 lastSeenByClient: ""
-pipeline: handoff
+pipeline: client-review
 draftReplies:
   - id: 3a6515f9-ee06-4db9-b3a8-fc9753f3827e
     message: |-

@@ -8,12 +8,15 @@ import { useCallback, useEffect, useState } from 'react';
  * handover doc (credentials + checklist) to a gitignored file; Ridhi
  * reviews it here and delivers it to the client on a channel she trusts.
  */
-export default function HandoffPanel({ slug, pipeline }: { slug: string; pipeline: string }) {
+export default function HandoffPanel({ slug, pipeline, githubUser }: { slug: string; pipeline: string; githubUser?: string }) {
   const [doc, setDoc] = useState('');
   const [generatedAt, setGeneratedAt] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [show, setShow] = useState(false);
+  const [ghUser, setGhUser] = useState(githubUser ?? '');
+  const [transferRepo, setTransferRepo] = useState(false);
+  const [transferNote, setTransferNote] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -39,9 +42,10 @@ export default function HandoffPanel({ slug, pipeline }: { slug: string; pipelin
       const res = await fetch('/api/agents/handoff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify({ slug, githubUser: ghUser.trim() || undefined, transfer: transferRepo && !!ghUser.trim() }),
       });
-      const data = (await res.json()) as { ok?: boolean; doc?: string; rotated?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; doc?: string; rotated?: boolean; error?: string; transfer?: { detail?: string } | null };
+      if (data.transfer?.detail) setTransferNote(data.transfer.detail);
       if (data.ok && data.doc) {
         setDoc(data.doc);
         setGeneratedAt(new Date().toISOString());
@@ -82,6 +86,21 @@ export default function HandoffPanel({ slug, pipeline }: { slug: string; pipelin
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <input
+          type="text"
+          value={ghUser}
+          onChange={(e) => setGhUser(e.target.value)}
+          placeholder="client GitHub username (optional)"
+          className="text-xs px-2 py-1 rounded-sm flex-1 min-w-[10rem]"
+          style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)', color: 'var(--text-primary)' }}
+        />
+        <label className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-faint)' }}>
+          <input type="checkbox" checked={transferRepo} onChange={(e) => setTransferRepo(e.target.checked)} />
+          transfer repo to them
+        </label>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={generate} disabled={busy || pipeline !== 'handoff'} className="btn-primary text-xs">
           {busy ? 'Generating...' : doc ? 'Regenerate (rotates password again)' : 'Generate package (rotates admin password)'}
@@ -95,6 +114,7 @@ export default function HandoffPanel({ slug, pipeline }: { slug: string; pipelin
       </div>
 
       {error && <p className="text-xs mt-2" style={{ color: '#e40014' }}>{error}</p>}
+      {transferNote && <p className="text-xs mt-2" style={{ color: 'var(--accent-light)' }}>{transferNote}</p>}
 
       {show && doc && (
         <pre

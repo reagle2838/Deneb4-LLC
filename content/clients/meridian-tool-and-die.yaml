@@ -1,0 +1,43 @@
+name: Meridian Tool & Die
+email: quotes@meridiantool.example
+projectName: Meridian site
+active: true
+passwordHash: 98092bac298efdeb0d1c747ce2aab130:4d0c5ceb78fbafdf71833c0ed2c194c094a24c3777db701d66f2311fc41a3273d6151b05af8f38a279bfff3ce25be5db50af4239c2840715d9868eb2b388abc7
+stage: ""
+driveFolder: ""
+updates:
+  - phase: Final approval
+    status: complete
+    notes: The finished site is ready for your final review. Take a look at the staging link, and when everything is the way you want it, approve here to move to launch. Anything that still needs a tweak — just tell us in Messages instead.
+    date: "2026-07-12"
+files: []
+revisions: []
+invoices:
+  - description: Build deposit (50%)
+    amount: $1,725.00
+    status: paid
+    dueDate: "2026-07-19"
+  - description: Final balance at handoff
+    amount: $1,770.00
+    status: paid
+    dueDate: "2026-07-26"
+staging:
+  url: ""
+  username: ""
+  password: ""
+  status: building
+  notes: ""
+feedbackOpen: false
+feedback:
+  - id: 7d2109a6-032b-4d9e-9ee0-869e24603f73
+    author: client
+    message: "Approved: Final approval"
+    page: ""
+    date: "2026-07-12T18:46:45.611Z"
+    read: false
+    resolved: false
+widgetKey: 4285cfe86e685149cc
+lastSeenByClient: ""
+pipeline: handoff
+draftReplies: []
+githubUser: ""
