@@ -19,6 +19,8 @@ export function toData(c: Client): ClientData {
   return {
     name: c.name,
     email: c.email,
+    phone: c.phone,
+    internalNotes: c.internalNotes,
     projectName: c.projectName,
     active: c.active,
     stage: c.stage,

@@ -10,6 +10,7 @@ import PipelinePanel from './PipelinePanel';
 import ChangeProposalsPanel from './ChangeProposalsPanel';
 import BillingPanel from './BillingPanel';
 import HandoffPanel from './HandoffPanel';
+import TimelinePanel from './TimelinePanel';
 import DangerZone from './DangerZone';
 import { useClientDraft } from './useClientDraft';
 import {
@@ -103,6 +104,8 @@ export default function ClientCommandCenter({
               compact
             />
           </div>
+
+          <TimelinePanel slug={client.slug} />
         </div>
 
         {/* Right: portal content editors */}

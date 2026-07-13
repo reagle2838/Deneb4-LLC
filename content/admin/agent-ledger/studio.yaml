@@ -34,3 +34,18 @@
     drafts: "1"
     proposals: "0"
     gated: "1"
+- id: 4525eef7-ad37-49be-ab61-36b9dd7ab415
+  date: "2026-07-13T11:54:23.301Z"
+  agent: concierge
+  kind: event
+  message: |-
+    Daily worklist.
+    Unread client messages: Acme Fabrication (5), Meridian Tool & Die (3).
+    Draft replies awaiting your approval: Acme Fabrication (1).
+    Invoices drafted, awaiting your send: Acme Fabrication (1).
+    Waiting on your gate: Meridian Tool & Die at Handoff.
+  data:
+    unread: "2"
+    drafts: "1"
+    proposals: "0"
+    gated: "1"

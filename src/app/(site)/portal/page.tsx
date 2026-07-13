@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyPortalSession } from "@/lib/portal-auth";
 import { getClientBySlug, countUnreadForClient } from "@/lib/clients";
+import { getProposedInvoices } from "@/lib/billing";
+import { loadPricing } from "@/lib/pricing";
 import PortalView, { type PortalData } from "./PortalView";
 
 export const metadata: Metadata = {
@@ -19,6 +21,13 @@ export default async function PortalPage() {
   const client = await getClientBySlug(clientSlug);
   if (!client || !client.active) redirect('/login');
 
+  // Line items for the client's SENT invoices (their own billing detail —
+  // internal drafts/rejections never leave the server).
+  const invoiceLines: Record<string, { label: string; amount: string }[]> = {};
+  for (const p of getProposedInvoices(client.slug)) {
+    if (p.status === 'sent') invoiceLines[p.description] = p.lines;
+  }
+
   // Only pass what the portal needs (no email/passwordHash to the client).
   const data: PortalData = {
     slug: client.slug,
@@ -31,6 +40,8 @@ export default async function PortalPage() {
     files: client.files,
     revisions: client.revisions,
     invoices: client.invoices,
+    invoiceLines,
+    paymentInstructions: loadPricing().paymentInstructions,
     feedbackOpen: client.feedbackOpen,
     feedback: client.feedback,
     unreadMessages: countUnreadForClient(client),

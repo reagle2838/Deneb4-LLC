@@ -14,11 +14,13 @@ export default function MessagesSection({
   canComment,
   unread,
   onSeen,
+  driveFolder,
 }: {
   initial: ClientFeedback[];
   canComment: boolean;
   unread: number;
   onSeen: () => void;
+  driveFolder?: string;
 }) {
   const [thread, setThread] = useState<ClientFeedback[]>(initial);
   const [page, setPage] = useState('');
@@ -191,9 +193,32 @@ export default function MessagesSection({
             style={{ ...inputStyle, resize: 'vertical' }}
           />
           {error && <p className="text-xs" style={{ color: '#e40014' }}>{error}</p>}
-          <button type="submit" disabled={busy || !message.trim()} className="btn-primary w-full justify-center">
-            {busy ? 'Sending...' : 'Send message'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button type="submit" disabled={busy || !message.trim()} className="btn-primary flex-1 justify-center">
+              {busy ? 'Sending...' : 'Send message'}
+            </button>
+            <button
+              type="button"
+              className="btn-outline text-sm justify-center"
+              onClick={() => {
+                setPage('Consultation request');
+                setMessage(
+                  "I'd like to schedule a 30-minute phone consultation. Times that work for me: \n\nWhat I'd like to discuss: "
+                );
+              }}
+            >
+              Request a phone call
+            </button>
+          </div>
+          {driveFolder && (
+            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+              Have a file to share &mdash; photos, specs, documents?{' '}
+              <a href={driveFolder} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-light)' }}>
+                Drop it in your shared project folder
+              </a>{' '}
+              and mention it here.
+            </p>
+          )}
         </form>
       )}
 

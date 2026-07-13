@@ -3,3 +3,8 @@
   kind: elevenlabs-call
   amount: 8
   note: 30-min intro consultation
+- id: 70c191ce-2c84-4a58-b316-f7988a94e3e0
+  date: "2026-07-13T01:43:07.158Z"
+  kind: elevenlabs-call
+  amount: 12
+  note: 45-min phone consultation (see consultation record 15e74557)

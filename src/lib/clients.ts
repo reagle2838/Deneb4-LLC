@@ -82,6 +82,8 @@ export interface Client {
   slug: string;
   name: string;
   email: string;
+  phone: string; // client's phone number (consultations, follow-ups)
+  internalNotes: string; // Ridhi's private notes: how they found us, context, reminders. Never shown to the client.
   projectName: string;
   active: boolean;
   passwordHash: string;
@@ -142,6 +144,8 @@ function parseFile(slug: string): Client | null {
     slug,
     name: str(data.name) || slug,
     email: str(data.email),
+    phone: str(data.phone),
+    internalNotes: str(data.internalNotes),
     projectName: str(data.projectName),
     active: data.active === true,
     passwordHash: str(data.passwordHash),
@@ -254,6 +258,8 @@ export function writeClient(
   const out = {
     name: data.name,
     email: data.email,
+    phone: data.phone ?? '',
+    internalNotes: data.internalNotes ?? '',
     projectName: data.projectName,
     active: data.active,
     passwordHash,

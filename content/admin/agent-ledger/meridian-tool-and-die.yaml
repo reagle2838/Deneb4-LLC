@@ -123,3 +123,35 @@
   data:
     rotated: "true"
     modules: d4-site-template,d4-cms-core,d4-careers-portal,d4-catalog
+- id: 02758906-261e-4644-9aa9-31a1cfe4547d
+  date: "2026-07-13T01:43:07.163Z"
+  agent: comms
+  kind: event
+  message: "Phone consultation (45 min): Walked through the catalog structure. They want part numbers searchable and three product categories at launch. Agreed: they send the product spreadsheet by Friday; we seed it. They asked about hosting costs post-handoff - explained they own everything, only pay their own hosting."
+  data:
+    consultationId: 15e74557-b0c5-4bc6-933b-69727b136598
+    durationMin: "45"
+- id: e82be86c-466d-442b-adb8-e637c3998a66
+  date: "2026-07-13T12:19:46.982Z"
+  agent: comms
+  kind: event
+  message: |-
+    Triaged 3 new client messages.
+    - [approval] "Approved: Final approval" — Reads like sign-off; Ridhi confirms before anything advances.
+    - [structural] "Quick question - can the part number search also match partial numbers?" — Asks for something off the module menu; needs Ridhi + Cowork.
+    - [consultation] "I'd like to schedule a 30-minute phone consultation. Times that work for me: Tuesday or..." — Wants a phone consultation — scheduling is yours; log the call summary in Billing afterward.
+    Draft reply queued for your approval in Messages.
+  data:
+    engine: heuristic
+    messages: "3"
+- id: ca609977-136d-4148-97e4-aec260472c14
+  date: "2026-07-13T12:19:47.105Z"
+  agent: comms
+  kind: alert
+  message: |-
+    3 messages need you:
+    [approval] "Approved: Final approval" — Reads like sign-off; Ridhi confirms before anything advances.
+    [structural] "Quick question - can the part number search also match partial numbers?" — Asks for something off the module menu; needs Ridhi + Cowork.
+    [consultation] "I'd like to schedule a 30-minute phone consultation. Times that work for me: Tuesday or..." — Wants a phone consultation — scheduling is yours; log the call summary in Billing afterward.
+  data:
+    categories: approval,structural,consultation

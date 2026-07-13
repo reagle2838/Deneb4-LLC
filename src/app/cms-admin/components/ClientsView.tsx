@@ -58,6 +58,8 @@ export default function ClientsView({
           slug: data.slug,
           name: addForm.name.trim(),
           email: addForm.email.trim(),
+          phone: '',
+          internalNotes: '',
           projectName: addForm.projectName.trim(),
           active: true,
           passwordHash: 'set',

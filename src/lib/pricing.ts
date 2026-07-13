@@ -3,6 +3,24 @@ import path from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import { totalCosts, consultationCount } from './costs';
 
+// Read consultation records directly (consultations.ts imports this module,
+// so importing it back would be a cycle). Billable sessions are 30-minute
+// blocks: a 60-minute call is two sessions on the invoice.
+function billableConsultationSessions(slug: string): number {
+  const file = path.join(process.cwd(), 'content', 'admin', 'consultations', `${slug}.yaml`);
+  if (!fs.existsSync(file)) return 0;
+  try {
+    const raw = yamlLoad(fs.readFileSync(file, 'utf-8'));
+    if (!Array.isArray(raw)) return 0;
+    return (raw as { durationMin?: number }[]).reduce(
+      (n, c) => n + Math.max(1, Math.ceil((c.durationMin ?? 30) / 30)),
+      0
+    );
+  } catch {
+    return 0;
+  }
+}
+
 /**
  * The pricing engine: turns a client's build config into a quote with an
  * auditable cost floor. Two sides, per content/admin/pricing.yaml (which
@@ -40,6 +58,8 @@ export interface PricingConfig {
   minMarginMultiplier: number;
   claudeRates: Record<string, ClaudeRate>;
   resendCostPerEmail: number;
+  /** Client-facing: how to pay, shown in the portal Billing section. */
+  paymentInstructions: string;
 }
 
 const DEFAULT_CLAUDE_RATES: Record<string, ClaudeRate> = {
@@ -66,6 +86,7 @@ const DEFAULTS: PricingConfig = {
   minMarginMultiplier: 3,
   claudeRates: DEFAULT_CLAUDE_RATES,
   resendCostPerEmail: 0.001,
+  paymentInstructions: '',
 };
 
 const PRICING_FILE = path.join(process.cwd(), 'content', 'admin', 'pricing.yaml');
@@ -142,7 +163,9 @@ export function computeQuote(slug: string): Quote | null {
     const price = p.modulePrices[mod];
     if (price) lines.push({ label: MODULE_LABELS[mod] ?? mod, amount: price });
   }
-  const consults = consultationCount(slug);
+  // Prefer duration-aware records; fall back to the cost-entry count for
+  // clients logged before consultation records existed.
+  const consults = billableConsultationSessions(slug) || consultationCount(slug);
   if (consults > 0) {
     lines.push({ label: `Phone consultations (${consults} × 30 min)`, amount: round2(consults * p.consultationPrice) });
   }

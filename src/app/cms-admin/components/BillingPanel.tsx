@@ -55,6 +55,9 @@ export default function BillingPanel({ slug }: { slug: string }) {
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [callOpen, setCallOpen] = useState(false);
+  const [callMinutes, setCallMinutes] = useState(30);
+  const [callSummary, setCallSummary] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -81,17 +84,21 @@ export default function BillingPanel({ slug }: { slug: string }) {
     refresh();
   }, [refresh]);
 
-  async function act(action: string, id?: string) {
+  async function act(action: string, id?: string, extra?: Record<string, unknown>) {
     setBusyId(id ?? action);
     setError('');
     try {
       const res = await fetch('/api/agents/billing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, action, id, ...(action === 'record-cost' ? { kind: 'elevenlabs-call', note: '30-min phone consultation' } : {}) }),
+        body: JSON.stringify({ slug, action, id, ...extra }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!data.ok) setError(data.error ?? 'Action failed.');
+      else if (action === 'log-consultation') {
+        setCallSummary('');
+        setCallOpen(false);
+      }
       await refresh();
     } catch {
       setError('Server error, try again.');
@@ -190,13 +197,49 @@ export default function BillingPanel({ slug }: { slug: string }) {
 
       {error && <p className="text-xs mt-2" style={{ color: '#e40014' }}>{error}</p>}
 
-      <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
-        <button onClick={() => act('record-cost')} disabled={busyId === 'record-cost'} className="btn-outline text-xs">
-          {busyId === 'record-cost' ? '...' : 'Log a 30-min consultation'}
-        </button>
-        <p className="font-spec text-[10px]" style={{ color: 'var(--text-faint)' }}>
-          Pricing lives in content/admin/pricing.yaml
-        </p>
+      <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
+        <div className="flex items-center justify-between">
+          <button onClick={() => setCallOpen((o) => !o)} className="btn-outline text-xs">
+            {callOpen ? 'Cancel' : 'Log a phone consultation'}
+          </button>
+          <p className="font-spec text-[10px]" style={{ color: 'var(--text-faint)' }}>
+            Pricing lives in content/admin/pricing.yaml
+          </p>
+        </div>
+        {callOpen && (
+          <div className="mt-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Minutes:</label>
+              <input
+                type="number"
+                min={5}
+                max={480}
+                step={5}
+                value={callMinutes}
+                onChange={(e) => setCallMinutes(Number(e.target.value) || 30)}
+                className="text-xs px-2 py-1 rounded-sm w-20"
+                style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)', color: 'var(--text-primary)' }}
+              />
+              <span className="font-spec text-[10px]" style={{ color: 'var(--text-faint)' }}>
+                billed per 30-min block on the final invoice
+              </span>
+            </div>
+            <textarea
+              value={callSummary}
+              onChange={(e) => setCallSummary(e.target.value)}
+              placeholder="What was discussed, decided, or promised on the call? (required — this is the record)"
+              className="text-xs px-2 py-1.5 rounded-sm w-full"
+              style={{ background: 'var(--bg-alt)', border: '1px solid var(--border-accent)', color: 'var(--text-primary)', minHeight: '4rem' }}
+            />
+            <button
+              onClick={() => act('log-consultation', undefined, { durationMin: callMinutes, summary: callSummary })}
+              disabled={busyId === 'log-consultation' || !callSummary.trim()}
+              className="btn-primary text-xs"
+            >
+              {busyId === 'log-consultation' ? 'Saving...' : 'Save call record'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

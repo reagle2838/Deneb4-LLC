@@ -15,13 +15,28 @@ const SITE_URL = process.env.SITE_URL || 'https://deneb4.com';
 const OWNER_EMAIL = process.env.CONTACT_TO_EMAIL || 'hello@deneb4.com';
 
 /**
- * Log the real cost of one delivered email against the client's project.
- * The static resendCostEstimate in pricing.yaml is the fallback until this
- * has run at least once — actual send counts replace the guess, never the
- * other way around (pricing.ts takes max(actual, estimate)).
+ * Bookkeeping for one project email: the real cost of the send (delivered
+ * only — console-fallback sends cost nothing) AND a content record of what
+ * was actually said (always, delivered or not), so "what exactly was the
+ * client told?" is answerable later from the email log / timeline.
  */
-function recordEmailCost(slug: string, delivered: boolean, label: string): void {
-  if (!delivered) return; // console-fallback sends cost nothing
+function recordEmailCost(
+  slug: string,
+  delivered: boolean,
+  label: string,
+  content?: { direction: 'to-client' | 'to-owner'; subject: string; textParts: string[] }
+): void {
+  if (content) {
+    try {
+      // Lazy import keeps notify.ts safe to load in edge-ish contexts.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { logEmail } = require('./email-log') as typeof import('./email-log');
+      logEmail(slug, { ...content, delivered });
+    } catch (err) {
+      console.error('[deneb4] email log failed:', err);
+    }
+  }
+  if (!delivered) return;
   const rate = loadPricing().resendCostPerEmail;
   if (rate > 0) recordCost(slug, { kind: 'resend', amount: rate, note: label });
 }
@@ -84,7 +99,11 @@ export async function notifyOwnerOfClientMessage(
         cta: { label: 'Open in Workspace', href: `${SITE_URL}/cms-admin?client=${client.slug}` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, 'Owner notified of client message');
+    recordEmailCost(client.slug, result.delivered, 'Owner notified of client message', {
+      direction: 'to-owner',
+      subject: `New message from ${client.name}`,
+      textParts: [entry.page ? `Regarding: ${entry.page}` : '', `Client wrote: ${entry.message}`],
+    });
   } catch (err) {
     console.error('[deneb4] notify owner of client message failed:', err);
   }
@@ -105,7 +124,11 @@ export async function notifyClientOfReply(client: Client, entry: ClientFeedback)
         cta: { label: 'Open your portal', href: `${SITE_URL}/portal` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, 'Client notified of reply');
+    recordEmailCost(client.slug, result.delivered, 'Client notified of reply', {
+      direction: 'to-client',
+      subject: `New update on ${client.projectName || 'your project'}`,
+      textParts: ['You have a new message from Deneb4. Sign in to your project portal to read and reply.', `Message: ${entry.message}`],
+    });
   } catch (err) {
     console.error('[deneb4] notify client of reply failed:', err);
   }
@@ -147,7 +170,13 @@ export async function notifyClientCredentials(
         cta: { label: 'Open your portal', href: `${SITE_URL}/login` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, `Client credentials (${variant})`);
+    // Content record deliberately excludes the password — the log is a
+    // communications record, never a credential store.
+    recordEmailCost(client.slug, result.delivered, `Client credentials (${variant})`, {
+      direction: 'to-client',
+      subject: variant === 'welcome' ? 'Your project portal is ready' : 'Your new portal password',
+      textParts: [`Portal ${variant} email with sign-in instructions (password omitted from this log).`],
+    });
     return result.delivered;
   } catch (err) {
     console.error('[deneb4] credentials email failed:', err);
@@ -203,7 +232,14 @@ export async function notifyClientOfSignoffRequest(client: Client): Promise<bool
         cta: { label: 'Review & approve', href: `${SITE_URL}/portal` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, 'Sign-off request');
+    recordEmailCost(client.slug, result.delivered, 'Sign-off request', {
+      direction: 'to-client',
+      subject: `${client.projectName || 'Your site'} is ready for your final approval`,
+      textParts: [
+        'The finished site is up on your staging link for a last look. When everything is the way you want it, open your portal and click Approve on the "Final approval" item.',
+        'If anything still needs a tweak, just tell us in Messages — nothing moves forward until you say so.',
+      ],
+    });
     return result.delivered;
   } catch (err) {
     console.error('[deneb4] sign-off request email failed:', err);
@@ -235,12 +271,22 @@ export async function notifyClientOfInvoice(
         lines: [
           `Hi ${escapeHtml(client.name)},`,
           `<table style="width:100%;border-collapse:collapse;margin:6px 0;">${rows}<tr><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;">Amount due</td><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;text-align:right;">${escapeHtml(invoice.amount)}</td></tr></table>`,
-          `Due ${escapeHtml(invoice.dueDate)}. Payment details are in your portal — reply here with any questions.`,
+          // Only promise portal payment details when they're actually configured.
+          loadPricing().paymentInstructions
+            ? `Due ${escapeHtml(invoice.dueDate)}. Payment details are in your portal's Billing section — reply here with any questions.`
+            : `Due ${escapeHtml(invoice.dueDate)}. Reply to this email and we'll arrange payment together.`,
         ],
         cta: { label: 'View in your portal', href: `${SITE_URL}/portal` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, `Invoice: ${invoice.description}`);
+    recordEmailCost(client.slug, result.delivered, `Invoice: ${invoice.description}`, {
+      direction: 'to-client',
+      subject: `Invoice: ${invoice.description} — ${invoice.amount}`,
+      textParts: [
+        ...lines.map((l) => `${l.label}: ${l.amount}`),
+        `Amount due: ${invoice.amount}, due ${invoice.dueDate}.`,
+      ],
+    });
     return result.delivered;
   } catch (err) {
     console.error('[deneb4] invoice email failed:', err);
@@ -265,7 +311,11 @@ export async function notifyOwnerOfApproval(client: Client, phase: string): Prom
         cta: { label: 'Open in Workspace', href: `${SITE_URL}/cms-admin?client=${client.slug}` },
       }),
     });
-    recordEmailCost(client.slug, result.delivered, `Owner notified: approved ${phase}`);
+    recordEmailCost(client.slug, result.delivered, `Owner notified: approved ${phase}`, {
+      direction: 'to-owner',
+      subject: `${client.name} approved: ${phase}`,
+      textParts: [`${client.name} approved "${phase}" from their portal.`],
+    });
   } catch (err) {
     console.error('[deneb4] notify owner of approval failed:', err);
   }

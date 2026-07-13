@@ -271,6 +271,7 @@ export type TriageCategory =
   | 'question'
   | 'structural'
   | 'approval'
+  | 'consultation'
   | 'urgent'
   | 'unclear';
 
@@ -292,6 +293,8 @@ const ADD_VERB = /\b(add|include|enable|turn on|set up|we (want|need)|can (we|yo
 const REMOVE_VERB = /\b(remove|drop|delete|take (off|down|out)|turn off|get rid of|don'?t (want|need))\b/i;
 const URGENT_RE = /\b(unacceptable|very disappointed|frustrat|angry|upset|furious|refund|cancel (the|my|this|our)|lawyer|legal action|terrible|awful|worst)\b/i;
 const APPROVAL_RE = /\b(approved?|looks? (great|good|perfect)|lgtm|sign(ed|ing)? ?off|good to go|ready to (go|launch|ship)|love it|ship it|we'?re happy|no (more )?changes)\b/i;
+// Checked before STRUCTURAL_RE, whose /schedul\w*/ would otherwise claim these.
+const CONSULTATION_RE = /\b(consultation|phone call|call me|give (me|us) a call|speak (with|to) you|talk (on the|by) phone|schedule a (call|chat|meeting)|hop on a call)\b/i;
 const STRUCTURAL_RE = /\b(new page|custom|animation|redesign|rebuild|different layout|integrat\w*|shopify|e-?commerce|online store|checkout|payment|booking|schedul\w*|calculator|configurator|map|multilingual|translat\w*|login for|portal for|search)\b/i;
 const QUESTION_RE = /\?|^\s*(when|what|how|why|where|who|can|could|will|would|is|are|do|does|should)\b/i;
 
@@ -341,6 +344,13 @@ function heuristicTriageOne(m: ClientFeedback, configAvailable: boolean): {
   if (URGENT_RE.test(text)) {
     return { category: 'urgent', reason: 'Tone suggests the client is upset; Ridhi should reply personally.', patch: {} };
   }
+  if (CONSULTATION_RE.test(text)) {
+    return {
+      category: 'consultation',
+      reason: 'Wants a phone consultation — scheduling is yours; log the call summary in Billing afterward.',
+      patch: {},
+    };
+  }
   if (configAvailable) {
     const set = extractSetRequests(text);
     const mods = extractModuleRequests(text);
@@ -372,6 +382,9 @@ function composeDraft(perMessage: BatchTriage['perMessage'], patch: ConfigPatch)
     parts.push(
       `Thanks for the notes! We've queued the following change${describePatch(patch).includes(';') ? 's' : ''}: ${describePatch(patch)}. You'll see it on the staging site shortly after it clears our checks, and we'll confirm here when it's up.`
     );
+  }
+  if (cats.has('consultation')) {
+    parts.push(`Happy to get on a call — we'll follow up here shortly to set a time that works for you.`);
   }
   if (cats.has('structural')) {
     parts.push(
@@ -418,7 +431,7 @@ async function llmTriage(
   const menu = selectableModules();
   const system = [
     `You triage client feedback for a web design studio. The client "${client.name}" is reviewing their staging site.`,
-    `Classify each message as one of: change-request, question, structural, approval, urgent, unclear.`,
+    `Classify each message as one of: change-request, question, structural, approval, consultation (wants a phone call), urgent, unclear.`,
     `A change-request maps ONLY onto this closed menu — identity fields ${PATCHABLE_FIELDS.join(', ')} (themePreset must be one of ${THEME_PRESETS.join(', ')}) and modules ${menu.join(', ')}. Anything else a client wants changed is "structural".`,
     configAvailable ? '' : 'This client has no build config yet, so nothing is a change-request; use structural or question.',
     `Rules for draftReply (a single reply to the whole batch, drafted for the studio owner to approve; it is NEVER sent automatically):`,
@@ -480,7 +493,7 @@ async function llmTriage(
     };
 
     const validIds = new Set(messages.map((m) => m.id));
-    const validCats: TriageCategory[] = ['change-request', 'question', 'structural', 'approval', 'urgent', 'unclear'];
+    const validCats: TriageCategory[] = ['change-request', 'question', 'structural', 'approval', 'consultation', 'urgent', 'unclear'];
     const perMessage: BatchTriage['perMessage'] = [];
     for (const p of parsed.perMessage ?? []) {
       if (!p.id || !validIds.has(p.id)) continue;
@@ -503,7 +516,12 @@ async function llmTriage(
 
 // ── The duty (called from /api/agents/tick) ──────────────────────────────
 
-const COMMS_STAGES = ['client-review', 'approval'];
+// Triage runs for every active client, whatever the stage: a consultation
+// request during handoff or an upset message during payment deserves the
+// same treatment as one during client review. Safe to widen because triage
+// never sends or applies anything — its products (drafts, proposals) stay
+// behind Ridhi's gates, and the Builder separately refuses ineligible
+// stages when a proposal is approved.
 const TRIAGED_CAP = 400;
 
 function triagedIds(slug: string): string[] {
@@ -532,7 +550,7 @@ const excerpt = (s: string) => (s.length > 90 ? s.slice(0, 87) + '...' : s).repl
  */
 export async function commsTriageDuty(): Promise<DutyResult> {
   const clients = await getAllClients();
-  const eligible = clients.filter((c) => c.active && COMMS_STAGES.includes(c.pipeline));
+  const eligible = clients.filter((c) => c.active && c.pipeline !== '');
   let triaged = 0;
   let drafts = 0;
   let proposals = 0;
@@ -586,7 +604,7 @@ export async function commsTriageDuty(): Promise<DutyResult> {
 
     // 4. Escalations (alert + email; the alert-and-stop rule).
     const needsRidhi = triage.perMessage.filter((p) =>
-      ['urgent', 'structural', 'approval', 'unclear'].includes(p.category)
+      ['urgent', 'structural', 'approval', 'consultation', 'unclear'].includes(p.category)
     );
     if (needsRidhi.length > 0) {
       const detail = needsRidhi
@@ -614,7 +632,7 @@ export async function commsTriageDuty(): Promise<DutyResult> {
   }
 
   if (triaged === 0) {
-    return { name: 'comms-triage', status: 'ok', summary: `No new client messages on ${eligible.length} comms-stage client(s).` };
+    return { name: 'comms-triage', status: 'ok', summary: `No new client messages across ${eligible.length} active client(s).` };
   }
   return {
     name: 'comms-triage',

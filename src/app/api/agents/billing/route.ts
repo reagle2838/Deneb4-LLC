@@ -4,6 +4,7 @@ import { getClientBySlug } from '@/lib/clients';
 import { getProposedInvoices, approveSendInvoice, rejectInvoice, proposeDeposit, proposeFinal } from '@/lib/billing';
 import { computeQuote, computeAnthropicCost, loadPricing } from '@/lib/pricing';
 import { getCosts, recordCost, type CostKind } from '@/lib/costs';
+import { getConsultations, logConsultation } from '@/lib/consultations';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     quote: computeQuote(slug),
     proposed: getProposedInvoices(slug),
     costs: getCosts(slug),
+    consultations: getConsultations(slug),
   });
 }
 
@@ -43,7 +45,7 @@ const COST_KINDS: CostKind[] = ['build-api', 'resend', 'elevenlabs-call', 'other
 export async function POST(req: NextRequest) {
   let body: {
     slug?: string;
-    action?: 'approve-send' | 'reject' | 'propose-deposit' | 'propose-final' | 'record-cost' | 'record-api-usage';
+    action?: 'approve-send' | 'reject' | 'propose-deposit' | 'propose-final' | 'record-cost' | 'record-api-usage' | 'log-consultation';
     id?: string;
     note?: string;
     kind?: string;
@@ -51,6 +53,8 @@ export async function POST(req: NextRequest) {
     model?: string;
     inputTokens?: number;
     outputTokens?: number;
+    durationMin?: number;
+    summary?: string;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -99,6 +103,16 @@ export async function POST(req: NextRequest) {
       note: `${body.note ?? 'API usage'} (${body.model}): ${body.inputTokens} in / ${body.outputTokens} out tokens.`,
     });
     return NextResponse.json({ ok: true, cost: entry });
+  }
+
+  if (action === 'log-consultation') {
+    const summary = (body.summary ?? '').trim();
+    if (!summary) {
+      return NextResponse.json({ error: 'A consultation log needs a summary of what was discussed.' }, { status: 400 });
+    }
+    const record = logConsultation(client.slug, { durationMin: body.durationMin, summary });
+    if (!record) return NextResponse.json({ error: 'Could not log the consultation.' }, { status: 400 });
+    return NextResponse.json({ ok: true, consultation: record });
   }
 
   if (action === 'record-cost') {

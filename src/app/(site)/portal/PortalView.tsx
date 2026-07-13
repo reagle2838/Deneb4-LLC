@@ -25,6 +25,8 @@ export interface PortalData {
   files: ClientFile[];
   revisions: ClientRevision[];
   invoices: ClientInvoice[];
+  invoiceLines: Record<string, { label: string; amount: string }[]>;
+  paymentInstructions: string;
   feedbackOpen: boolean;
   feedback: ClientFeedback[];
   unreadMessages: number;
@@ -65,11 +67,12 @@ export default function PortalView({ client }: { client: PortalData }) {
           canComment={client.feedbackOpen}
           unread={unread}
           onSeen={clearUnread}
+          driveFolder={client.driveFolder}
         />
 
         <FilesSection files={client.files} driveFolder={client.driveFolder} />
 
-        <BillingSection invoices={client.invoices} />
+        <BillingSection invoices={client.invoices} invoiceLines={client.invoiceLines} paymentInstructions={client.paymentInstructions} />
 
         <NotesTimeline updates={updates} revisions={client.revisions} />
 

@@ -1,10 +1,12 @@
 name: Meridian Tool & Die
 email: quotes@meridiantool.example
+phone: ""
+internalNotes: ""
 projectName: Meridian site
 active: true
-passwordHash: 98092bac298efdeb0d1c747ce2aab130:4d0c5ceb78fbafdf71833c0ed2c194c094a24c3777db701d66f2311fc41a3273d6151b05af8f38a279bfff3ce25be5db50af4239c2840715d9868eb2b388abc7
+passwordHash: 0156da4a23b6b3a7d8846b85014c1c23:cc92c6253d55ed167eb658675040ce05e90f32ee80927e4af19e6d89479219a8242f6a59defc11ea16998dfe95f630e6c1b07f17ba1ae727aeddeb3d1a87f421
 stage: ""
-driveFolder: ""
+driveFolder: https://drive.google.com/drive/folders/demo-meridian
 updates:
   - phase: Final approval
     status: complete
@@ -27,7 +29,7 @@ staging:
   password: ""
   status: building
   notes: ""
-feedbackOpen: false
+feedbackOpen: true
 feedback:
   - id: 7d2109a6-032b-4d9e-9ee0-869e24603f73
     author: client
@@ -36,8 +38,30 @@ feedback:
     date: "2026-07-12T18:46:45.611Z"
     read: false
     resolved: false
+  - id: 3642b814-e33c-4ebf-8871-1074622bd5d9
+    author: client
+    message: Quick question - can the part number search also match partial numbers?
+    page: /catalog
+    date: "2026-07-13T01:46:37.026Z"
+    read: false
+    resolved: false
+  - id: 7e4c699d-8140-4a1d-b8d1-3fc55f3d236b
+    author: client
+    message: "I'd like to schedule a 30-minute phone consultation. Times that work for me: Tuesday or Wednesday afternoon. What I'd like to discuss: the product catalog structure."
+    page: Consultation request
+    date: "2026-07-13T11:54:19.228Z"
+    read: false
+    resolved: false
 widgetKey: 4285cfe86e685149cc
 lastSeenByClient: ""
 pipeline: handoff
-draftReplies: []
+draftReplies:
+  - id: 27bc36c5-e1dd-4a02-ab75-93de428677cb
+    message: |-
+      Happy to get on a call — we'll follow up here shortly to set a time that works for you.
+
+      Part of what you asked for goes beyond a quick settings change, so we're looking at the best way to do it properly and will come back to you with options.
+    page: ""
+    createdBy: comms
+    date: "2026-07-13T12:19:46.756Z"
 githubUser: ""

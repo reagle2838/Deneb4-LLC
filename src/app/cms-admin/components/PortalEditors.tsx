@@ -10,14 +10,30 @@ import { blank, today, type ClientDraft } from './useClientDraft';
 
 export function BasicsEditor({ d }: { d: ClientDraft }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div>
-        <label className={labelClass} style={labelStyle}>Email</label>
-        <input className={inputClass} style={inputStyle} value={d.draft.email} onChange={(e) => d.patch({ email: e.target.value })} />
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass} style={labelStyle}>Email</label>
+          <input className={inputClass} style={inputStyle} value={d.draft.email} onChange={(e) => d.patch({ email: e.target.value })} />
+        </div>
+        <div>
+          <label className={labelClass} style={labelStyle}>Phone</label>
+          <input className={inputClass} style={inputStyle} value={d.draft.phone} placeholder="(555) 555-0100" onChange={(e) => d.patch({ phone: e.target.value })} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className={labelClass} style={labelStyle}>Project Name</label>
+          <input className={inputClass} style={inputStyle} value={d.draft.projectName} onChange={(e) => d.patch({ projectName: e.target.value })} />
+        </div>
       </div>
       <div>
-        <label className={labelClass} style={labelStyle}>Project Name</label>
-        <input className={inputClass} style={inputStyle} value={d.draft.projectName} onChange={(e) => d.patch({ projectName: e.target.value })} />
+        <label className={labelClass} style={labelStyle}>Internal notes (never shown to the client)</label>
+        <textarea
+          className={inputClass}
+          style={{ ...inputStyle, minHeight: '4.5rem' }}
+          value={d.draft.internalNotes}
+          placeholder="How they found us, context from calls, reminders..."
+          onChange={(e) => d.patch({ internalNotes: e.target.value })}
+        />
       </div>
     </div>
   );
@@ -140,6 +156,7 @@ export function FilesEditor({ d, slug }: { d: ClientDraft; slug: string }) {
           </div>
           <p className="text-[11px] font-spec" style={{ color: 'var(--text-faint)' }}>
             In Google Drive, share this folder with the client&apos;s email as an <strong>Editor</strong> so they can upload. The client sees an &ldquo;Add your files&rdquo; button in their portal.
+            This folder is the file exchange for the whole project: contracts and signed documents live here, and clients drop images, specs, and docs here rather than attaching them to messages.
           </p>
         </div>
       </div>

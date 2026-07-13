@@ -52,3 +52,11 @@ consultationPrice: 45          # per scheduled 30-minute phone consultation
 
 # ── Guardrail ────────────────────────────────────────────────────────────
 minMarginMultiplier: 3         # quote must be >= total cost x this, or Billing alerts
+
+# ── Payment instructions shown to clients ────────────────────────────────
+# Shown in the client portal's Billing section under their invoices, and
+# referenced by the invoice email. Write it exactly as a client should read
+# it, e.g.: "Zelle to hello@deneb4.com, or a check payable to Deneb4 LLC
+# (address on your invoice). Include the invoice description in the memo."
+# Left empty, the portal shows a "reply to your invoice email" fallback.
+paymentInstructions: ""

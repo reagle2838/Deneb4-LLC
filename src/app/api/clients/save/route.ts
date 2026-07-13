@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       data: {
         name: existing.name,
         email: data.email ?? existing.email,
+        phone: data.phone ?? existing.phone,
+        internalNotes: data.internalNotes ?? existing.internalNotes,
         projectName: data.projectName ?? existing.projectName,
         active: data.active ?? existing.active,
         stage: data.stage ?? existing.stage,
