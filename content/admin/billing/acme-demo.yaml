@@ -14,5 +14,7 @@
       amount: $450.00
     - label: Project total $3,600.00 — 50% deposit due now, balance at handoff
       amount: $1,800.00
-  status: proposed
+  status: sent
   date: "2026-07-12T18:45:50.851Z"
+  resolvedDate: "2026-07-13T23:16:39.245Z"
+  note: "Recorded on the portal; email not configured, share it yourself. On the books as Wave invoice #3; payment will be detected automatically."

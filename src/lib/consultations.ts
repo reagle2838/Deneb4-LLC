@@ -5,6 +5,7 @@ import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
 import { recordCost } from './costs';
 import { loadPricing } from './pricing';
 import { appendLedger } from './agent-ledger';
+import { assertSafeSlug } from './agent-auth';
 
 /**
  * Consultation call records: what was actually SAID on a call, not just
@@ -28,7 +29,7 @@ export interface Consultation {
 }
 
 const DIR = path.join(process.cwd(), 'content', 'admin', 'consultations');
-const filePath = (slug: string) => path.join(DIR, `${slug}.yaml`);
+const filePath = (slug: string) => path.join(DIR, `${assertSafeSlug(slug)}.yaml`);
 
 export function getConsultations(slug: string): Consultation[] {
   const file = filePath(slug);

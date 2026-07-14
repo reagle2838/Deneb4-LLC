@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAgentKey } from '@/lib/agent-auth';
 import { verifySession } from '@/lib/cms-auth';
 import { getClientBySlug, setPipelineStage } from '@/lib/clients';
 import { appendLedger } from '@/lib/agent-ledger';
@@ -18,8 +19,7 @@ export const dynamic = 'force-dynamic';
  */
 async function authorized(req: NextRequest): Promise<boolean> {
   if (await verifySession(req.cookies.get('cms_auth')?.value)) return true;
-  const key = process.env.AGENT_API_KEY;
-  return Boolean(key && req.headers.get('x-agent-key') === key);
+  return hasAgentKey(req);
 }
 
 export async function GET(req: NextRequest) {

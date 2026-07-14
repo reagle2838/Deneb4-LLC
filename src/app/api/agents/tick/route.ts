@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAgentKey } from '@/lib/agent-auth';
 import { verifySession } from '@/lib/cms-auth';
 import { fetchUpcomingEvents, formatEventLine } from '@/lib/calendar';
 import { sendEmail } from '@/lib/email';
@@ -28,8 +29,7 @@ export const dynamic = 'force-dynamic';
  */
 async function authorized(req: NextRequest): Promise<boolean> {
   if (await verifySession(req.cookies.get('cms_auth')?.value)) return true;
-  const key = process.env.AGENT_API_KEY;
-  return Boolean(key && req.headers.get('x-agent-key') === key);
+  return hasAgentKey(req);
 }
 
 const OWNER_TZ = process.env.OWNER_TIMEZONE || 'America/New_York';
@@ -141,7 +141,7 @@ async function worklistDuty(): Promise<DutyResult> {
 function stubbedDuties(): DutyResult[] {
   return [
     { name: 'form-received', status: 'skipped', summary: 'Needs Google Drive API (Provisioning part 2).' },
-    { name: 'payment-received', status: 'skipped', summary: 'Wave API detection pending credentials; billing-watch covers manually-tracked invoices meanwhile.' },
+    { name: 'payment-received', status: 'skipped', summary: 'Retired into billing-watch: Wave payment detection runs there when WAVE_ACCESS_TOKEN is configured; manual paid-marking still works too.' },
   ];
 }
 

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+import { assertSafeSlug } from './agent-auth';
 
 /**
  * Per-client cost ledger: the ACTUAL money spent delivering a project
@@ -22,7 +23,7 @@ export interface CostEntry {
 }
 
 const COSTS_DIR = path.join(process.cwd(), 'content', 'admin', 'costs');
-const costsPath = (slug: string) => path.join(COSTS_DIR, `${slug}.yaml`);
+const costsPath = (slug: string) => path.join(COSTS_DIR, `${assertSafeSlug(slug)}.yaml`);
 
 export function getCosts(slug: string): CostEntry[] {
   const file = costsPath(slug);

@@ -1,5 +1,7 @@
 name: Acme Fabrication
 email: test@example.com
+phone: ""
+internalNotes: ""
 projectName: Acme Website
 active: true
 passwordHash: 90ea907a3f2ae22be65d28a93c795768:f497563f8cb685cbd872245782c5696e59679a44d915473515494444665e4e5eb6978717204d11d2d0a28edb01645a1cfc81541c776d4c5e397226ca8c285a56
@@ -17,6 +19,10 @@ invoices:
     amount: $3,800
     status: paid
     dueDate: "2026-07-01"
+  - description: Build deposit (50%)
+    amount: $1,800.00
+    status: paid
+    dueDate: "2026-07-19"
 staging:
   url: http://127.0.0.1:4248
   username: ""
@@ -74,3 +80,4 @@ draftReplies:
     page: /
     createdBy: comms
     date: "2026-07-11T15:16:28.440Z"
+githubUser: ""

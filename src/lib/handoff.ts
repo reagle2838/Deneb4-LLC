@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import type { Client } from './clients';
 import { appendLedger } from './agent-ledger';
+import { assertSafeSlug } from './agent-auth';
 
 /**
  * The handoff package (docs/agents.md: Concierge produces the "handover
@@ -24,7 +25,7 @@ const HANDOFFS_DIR = path.join(process.cwd(), 'content', 'admin', 'handoffs');
 const BUILDS_DIR = path.join(process.cwd(), 'builds');
 
 export function handoffDocPath(slug: string): string {
-  return path.join(HANDOFFS_DIR, `${slug}.md`);
+  return path.join(HANDOFFS_DIR, `${assertSafeSlug(slug)}.md`);
 }
 
 export function getHandoffDoc(slug: string): { doc: string; generatedAt: string } | null {

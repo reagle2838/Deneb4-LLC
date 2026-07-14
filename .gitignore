@@ -49,6 +49,8 @@ next-env.d.ts
 /content/admin/seeds/
 # Staged intake proposals are transient review state.
 /content/admin/intake/
+# Wave customer/product IDs — account-specific operational state, regenerated on demand.
+/content/admin/wave/
 
 # Builder: per-client assembled build artifacts (each is its own git repo)
 /builds/

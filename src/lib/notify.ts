@@ -251,7 +251,8 @@ export async function notifyClientOfSignoffRequest(client: Client): Promise<bool
 export async function notifyClientOfInvoice(
   client: Client,
   invoice: { description: string; amount: string; dueDate: string },
-  lines: { label: string; amount: string }[]
+  lines: { label: string; amount: string }[],
+  waveViewUrl?: string
 ): Promise<boolean> {
   if (!client.email) return false;
   const rows = lines
@@ -271,12 +272,18 @@ export async function notifyClientOfInvoice(
         lines: [
           `Hi ${escapeHtml(client.name)},`,
           `<table style="width:100%;border-collapse:collapse;margin:6px 0;">${rows}<tr><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;">Amount due</td><td style="padding:8px 0;border-top:1px solid rgba(0,107,143,0.25);color:#080f1a;font-weight:bold;font-size:14px;text-align:right;">${escapeHtml(invoice.amount)}</td></tr></table>`,
-          // Only promise portal payment details when they're actually configured.
-          loadPricing().paymentInstructions
-            ? `Due ${escapeHtml(invoice.dueDate)}. Payment details are in your portal's Billing section — reply here with any questions.`
-            : `Due ${escapeHtml(invoice.dueDate)}. Reply to this email and we'll arrange payment together.`,
+          // Wave link wins (it's the real invoice, with online payment when
+          // enabled); otherwise only promise portal payment details when
+          // they're actually configured.
+          waveViewUrl
+            ? `Due ${escapeHtml(invoice.dueDate)}. View and pay your invoice with the button below — reply here with any questions.`
+            : loadPricing().paymentInstructions
+              ? `Due ${escapeHtml(invoice.dueDate)}. Payment details are in your portal's Billing section — reply here with any questions.`
+              : `Due ${escapeHtml(invoice.dueDate)}. Reply to this email and we'll arrange payment together.`,
         ],
-        cta: { label: 'View in your portal', href: `${SITE_URL}/portal` },
+        cta: waveViewUrl
+          ? { label: 'View & pay invoice', href: waveViewUrl }
+          : { label: 'View in your portal', href: `${SITE_URL}/portal` },
       }),
     });
     recordEmailCost(client.slug, result.delivered, `Invoice: ${invoice.description}`, {
@@ -284,7 +291,7 @@ export async function notifyClientOfInvoice(
       subject: `Invoice: ${invoice.description} — ${invoice.amount}`,
       textParts: [
         ...lines.map((l) => `${l.label}: ${l.amount}`),
-        `Amount due: ${invoice.amount}, due ${invoice.dueDate}.`,
+        `Amount due: ${invoice.amount}, due ${invoice.dueDate}.${waveViewUrl ? ` Invoice link: ${waveViewUrl}` : ''}`,
       ],
     });
     return result.delivered;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAgentKey, isValidSlug } from '@/lib/agent-auth';
 import { verifySession } from '@/lib/cms-auth';
 import { getClientBySlug } from '@/lib/clients';
 import { getProposedInvoices, approveSendInvoice, rejectInvoice, proposeDeposit, proposeFinal } from '@/lib/billing';
@@ -20,17 +21,13 @@ export const dynamic = 'force-dynamic';
 async function hasCmsSession(req: NextRequest): Promise<boolean> {
   return verifySession(req.cookies.get('cms_auth')?.value);
 }
-function hasAgentKey(req: NextRequest): boolean {
-  const key = process.env.AGENT_API_KEY;
-  return Boolean(key && req.headers.get('x-agent-key') === key);
-}
 
 export async function GET(req: NextRequest) {
   if (!(await hasCmsSession(req)) && !hasAgentKey(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const slug = req.nextUrl.searchParams.get('slug') ?? '';
-  if (!slug) return NextResponse.json({ error: 'Missing slug.' }, { status: 400 });
+  if (!isValidSlug(slug)) return NextResponse.json({ error: 'Missing or invalid slug.' }, { status: 400 });
   return NextResponse.json({
     ok: true,
     quote: computeQuote(slug),

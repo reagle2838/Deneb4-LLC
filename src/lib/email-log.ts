@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+import { assertSafeSlug } from './agent-auth';
 
 /**
  * Per-client email log: WHAT every project email actually said, not just
@@ -23,7 +24,7 @@ export interface EmailRecord {
 }
 
 const DIR = path.join(process.cwd(), 'content', 'admin', 'emails');
-const filePath = (slug: string) => path.join(DIR, `${slug}.yaml`);
+const filePath = (slug: string) => path.join(DIR, `${assertSafeSlug(slug)}.yaml`);
 
 export function getEmailLog(slug: string): EmailRecord[] {
   const file = filePath(slug);

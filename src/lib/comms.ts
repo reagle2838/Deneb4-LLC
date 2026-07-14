@@ -9,6 +9,7 @@ import { getState, setState } from './agent-state';
 import { notifyOwnerOfAgentAlert } from './notify';
 import { recordCost } from './costs';
 import { computeAnthropicCost } from './pricing';
+import { assertSafeSlug } from './agent-auth';
 import type { DutyResult } from './agent-roster';
 
 /**
@@ -106,7 +107,7 @@ export function selectableModules(): string[] {
 }
 
 export function hasBuildConfig(slug: string): boolean {
-  return fs.existsSync(path.join(BUILD_CONFIGS_DIR, `${slug}.json`));
+  return fs.existsSync(path.join(BUILD_CONFIGS_DIR, `${assertSafeSlug(slug)}.json`));
 }
 
 /**
@@ -181,7 +182,7 @@ export function describePatch(patch: ConfigPatch): string {
 }
 
 function proposalsPath(slug: string): string {
-  return path.join(PROPOSALS_DIR, `${slug}.yaml`);
+  return path.join(PROPOSALS_DIR, `${assertSafeSlug(slug)}.yaml`);
 }
 
 export function getProposals(slug: string): ChangeProposal[] {
@@ -240,7 +241,7 @@ export function resolveProposal(
  * null if the config file doesn't exist.
  */
 export function applyPatchToBuildConfig(slug: string, patch: ConfigPatch): string | null {
-  const file = path.join(BUILD_CONFIGS_DIR, `${slug}.json`);
+  const file = path.join(BUILD_CONFIGS_DIR, `${assertSafeSlug(slug)}.json`);
   if (!fs.existsSync(file)) return null;
   const cfg = JSON.parse(fs.readFileSync(file, 'utf-8')) as Record<string, unknown>;
   for (const [k, v] of Object.entries(patch.set ?? {})) cfg[k] = v;

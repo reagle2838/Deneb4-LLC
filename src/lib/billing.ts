@@ -10,7 +10,9 @@ import { notifyOwnerOfAgentAlert, notifyClientOfInvoice } from './notify';
 import { computeQuote, money, type Quote } from './pricing';
 import { hasBuildConfig } from './comms';
 import { generateHandoffPackage } from './handoff';
+import { waveEnabled, ensureCustomer, createInvoice, markInvoiceSent, getInvoiceStatus, isSettled } from './wave';
 import type { DutyResult } from './agent-roster';
+import { assertSafeSlug } from './agent-auth';
 
 /**
  * The Billing agent, automated end to end with ONE human gate: Ridhi
@@ -45,10 +47,13 @@ export interface ProposedInvoice {
   date: string;
   resolvedDate?: string;
   note?: string;
+  /** Set when the send went through Wave: the real invoice's id + link. */
+  waveId?: string;
+  waveViewUrl?: string;
 }
 
 const BILLING_DIR = path.join(process.cwd(), 'content', 'admin', 'billing');
-const billingPath = (slug: string) => path.join(BILLING_DIR, `${slug}.yaml`);
+const billingPath = (slug: string) => path.join(BILLING_DIR, `${assertSafeSlug(slug)}.yaml`);
 
 export function getProposedInvoices(slug: string): ProposedInvoice[] {
   const file = billingPath(slug);
@@ -153,20 +158,50 @@ export async function approveSendInvoice(slug: string, id: string): Promise<Prop
   const client = await getClientBySlug(slug);
   if (!target || !client) return null;
 
+  // Wave path: put the invoice on the real books first. Wave failure never
+  // blocks the send — we fall back to the local-only flow and say so.
+  let waveNote = '';
+  if (waveEnabled()) {
+    try {
+      const customerId = await ensureCustomer(slug, client.name, client.email);
+      const memo = target.lines.map((l) => `${l.label}: ${l.amount}`).join('\n');
+      const wave = await createInvoice({
+        customerId,
+        description: target.description,
+        amount: target.amount,
+        dueDate: target.dueDate,
+        memo,
+      });
+      await markInvoiceSent(wave.id);
+      target.waveId = wave.id;
+      target.waveViewUrl = wave.viewUrl;
+      waveNote = ` On the books as Wave invoice #${wave.invoiceNumber}; payment will be detected automatically.`;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      appendLedger(slug, {
+        agent: 'billing',
+        kind: 'alert',
+        message: `Wave invoice creation failed (${msg}). The invoice was still sent the local way — record it in Wave by hand and mark it paid here when money arrives.`,
+      });
+    }
+  }
+
   const invoice: ClientInvoice = {
     description: target.description,
     amount: money(target.amount),
     status: 'pending',
     dueDate: target.dueDate,
+    ...(target.waveViewUrl ? { invoiceUrl: target.waveViewUrl } : {}),
   };
   // Persist onto the client's portal record.
   const { setInvoices } = await import('./clients');
   setInvoices(slug, [...client.invoices, invoice]);
 
-  const emailed = await notifyClientOfInvoice(client, invoice, target.lines);
+  const emailed = await notifyClientOfInvoice(client, invoice, target.lines, target.waveViewUrl);
   target.status = 'sent';
   target.resolvedDate = new Date().toISOString();
-  target.note = emailed ? 'Emailed to the client.' : 'Recorded on the portal; email not configured, share it yourself.';
+  target.note =
+    (emailed ? 'Emailed to the client.' : 'Recorded on the portal; email not configured, share it yourself.') + waveNote;
   writeProposed(slug, list);
 
   appendLedger(slug, {
@@ -175,6 +210,48 @@ export async function approveSendInvoice(slug: string, id: string): Promise<Prop
     message: `Approved & sent: ${target.description}, ${money(target.amount)}, due ${target.dueDate}. ${target.note}`,
   });
   return target;
+}
+
+/**
+ * Payment detection (Wave): check every sent-with-a-waveId invoice that is
+ * still unpaid locally; when Wave says it's settled, flip the local record
+ * and tell the ledger. Runs for any active client — deposits are sent long
+ * before the payment stage. Returns how many were flipped.
+ */
+async function detectWavePayments(client: Client): Promise<number> {
+  if (!waveEnabled()) return 0;
+  const proposals = getProposedInvoices(client.slug).filter((p) => p.status === 'sent' && p.waveId);
+  if (proposals.length === 0) return 0;
+
+  const unpaidLocal = client.invoices.filter((i) => i.status !== 'paid');
+  if (unpaidLocal.length === 0) return 0;
+
+  let flipped = 0;
+  const updated = [...client.invoices];
+  for (const p of proposals) {
+    const idx = updated.findIndex((i) => i.description === p.description && i.status !== 'paid');
+    if (idx === -1) continue;
+    try {
+      const status = await getInvoiceStatus(p.waveId!);
+      if (status && isSettled(status)) {
+        updated[idx] = { ...updated[idx], status: 'paid' };
+        flipped++;
+        appendLedger(client.slug, {
+          agent: 'billing',
+          kind: 'event',
+          message: `Payment received: ${p.description} (${money(p.amount)}) — detected automatically via Wave (status ${status.status}).`,
+        });
+      }
+    } catch (err) {
+      // Detection is best-effort; a Wave hiccup must not fail the duty.
+      console.error(`[deneb4] Wave status check failed for ${client.slug}:`, err instanceof Error ? err.message : err);
+    }
+  }
+  if (flipped > 0) {
+    const { setInvoices } = await import('./clients');
+    setInvoices(client.slug, updated);
+  }
+  return flipped;
 }
 
 export function rejectInvoice(slug: string, id: string, note?: string): ProposedInvoice | null {
@@ -204,10 +281,17 @@ export async function billingWatchDuty(): Promise<DutyResult> {
   let nudges = 0;
   let advanced = 0;
 
-  for (const client of clients.filter((c) => c.active)) {
+  for (let client of clients.filter((c) => c.active)) {
     // 1. Deposit drafting: as soon as a build exists to bill for.
     if (DEPOSIT_STAGES.includes(client.pipeline) && hasBuildConfig(client.slug) && !hasKind(client.slug, 'deposit')) {
       if (await proposeDeposit(client)) drafted++;
+    }
+
+    // 2. Wave payment detection, any stage (deposits are sent early).
+    const detected = await detectWavePayments(client);
+    if (detected > 0) {
+      const fresh = await getClientBySlug(client.slug);
+      if (fresh) client = fresh; // the all-paid check below must see the flip
     }
 
     if (client.pipeline !== 'payment') continue;

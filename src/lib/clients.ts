@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+import { isValidSlug } from './agent-auth';
 
 export function generateWidgetKey(): string {
   return crypto.randomBytes(9).toString('hex'); // 18-char unguessable key
@@ -108,7 +109,13 @@ export type ClientData = Omit<Client, 'slug' | 'passwordHash'>;
 
 const CLIENTS_DIR = path.join(process.cwd(), 'content', 'clients');
 
+// Reject any slug that could escape the clients directory (path traversal)
+// before it ever reaches the filesystem. Every route that takes a slug from
+// the request funnels through getClientBySlug → parseFile, so validating
+// here closes the traversal vector for the whole app: a bad slug reads as
+// "client not found" (clean 404) rather than reaching outside content/.
 function clientPath(slug: string): string {
+  if (!isValidSlug(slug)) throw new Error('Invalid client slug.');
   return path.join(CLIENTS_DIR, `${slug}.yaml`);
 }
 
@@ -122,6 +129,7 @@ export function slugify(name: string): string {
 }
 
 export function clientExists(slug: string): boolean {
+  if (!isValidSlug(slug)) return false;
   return fs.existsSync(clientPath(slug));
 }
 
@@ -136,6 +144,7 @@ function str(v: unknown): string {
 }
 
 function parseFile(slug: string): Client | null {
+  if (!isValidSlug(slug)) return null; // unsafe slug → treated as not found
   const filePath = clientPath(slug);
   if (!fs.existsSync(filePath)) return null;
   const data = (yamlLoad(fs.readFileSync(filePath, 'utf-8')) ?? {}) as RawClient;

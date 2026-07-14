@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isValidSlug } from '@/lib/agent-auth';
 import { verifySession } from '@/lib/cms-auth';
 import { getClientBySlug, setGithubUser } from '@/lib/clients';
 import { generateHandoffPackage, getHandoffDoc } from '@/lib/handoff';
@@ -22,7 +23,7 @@ async function cmsOnly(req: NextRequest): Promise<boolean> {
 export async function GET(req: NextRequest) {
   if (!(await cmsOnly(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const slug = req.nextUrl.searchParams.get('slug') ?? '';
-  if (!slug) return NextResponse.json({ error: 'Missing slug.' }, { status: 400 });
+  if (!isValidSlug(slug)) return NextResponse.json({ error: 'Missing or invalid slug.' }, { status: 400 });
   const existing = getHandoffDoc(slug);
   return NextResponse.json({ ok: true, exists: Boolean(existing), ...existing });
 }

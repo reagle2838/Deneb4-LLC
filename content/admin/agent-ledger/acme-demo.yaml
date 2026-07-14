@@ -498,3 +498,15 @@
   kind: event
   message: Deposit invoice drafted ($1,800.00 of $3,600.00 total; cost floor $41.00, 87.8x margin). Waiting for your "Approve & send" on the Billing panel.
   data: {}
+- id: 3d50537f-fd84-4141-b67b-866c5359078c
+  date: "2026-07-13T23:16:39.247Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved & sent: Build deposit (50%), $1,800.00, due 2026-07-19. Recorded on the portal; email not configured, share it yourself. On the books as Wave invoice #3; payment will be detected automatically."
+  data: {}
+- id: e452d0f9-7ebe-4791-b188-084f3c70edd5
+  date: "2026-07-14T13:47:44.926Z"
+  agent: billing
+  kind: event
+  message: "Payment received: Build deposit (50%) ($1,800.00) — detected automatically via Wave (status PAID)."
+  data: {}
