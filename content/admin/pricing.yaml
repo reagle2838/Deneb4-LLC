@@ -61,4 +61,4 @@ minMarginMultiplier: 3         # quote must be >= total cost x this, or Billing 
 # it, e.g.: "Zelle to hello@deneb4.com, or a check payable to Deneb4 LLC
 # (address on your invoice). Include the invoice description in the memo."
 # Left empty, the portal shows a "reply to your invoice email" fallback.
-paymentInstructions: ""
+paymentInstructions: "Pay online with the secure payment link on your invoice (the button in your invoice email, or View invoice here in your portal's Billing section). Questions about a charge? Just reply to your invoice email."
