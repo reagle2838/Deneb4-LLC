@@ -475,7 +475,10 @@ export async function maybePushToGitHub(slug, outDir) {
       /* no origin yet */
     }
     git(['remote', 'add', 'origin', remote], outDir);
-    git(['push', '--quiet', '-u', 'origin', 'main'], outDir);
+    // credential.helper is disabled for this push: the URL already carries
+    // the token, and letting GCM "approve" it caches an x-access-token
+    // credential that shadows the user's own GitHub login machine-wide.
+    git(['-c', 'credential.helper=', 'push', '--quiet', '-u', 'origin', 'main'], outDir);
     // Scrub the token from the stored remote; later pushes ride the
     // credential manager or re-embed it for the single push above.
     git(['remote', 'set-url', 'origin', `https://github.com/${owner}/${repo}.git`], outDir);
