@@ -57,3 +57,4 @@ next-env.d.ts
 
 # Local mirror of the d4 template ecosystem (cloned/pulled by the Builder)
 /vendor/d4/
+/vendor/d4-shell/
