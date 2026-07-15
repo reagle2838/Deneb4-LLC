@@ -333,6 +333,16 @@ export function setStaging(slug: string, patch: Partial<ClientStaging>): ClientS
   return data.staging;
 }
 
+/** Set the shared Drive folder link, only if it isn't already set (never overwrite a real value). */
+export function setDriveFolderIfEmpty(slug: string, url: string): boolean {
+  const c = parseFile(slug);
+  if (!c || c.driveFolder || !url) return false;
+  const data = clientToData(c);
+  data.driveFolder = url;
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
 /** Append one update to a client's portal timeline. */
 export function appendUpdate(slug: string, update: ClientUpdate): boolean {
   const c = parseFile(slug);

@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 /**
  * Intake parser (ROADMAP Phase 6: "intake delivery, collection, parse into
- * compiler config"). Turns a filled-out intake — exported from Google Forms
- * as a CSV (Responses sheet → File → Download → CSV) — into a PROPOSED build
- * config for the Builder. Like everything else here, it proposes; Ridhi
- * disposes: the config is STAGED for review, never written straight to
- * content/build-configs/. It never invents a fact — anything it can't map
- * confidently is listed for you to fill in.
+ * compiler config"). Turns a filled-out Deneb4 intake — exported from Google
+ * Forms as a CSV (Responses → ⋮ → Download responses .csv) — into a PROPOSED
+ * build config for the Builder, plus the client-contact record, decision
+ * flags (structural request, catalog upcharge, discovery call, GitHub
+ * transfer, brand ingest), and a context bundle of the rich answers for
+ * Ridhi. It proposes; Ridhi disposes: staged for review, never written
+ * straight to content/build-configs/. Never invents a fact.
+ *
+ * Mapping is by the form's stable per-question CODES (Q3-1, Q7A-1, ...),
+ * which Google uses verbatim as CSV headers — exact and reword-proof — with
+ * a keyword fuzzy fallback and a printed mapping report so nothing is ever
+ * silently missed. If the form changes, update the codes in MODULE_DECISIONS
+ * / the read() calls / CONTEXT_FIELDS below.
  *
  * Usage:
  *   npm run intake -- --file responses.csv [--row 1] [--slug acme]   # stage
@@ -60,71 +67,111 @@ function parseCsv(text) {
   return rows;
 }
 
-// ── Fuzzy header mapping ────────────────────────────────────────────────
-// Each field: keyword patterns matched against the (lowercased) header.
-const FIELD_HINTS = {
-  siteName: [/business\s*name/, /company\s*name/, /organi[sz]ation/, /\bsite\s*name/, /name of (your |the )?(business|company)/, /^name$/],
-  tagline: [/tagline/, /slogan/, /motto/, /one[\s-]*liner/, /one[\s-]*line/, /headline/],
-  description: [/description/, /what (do |does )?you( do| make| offer)?/, /about (your|the) (business|company)/, /\babout\b/, /elevator pitch/, /summary/],
-  contactEmail: [/e[\s-]*mail/, /contact email/, /best email/],
-  phone: [/phone/, /telephone/, /\bcell\b/, /mobile/, /contact number/],
-  address: [/address/, /location/, /where.*(located|based)/, /mailing/, /street/],
-  theme: [/colou?r/, /theme/, /palette/, /style/, /\bfeel\b/, /look and feel/, /brand.*colou?r/, /aesthetic/],
-  features: [/feature/, /(which|what).*(page|section|module)/, /add[\s-]*on/, /\bsection/, /modules?/],
-  brandUrl: [/current (web)?site/, /existing (web)?site/, /old (web)?site/, /website url/, /your website/, /web address/],
-};
+// ── Column matching by stable Q-code (with fuzzy fallback) ──────────────
+// The Deneb4 Google Form titles every question with a stable code
+// (Q3-1, Q7A-1, ...). Google uses the exact title as the CSV column header,
+// so matching on the code is exact AND survives Ridhi rewording a question
+// later. If a code can't be found (form edited, code dropped), each field
+// has a keyword fallback, and the mapping report shows how every field was
+// resolved so nothing is ever silently missed.
 
-function scoreHeader(header, patterns) {
-  const h = header.toLowerCase();
-  for (const p of patterns) if (p.test(h)) return true;
-  return false;
-}
-
-function mapHeaders(headers) {
-  const map = {}; // field -> column index
-  const claimed = new Set();
-  // FIELD_HINTS order is priority order: identity fields (specific) before
-  // theme/features, so a column is claimed by its most specific field and
-  // never reused by a broader one.
-  for (const [field, patterns] of Object.entries(FIELD_HINTS)) {
-    const idx = headers.findIndex((h, i) => !claimed.has(i) && scoreHeader(h, patterns));
-    if (idx >= 0) {
-      map[field] = idx;
-      claimed.add(idx);
+function makeColFinder(headers) {
+  const norm = headers.map((h) => String(h).trim());
+  return (code, hint) => {
+    // Exact code prefix: "Q3-1." / "Q3-1 " / "Q3-1:" / "Q3-1" — the
+    // lookahead stops "Q3-1" from also matching "Q3-10" or "Q3-1A".
+    const codeRe = new RegExp('^' + code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=[.\\s:)\\-]|$)', 'i');
+    let idx = norm.findIndex((h) => codeRe.test(h));
+    if (idx >= 0) return { idx, how: 'code' };
+    if (hint) {
+      idx = norm.findIndex((h) => hint.test(h));
+      if (idx >= 0) return { idx, how: 'fuzzy' };
     }
+    return { idx: -1, how: 'none' };
+  };
+}
+
+const looksLikeEmail = (v) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(v).trim());
+const looksLikeUrl = (v) => /^https?:\/\/\S+$/i.test(String(v).trim()) || /^www\.\S+\.\S+/i.test(String(v).trim());
+const isYes = (v) => /^yes\b/i.test(String(v).trim());
+const isUnsure = (v) => /not sure|unsure|maybe/i.test(String(v).trim());
+
+// Q5-1 visual direction (+ Q5-2 site words) → a design pairing from
+// d4-site-builder's pairings.json, plus optionally a color preset when the
+// client explicitly picked a color flavor. When no preset is set, the
+// pairing's own validated fallback palette applies. Keyworded so it
+// survives the exact em-dash wording; first matching rule wins.
+// (Deliberately kept identical to the copy in src/lib/intake-webhook.ts —
+// Apps Script and Node can't share one file across runtimes.)
+const PAIRING_RULES = [
+  ['playful-bright', /playful|fun\b|bubbly|bright|whimsical|cheerful|energetic|kid|family.?friendly/],
+  ['calm-wellness', /calm|wellness|sooth|serene|gentle|spa\b|holistic|peaceful|tranquil|yoga|therap/],
+  ['quiet-luxury', /luxur|elegant|premium|upscale|refined|sophisticat|high.?end|minimal/],
+  ['editorial-voice', /editorial|magazine|journal|literary|publish|newsroom/],
+  ['industrial-confidence', /industrial|technical|rugged|manufactur|engineer|machin|construction|welding|trades?\b/],
+  ['bold-authority', /bold|authorit|corporate|finance|insurance|banking|law\b|legal/],
+  ['warm-craft', /warm|earthy?|craft|handmade|rustic|artisan|farm|homey|local/],
+  ['modern-signal', /modern|clean|sleek|crisp|fresh|tech|startup|professional|cool/],
+];
+
+function mapDesign(direction, words) {
+  const d = String(direction).toLowerCase();
+  const notes = [];
+  let preset;
+  let brandIngest = false;
+  if (/match.*(existing )?brand/.test(d)) {
+    brandIngest = true;
+    notes.push('Client chose "match existing brand" — run brand ingest on their current site; until then the pairing\'s own palette applies.');
+  } else if (/teal|slate|cool/.test(d)) preset = 'slate-teal';
+  else if (/sand|warm|earth|ground/.test(d)) preset = 'warm-sand';
+  else if (/ink|indigo/.test(d)) preset = 'ink-indigo';
+
+  const v = `${direction} ${words}`.toLowerCase();
+  const hit = PAIRING_RULES.find(([, re]) => re.test(v));
+  const pairing = hit ? hit[0] : 'modern-signal';
+  if (hit) {
+    notes.push(`Design pairing proposed: ${pairing} (from visual direction "${direction || 'n/a'}"${words ? ` + site words "${words}"` : ''}).`);
+  } else {
+    notes.push(`No pairing keywords matched${direction ? ` for "${direction}"` : ' (no visual direction given)'}; defaulted to modern-signal.`);
   }
-  return map;
+  return { preset, pairing, brandIngest, notes };
 }
 
-// ── Value interpretation ────────────────────────────────────────────────
-const THEME_KEYWORDS = [
-  { preset: 'slate-teal', re: /teal|slate|blue|cool|grey|gray|professional|corporate|clean|tech/i },
-  { preset: 'warm-sand', re: /sand|warm|earth|tan|beige|natural|organic|cream|gold|amber/i },
-  { preset: 'ink-indigo', re: /indigo|ink|purple|violet|dark|bold|navy|deep/i },
+// The four module decision questions (explicit Yes/No/Not-sure).
+const MODULE_DECISIONS = [
+  { code: 'Q7A-1', module: 'd4-catalog', label: 'catalog', hint: /catalog|product|equipment/i },
+  { code: 'Q8A-1', module: 'd4-careers-portal', label: 'careers', hint: /careers?|job.?opening/i },
+  { code: 'Q9A-1', module: 'd4-insights-blog', label: 'blog', hint: /blog|news|insights/i },
+  { code: 'Q10A-1', module: 'd4-gallery-editor', label: 'gallery', hint: /gallery|portfolio|case.?stud/i },
 ];
-function mapTheme(value) {
-  if (!value) return null;
-  for (const { preset, re } of THEME_KEYWORDS) if (re.test(value)) return preset;
-  return null;
-}
 
-const MODULE_KEYWORDS = [
-  { module: 'd4-careers-portal', re: /career|job|hiring|recruit|apply|position|employment|vacanc/i },
-  { module: 'd4-insights-blog', re: /blog|article|insight|news|post|stor(y|ies)|updates/i },
-  { module: 'd4-catalog', re: /catalog|catalogue|product|equipment|part|inventory|item|shop/i },
-  { module: 'd4-gallery-editor', re: /gallery|galleries|photo|picture|image|portfolio|showcase/i },
+// Rich context answers — NOT config, but everything Ridhi wants in one place
+// (About-page material, scoping detail, seeding pointers). code → label.
+const CONTEXT_FIELDS = [
+  ['Q3-4', 'Key products/services to promote'],
+  ['Q3-5', 'Primary customers'],
+  ['Q3-6', 'Geographic areas served'],
+  ['Q5-2', 'Words to describe the site'],
+  ['Q5-3', 'Colors/fonts/styles to use or avoid'],
+  ['Q5-4', 'Competitor/industry sites to review'],
+  ['Q6-1', 'What the site should accomplish'],
+  ['Q6-2', 'Primary visitor action'],
+  ['Q6-3', 'Standard pages expected'],
+  ['Q7B-2', 'Catalog categories'],
+  ['Q7B-3', 'Where product info lives now'],
+  ['Q9B-4', 'Blog categories'],
+  ['Q10B-1', 'Gallery: what to showcase'],
+  ['Q12-3', 'Content readiness (ready vs pending)'],
+  ['Q12-2', 'Who approves content'],
+  ['Q13-1', 'Business story'],
+  ['Q13-2', 'What makes them different'],
+  ['Q13-3', 'What a prospect should know'],
+  ['Q13-4', 'Trust signals to include'],
+  ['Q15-3', 'Launch tied to an event?'],
+  ['Q15-4', 'Scheduling/approval constraints'],
+  ['Q18-1', 'Anything else about the project'],
+  ['Q18-2', 'How they heard about Deneb4'],
 ];
-function mapModules(featuresText) {
-  // Only the features answer — never inferred from prose or contact fields,
-  // where words like "shop" or "part" would trip false positives.
-  const found = new Set();
-  if (!featuresText) return [];
-  for (const { module, re } of MODULE_KEYWORDS) if (re.test(featuresText)) found.add(module);
-  return [...found];
-}
-
-const looksLikeEmail = (v) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim());
-const looksLikeUrl = (v) => /^https?:\/\/\S+$/i.test(v.trim()) || /^www\.\S+\.\S+/i.test(v.trim());
 
 // ── Stage ────────────────────────────────────────────────────────────────
 function stage() {
@@ -138,81 +185,147 @@ function stage() {
   const dataRows = rows.slice(1);
   if (rowNum > dataRows.length) { console.error(`Row ${rowNum} doesn't exist (only ${dataRows.length} response(s)).`); process.exit(2); }
   const record = dataRows[rowNum - 1];
-  const cell = (i) => (i >= 0 && i < record.length ? String(record[i] ?? '').trim() : '');
+  const col = makeColFinder(headers);
+  const mapReport = []; // { field, code, how, header }
 
-  const map = mapHeaders(headers);
-  const cfg = { $comment: 'd4-site-builder format. Proposed by the intake parser; review before building.' };
+  // Read a field by code (+ fuzzy hint); record how it resolved.
+  const read = (field, code, hint) => {
+    const { idx, how } = col(code, hint);
+    mapReport.push({ field, code, how, header: idx >= 0 ? headers[idx] : null });
+    return idx >= 0 ? String(record[idx] ?? '').trim() : '';
+  };
+
+  const cfg = { $comment: 'd4-site-builder format. Proposed by the intake parser from the Deneb4 form; review before building.' };
   const unmapped = [];
   const notes = [];
+  const flags = {};
 
-  // Identity fields (fact-slot rule: only set what the form actually gave).
-  const siteName = map.siteName != null ? cell(map.siteName) : '';
-  if (siteName) cfg.siteName = siteName; else unmapped.push('siteName (business name)');
-  if (map.tagline != null && cell(map.tagline)) cfg.tagline = cell(map.tagline); else unmapped.push('tagline');
-  if (map.description != null && cell(map.description)) cfg.description = cell(map.description); else unmapped.push('description');
+  // ── Identity (public-facing, goes in the build config) ───────────────
+  const siteName = read('siteName', 'Q3-1', /business name/i);
+  if (siteName) cfg.siteName = siteName; else unmapped.push('siteName (Q3-1 business name)');
 
-  // Contact: honor the mapped column, but also rescue an email/phone that
-  // landed in an oddly-named column.
-  let email = map.contactEmail != null ? cell(map.contactEmail) : '';
-  if (!email || !looksLikeEmail(email)) {
-    const found = record.find((v) => looksLikeEmail(String(v)));
-    if (found) { email = String(found).trim(); notes.push('Email recovered from an unlabeled column.'); }
+  const tagline = read('tagline', 'Q3-2', /tagline/i);
+  if (tagline && !/^(no|n\/a|none)$/i.test(tagline)) cfg.tagline = tagline;
+
+  const description = read('description', 'Q3-3', /what does your business do/i);
+  if (description) cfg.description = description; else unmapped.push('description (Q3-3)');
+
+  let email = read('contactEmail', 'Q3-7', /public email/i);
+  if (!looksLikeEmail(email)) {
+    const found = record.find((v) => looksLikeEmail(v));
+    if (found) { email = String(found).trim(); notes.push('Public email recovered from another column.'); }
   }
-  if (email && looksLikeEmail(email)) cfg.contactEmail = email.trim(); else unmapped.push('contactEmail');
+  if (looksLikeEmail(email)) cfg.contactEmail = email; else unmapped.push('contactEmail (Q3-7)');
 
-  if (map.phone != null && cell(map.phone)) cfg.phone = cell(map.phone); else unmapped.push('phone');
-  if (map.address != null && cell(map.address)) cfg.address = cell(map.address); else unmapped.push('address');
+  const phone = read('phone', 'Q3-8', /public phone/i);
+  if (phone) cfg.phone = phone; else unmapped.push('phone (Q3-8)');
 
-  // Theme
-  const themeRaw = map.theme != null ? cell(map.theme) : '';
-  const preset = mapTheme(themeRaw);
-  if (preset) {
-    cfg.themePreset = preset;
-    if (themeRaw) notes.push(`Theme "${themeRaw}" → preset ${preset}.`);
-  } else {
-    cfg.themePreset = 'slate-teal';
-    notes.push(themeRaw ? `Theme "${themeRaw}" didn't match a preset; defaulted to slate-teal (change or run brand ingest).` : 'No theme given; defaulted to slate-teal.');
+  const address = read('address', 'Q3-9', /business address/i);
+  if (address) cfg.address = address; else unmapped.push('address (Q3-9)');
+
+  // ── Design: pairing + optional color preset (Q5-1 + Q5-2) ───────────
+  const themeRaw = read('theme', 'Q5-1', /visual direction/i);
+  const siteWords = read('siteWords', 'Q5-2', /words.*describe/i);
+  const design = mapDesign(themeRaw, siteWords);
+  cfg.pairing = design.pairing;
+  if (design.preset) cfg.themePreset = design.preset;
+  notes.push(...design.notes);
+  if (design.brandIngest) flags.brandIngest = true;
+
+  // Brand-ingest URL: the current-site question (only relevant on the
+  // "existing website" branch), or any URL the client dropped in.
+  const brandUrl = read('brandUrl', 'Q2A-1', /current website address/i) || (record.find((v) => looksLikeUrl(v)) ?? '');
+  if (looksLikeUrl(brandUrl)) {
+    flags.brandUrl = String(brandUrl).trim();
+    notes.push(`Existing site: ${flags.brandUrl} — ${design.brandIngest ? 'run' : 'consider'} brand ingest: npm run brand -- <slug> --url ${flags.brandUrl}`);
   }
 
-  // Modules come only from the features answer (fact-slot rule).
-  const featuresCell = map.features != null ? cell(map.features) : '';
-  const modules = mapModules(featuresCell);
+  // ── Modules (explicit Yes/No decision questions) ─────────────────────
+  const modules = [];
+  for (const d of MODULE_DECISIONS) {
+    const ans = read(`module:${d.label}`, d.code, d.hint);
+    if (isYes(ans)) modules.push(d.module);
+    else if (isUnsure(ans)) notes.push(`${d.label} module: client answered "not sure" — left OFF (don't bill for an unrequested module). Confirm on the discovery call.`);
+  }
   if (modules.length) {
-    // Feature modules depend on the CMS; include it explicitly.
-    cfg.modules = ['d4-cms-core', ...modules];
-    notes.push(`Modules from the form: ${modules.join(', ')} (+ d4-cms-core for the admin dashboard).`);
+    cfg.modules = ['d4-cms-core', ...modules]; // features need the CMS
+    notes.push(`Modules requested: ${modules.join(', ')} (+ d4-cms-core for the admin dashboard).`);
   } else {
     cfg.modules = [];
-    notes.push(
-      featuresCell
-        ? `Features answer ("${featuresCell}") didn't match any module; add modules manually if needed.`
-        : map.features == null
-          ? 'No features question found in the form; a brochure site with no extra modules. Add modules if the client wants them.'
-          : 'No features selected; a brochure site with no extra modules.'
-    );
+    notes.push('No feature modules requested — a core brochure site (Home/About/Contact).');
   }
 
-  // Brand ingest hint
-  const brandUrl = map.brandUrl != null ? cell(map.brandUrl) : record.find((v) => looksLikeUrl(String(v)));
-  if (brandUrl && looksLikeUrl(String(brandUrl))) {
-    notes.push(`Client has an existing site (${String(brandUrl).trim()}); consider: npm run brand -- <slug> --url ${String(brandUrl).trim()}`);
+  // Catalog size → the 50-item upcharge boundary (Q7B-1).
+  if (modules.includes('d4-catalog')) {
+    const size = read('catalogSize', 'Q7B-1', /how many products/i);
+    if (/51|150|more than/i.test(size)) {
+      flags.catalogUpcharge = size;
+      notes.push(`Catalog size "${size}" is beyond the included 50 items — price the seeding upcharge.`);
+    }
+  }
+
+  // ── Custom functionality (Q11) → structural request, never auto-built ─
+  const customDecision = read('customFunc', 'Q11A-1', /functionality that has not/i);
+  if (isYes(customDecision)) {
+    const desc = read('customFuncDesc', 'Q11B-1', /describe the functionality/i);
+    flags.structuralRequest = desc || 'see form';
+    notes.push(`⚠ STRUCTURAL REQUEST (off-menu, needs your review + a quote, never auto-built): ${desc || '(client marked yes; see Q11B)'}`);
+  }
+
+  // ── Client point of contact (goes on the CLIENT RECORD, not the config) ─
+  const clientContact = {
+    name: read('clientName', 'Q4-1', /what is your name/i),
+    email: read('clientEmail', 'Q4-3', /receive project updates/i),
+    phone: read('clientPhone', 'Q4-4', /direct phone/i),
+  };
+  if (clientContact.name || clientContact.email) {
+    notes.push(`Create the client with — name: ${clientContact.name || '(?)'}, email: ${clientContact.email || '(?)'}${clientContact.phone ? `, phone: ${clientContact.phone}` : ''}.`);
+  }
+
+  // ── GitHub transfer at handoff (Q17) ─────────────────────────────────
+  const ghWanted = read('githubWanted', 'Q17A-1', /transferred to your own github/i);
+  if (isYes(ghWanted)) {
+    const ghUser = read('githubUser', 'Q17B-1', /github username/i);
+    flags.githubUser = ghUser;
+    notes.push(`Client wants the repo transferred at handoff${ghUser ? ` — GitHub username: ${ghUser}` : ' (username not given)'}. Set it on the client record.`);
+  }
+
+  // ── Discovery call (Q16) ─────────────────────────────────────────────
+  const callWanted = read('discoveryCall', 'Q16A-1', /discovery call/i);
+  if (isYes(callWanted)) {
+    flags.discoveryCall = true;
+    notes.push('Client requested a 30-minute discovery call — schedule it (see Q16B answers for availability).');
+  }
+
+  // ── Rich context bundle for Ridhi (not config) ───────────────────────
+  const context = {};
+  for (const [code, label] of CONTEXT_FIELDS) {
+    const { idx } = col(code);
+    const v = idx >= 0 ? String(record[idx] ?? '').trim() : '';
+    if (v) context[label] = v;
   }
 
   const slug = optOf('slug') || slugify(siteName || `intake-${Date.now()}`);
   fs.mkdirSync(INTAKE_DIR, { recursive: true });
-  const staged = { slug, config: cfg, unmapped, notes, source: path.basename(file), row: rowNum, stagedAt: new Date().toISOString() };
+  const staged = {
+    slug, config: cfg, clientContact, flags, unmapped, notes, context,
+    mapReport, source: path.basename(file), row: rowNum, stagedAt: new Date().toISOString(),
+  };
   fs.writeFileSync(path.join(INTAKE_DIR, `${slug}.json`), JSON.stringify(staged, null, 2));
 
+  // ── Report ───────────────────────────────────────────────────────────
   console.log(`\nStaged a proposed build config for "${cfg.siteName || slug}" (slug: ${slug}):\n`);
   console.log(JSON.stringify(cfg, null, 2));
-  if (unmapped.length) {
-    console.log(`\n⚠ Couldn't fill from the form (add before building): ${unmapped.join(', ')}.`);
-  }
-  if (notes.length) {
-    console.log('\nNotes:');
-    for (const n of notes) console.log(`  - ${n}`);
-  }
-  console.log(`\nReview: content/admin/intake/${slug}.json`);
+
+  const fuzzy = mapReport.filter((m) => m.how === 'fuzzy');
+  const missed = mapReport.filter((m) => m.how === 'none');
+  console.log(`\nField mapping: ${mapReport.filter((m) => m.how === 'code').length} matched by exact code, ${fuzzy.length} by fuzzy fallback, ${missed.length} not found.`);
+  if (fuzzy.length) console.log('  fuzzy-matched (verify): ' + fuzzy.map((m) => `${m.field}←"${m.header}"`).join(', '));
+  if (missed.length) console.log('  NOT FOUND (column missing): ' + missed.map((m) => `${m.field} (${m.code})`).join(', '));
+
+  if (unmapped.length) console.log(`\n⚠ Config fields the form didn't fill (add before building): ${unmapped.join(', ')}.`);
+  if (notes.length) { console.log('\nNotes:'); for (const n of notes) console.log(`  - ${n}`); }
+  console.log(`\nFull staged detail (context, flags, contact): content/admin/intake/${slug}.json`);
   console.log(`Then: npm run intake -- --slug ${slug} --apply   (creates content/build-configs/${slug}.json)`);
 }
 
@@ -226,9 +339,19 @@ function loadStaged(slug) {
 function preview(slug) {
   const s = loadStaged(slug);
   if (!s) return console.log(`Nothing staged for ${slug}.`);
-  console.log(JSON.stringify(s.config, null, 2));
-  if (s.unmapped?.length) console.log(`\n⚠ Unmapped: ${s.unmapped.join(', ')}.`);
-  if (s.notes?.length) console.log('\nNotes:\n' + s.notes.map((n) => `  - ${n}`).join('\n'));
+  console.log('BUILD CONFIG:\n' + JSON.stringify(s.config, null, 2));
+  if (s.clientContact && (s.clientContact.name || s.clientContact.email)) {
+    console.log(`\nCLIENT CONTACT (for the client record): ${s.clientContact.name || '(?)'} · ${s.clientContact.email || '(?)'}${s.clientContact.phone ? ' · ' + s.clientContact.phone : ''}`);
+  }
+  if (s.flags && Object.keys(s.flags).length) console.log('\nFLAGS: ' + JSON.stringify(s.flags));
+  if (s.unmapped?.length) console.log(`\n⚠ Unmapped config fields: ${s.unmapped.join(', ')}.`);
+  if (s.notes?.length) console.log('\nNOTES:\n' + s.notes.map((n) => `  - ${n}`).join('\n'));
+  if (s.context && Object.keys(s.context).length) {
+    console.log('\nCONTEXT (for you / the About page / content seeding):');
+    for (const [label, val] of Object.entries(s.context)) {
+      console.log(`  ${label}: ${val.length > 100 ? val.slice(0, 97) + '...' : val}`);
+    }
+  }
 }
 
 function discard(slug) {
