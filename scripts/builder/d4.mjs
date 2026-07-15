@@ -476,6 +476,9 @@ export async function maybePushToGitHub(slug, outDir) {
     }
     git(['remote', 'add', 'origin', remote], outDir);
     git(['push', '--quiet', '-u', 'origin', 'main'], outDir);
+    // Scrub the token from the stored remote; later pushes ride the
+    // credential manager or re-embed it for the single push above.
+    git(['remote', 'set-url', 'origin', `https://github.com/${owner}/${repo}.git`], outDir);
     return { pushed: true, detail: `Pushed to ${owner}/${repo}.`, url: `https://github.com/${owner}/${repo}` };
   } catch (err) {
     return { pushed: false, detail: `Push failed: ${err instanceof Error ? err.message : String(err)}` };
