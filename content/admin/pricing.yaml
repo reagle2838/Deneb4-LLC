@@ -15,7 +15,9 @@
 # (plus any post-quote line items like extra consultations).
 
 # ── Cost side ────────────────────────────────────────────────────────────
-overheadMonthly: 50            # Claude $20/mo + Google Workspace $30/mo
+overheadMonthly: 70            # Claude $20/mo + Google Workspace $30/mo + Vercel Pro $20/mo
+                                # (client-site hosting; Turso and Vercel Blob are $0 on current
+                                # free-tier allowances at this scale, see ROADMAP 2026-07-15)
 expectedClientsPerMonth: 2     # overhead is amortized over this many
 buildApiCostEstimate: 15       # FALLBACK ONLY: Anthropic $ per project before any real usage is
                                 # recorded. Every actual Comms/seeding API call now measures its own
