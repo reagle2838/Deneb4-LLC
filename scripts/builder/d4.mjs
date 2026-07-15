@@ -171,6 +171,8 @@ const SYNCED_ARTIFACTS = [
   'src/config/site.ts',
   'src/config/nav.generated.ts',
   'src/config/admin-panels.generated.tsx',
+  'src/config/fonts.generated.ts',
+  'src/config/design.generated.ts',
   'src/app/theme.css',
   '.env.example',
 ];
@@ -434,19 +436,34 @@ export async function maybePushToGitHub(slug, outDir) {
     'User-Agent': 'deneb4-builder',
   };
   try {
-    // Org endpoint first; fall back to user endpoint for a personal account.
-    let res = await fetch(`https://api.github.com/orgs/${owner}/repos`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ name: repo, private: true, description: `Deneb4 client site: ${slug}` }),
-    });
-    if (res.status === 404) {
-      res = await fetch('https://api.github.com/user/repos', {
+    // Identity guard: client repos hold client content and must land under
+    // GITHUB_OWNER, never under whichever account happened to mint the
+    // token. A personal-owner mismatch would otherwise silently create the
+    // repo on the wrong account via the /user/repos fallback.
+    const whoRes = await fetch('https://api.github.com/user', { headers });
+    if (!whoRes.ok) {
+      return { pushed: false, detail: `GITHUB_TOKEN is invalid (${whoRes.status}); repo not created.` };
+    }
+    const login = (await whoRes.json()).login;
+    let ownerIsOrg = false;
+    if (login.toLowerCase() !== owner.toLowerCase()) {
+      const ownerRes = await fetch(`https://api.github.com/users/${owner}`, { headers });
+      ownerIsOrg = ownerRes.ok && (await ownerRes.json()).type === 'Organization';
+      if (!ownerIsOrg) {
+        return {
+          pushed: false,
+          detail: `GITHUB_TOKEN belongs to "${login}" but GITHUB_OWNER is "${owner}" (a personal account). Refusing to create the repo under the wrong account; mint the token while signed in as ${owner}.`,
+        };
+      }
+    }
+    let res = await fetch(
+      ownerIsOrg ? `https://api.github.com/orgs/${owner}/repos` : 'https://api.github.com/user/repos',
+      {
         method: 'POST',
         headers,
         body: JSON.stringify({ name: repo, private: true, description: `Deneb4 client site: ${slug}` }),
-      });
-    }
+      }
+    );
     if (!res.ok && res.status !== 422) {
       // 422 = already exists, which is fine; anything else is a real failure.
       return { pushed: false, detail: `GitHub repo creation failed (${res.status}).` };
