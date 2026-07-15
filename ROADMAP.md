@@ -259,3 +259,53 @@ THE PLAN (graft, not wholesale swap — a direct swap would bake Eagle's busines
 - [x] **[Ridhi]** DONE 2026-07-15 — PAT re-minted as deneb4admin (repo scope). Eagle snapshot pushed to PRIVATE deneb4admin/d4-shell (token scrubbed from the remote afterward). Builder repo creation LIVE: deneb4admin/d4-client-acme-demo and d4-client-meridian-tool-and-die created private and pushed; future builds/changes push automatically. Guard kept: maybePushToGitHub verifies token identity vs GITHUB_OWNER and refuses on personal-account mismatch. Also fixed: the tokened push now runs with credential.helper disabled and resets origin to the clean URL, because GCM was caching the x-access-token credential and shadowing the user's own GitHub login machine-wide (this briefly broke pushes to the main repo; stray credential erased).
 - [x] Pairing gallery artifact refreshed 2026-07-15 with the v1.1.0 shell: all 8 pairings shot from real production builds (Harbor & Pine Studio demo) in light mode, dark mode, and with the mega menu open, plus a quote-modal detail shot.
 - [ ] Follow-ups: browser-QA contrast bars run per-mode only for the light default today — add a dark-mode axe pass (toggle .dark) to verify.mjs browser battery; consider porting ProductCard adoption into d4-catalog's list UI; LogoMarquee/FaqAccordion are shell components awaiting a config/content seam (module or page templates) to surface per-client.
+
+## Phase 14: Maximum agency — agents as the logic gates (mandated by Ridhi 2026-07-15)
+
+Ridhi's directive, verbatim intent: "I just want this to be as agentic as possible." The Google Apps Script
+automations and the Deneb4 agents must communicate BOTH ways, so that agents — not a human — are the logic
+gates between pipeline steps. Human-in-the-loop shrinks to exactly FOUR touchpoints:
+
+1. **Quote approval (Ridhi first, then client, BEFORE any build starts).** Agent drafts the quote from the
+   intake → Ridhi approves or DENIES WITH INSTRUCTIONS (a feedback loop: her notes go back to the agent,
+   which revises the quote/config and resubmits — not just a reject button) → only after her approval does
+   it go to the client for confirmation.
+2. **Deposit paid (client).** The 50% upfront invoice must be PAID before the build begins — payment is the
+   trigger that starts the Builder, not a stage Ridhi advances.
+3. **Invoicing approvals (Ridhi).** Approve-and-send on every invoice stays hers.
+4. **Final approval of the website (Ridhi AND the client, jointly).** The one look-at-the-site gate.
+
+Everything else becomes agent-driven: intake config auto-applies after quote+deposit clear, build auto-starts
+on deposit payment, the internal-review gate folds into the joint final approval, and the GAS document engine's
+manual steps (e.g. the sheet-menu handoff trigger) become agent-callable.
+
+- [ ] **[Claude]** Deneb4 → GAS direction of the bridge: `src/lib/gas-bridge.ts` + outbound calls from agents
+      to a GAS Web App endpoint (env: GAS_WEBAPP_URL + GAS_SHARED_SECRET). Lets agents trigger what today needs
+      Ridhi's click in the Sheet: send-handoff-document, Matrix row updates, scope-doc actions. GAS → Deneb4
+      already exists (the 4-event webhook, Phase 11).
+- [ ] **[Ridhi]** Deploy the Apps Script project as a Web App (doPost handler — code to be supplied when the
+      bridge is built) and put the shared secret in Script Properties. Prereq for the direction above.
+- [ ] **[Claude]** Quote gate with feedback loop: quote drafts at intake-review; PENDING_RIDHI → (approve |
+      deny+instructions → agent revises → resubmit) → PENDING_CLIENT → client confirms → deposit invoice sends
+      (her invoice-send click may be folded into her quote approval — one click, not two; decide at build).
+- [ ] **[Claude]** Deposit-starts-the-build: pipeline reorder so `building` is entered automatically on
+      deposit settlement (Wave detection already live), never before.
+- [ ] **[Claude]** Gate relaxation per the four-touchpoint list: auto-apply staged configs post-quote,
+      remove internal-review as a separate human stage, auto-apply QA-green change proposals. Structural
+      (off-menu) requests STILL escalate — closed catalog unchanged.
+- [ ] **[Both]** docs/agents.md contract amendment (this mandate supersedes the 2026-07-08 gate table;
+      re-approve the amended doc).
+- [ ] **[Ridhi — decisions needed before build]** (a) Comms replies: your four-touchpoint list implies drafted
+      replies AUTO-SEND without your review — confirm that's intended (urgent/upset/structural still escalate).
+      (b) Handoff delivery isn't in your HITL list: auto-email the credentials package on final payment, or keep
+      the manual delivery step? (c) Client quote confirmation mechanism: portal Approve button, or a GAS
+      Authorization Form like your other sign-offs (recommended: GAS form → it e-signs and PDF-locks the quote
+      exactly like the scope doc, and the existing webhook reports it back).
+- [ ] **[Claude]** Questionnaire wiring for the v1.1.0 shell (spec = the Intake Questionnaire artifact,
+      2026-07-15): promote Q6-2 (primary visitor action → header/hero CTA + quote.enabled); add + map quote
+      topics, announcement, social links, FAQ pairs, logo list, billing contact, per-module upload prompts.
+      Update BOTH mapping copies (parse-intake.mjs + intake-webhook.ts) and the form generator.
+- [ ] **[Claude]** Page seams for FaqAccordion + LogoMarquee (components shipped in v1.1.0; no page renders
+      them yet) — config/content-driven sections so the new intake questions have somewhere to land.
+- [ ] **[Both]** PREREQ for all of Phase 14 in production: the studio app itself needs a public production
+      deploy (Vercel) — GAS can only webhook a public URL, and the E2E bridge verification so far ran locally.
