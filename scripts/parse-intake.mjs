@@ -272,6 +272,60 @@ function stage() {
     notes.push(`⚠ STRUCTURAL REQUEST (off-menu, needs your review + a quote, never auto-built): ${desc || '(client marked yes; see Q11B)'}`);
   }
 
+  // ── v1.2.0 shell features (Intake Questionnaire spec, 2026-07-15) ─────
+  // All optional: a form without the question leaves the shell default in
+  // place. Keep this block in sync with src/lib/intake-webhook.ts.
+  const splitList = (raw) =>
+    (raw || '')
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter((s) => s && !/^(no|n\/a|none)$/i.test(s));
+  const primaryAction = read('primaryAction', 'Q6-2', /most important thing.*(do|action)|primary.*action/i);
+  const quoteTopicsRaw = read('quoteTopics', 'Q6-4', /ask.*quote.*about|quote topics/i);
+  if (primaryAction || quoteTopicsRaw) {
+    cfg.quote = { enabled: true, topics: splitList(quoteTopicsRaw).slice(0, 5) };
+    if (primaryAction) {
+      const quoteFirst = /quote|estimate|bid/i.test(primaryAction);
+      notes.push(`Primary visitor action: "${primaryAction}"${quoteFirst ? ' — quote-first business; the header CTA leads with Request a quote.' : ''}`);
+    }
+  }
+  const announcementText = read('announcement', 'Q6-5', /announce.*banner|time-sensitive/i);
+  if (announcementText && !/^(no|n\/a|none|nothing)$/i.test(announcementText)) {
+    cfg.announcement = { text: announcementText.slice(0, 160) };
+    notes.push(`Announcement bar requested: "${announcementText.slice(0, 80)}" — confirm the link target with the client.`);
+  }
+  const socialLinks = [
+    ['Q14-1', 'LinkedIn'],
+    ['Q14-2', 'Facebook'],
+    ['Q14-3', 'Instagram'],
+    ['Q14-4', 'X'],
+    ['Q14-5', 'YouTube'],
+  ]
+    .map(([code, label]) => ({ label, href: read(`social:${label}`, code) }))
+    .filter((s) => /^https?:\/\//i.test(s.href));
+  if (socialLinks.length) cfg.socialLinks = socialLinks;
+  const faqRaw = read('faq', 'Q13-5', /questions.*customers.*ask/i);
+  const faqPairs = [];
+  for (const m of (faqRaw || '').matchAll(/Q[:.]\s*([^\n]+)\n+\s*A[:.]\s*([^\n]+)/gi)) {
+    faqPairs.push({ q: m[1].trim(), a: m[2].trim() });
+  }
+  if (!faqPairs.length) {
+    const lines = (faqRaw || '').split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    for (let i = 0; i + 1 < lines.length; i += 2) {
+      if (lines[i].endsWith('?')) faqPairs.push({ q: lines[i], a: lines[i + 1] });
+    }
+  }
+  if (faqPairs.length) cfg.faq = faqPairs.slice(0, 12);
+  const logoNames = splitList(read('logos', 'Q13-6', /notable clients|partners.*display/i)).slice(0, 16);
+  if (logoNames.length) {
+    cfg.logoWall = { items: logoNames.map((name) => ({ name })) };
+    notes.push('Logo wall from client-named partners; swap in real logo files from their Drive folder when available.');
+  }
+  const billingEmail = read('billingEmail', 'Q4-5', /invoices.*go|billing contact/i);
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(billingEmail)) {
+    notes.push(`Invoices go to: ${billingEmail} (billing contact, not the project contact).`);
+  }
+
   // ── Client point of contact (goes on the CLIENT RECORD, not the config) ─
   const clientContact = {
     name: read('clientName', 'Q4-1', /what is your name/i),

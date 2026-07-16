@@ -154,6 +154,14 @@ export function computeQuote(slug: string): Quote | null {
   const cfgFile = path.join(BUILD_CONFIGS_DIR, `${slug}.json`);
   if (!fs.existsSync(cfgFile)) return null;
   const cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf-8')) as { modules?: string[] };
+  return computeQuoteForConfig(slug, cfg);
+}
+
+/**
+ * Same computation from an in-memory config — used by the quote gate, which
+ * prices the STAGED intake config before anything is applied or built.
+ */
+export function computeQuoteForConfig(slug: string, cfg: { modules?: string[] }): Quote {
   const p = loadPricing();
 
   const lines: QuoteLine[] = [

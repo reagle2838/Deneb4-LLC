@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasAgentKey } from '@/lib/agent-auth';
+import { getClientByEmail } from '@/lib/clients';
+import { confirmQuoteAndKickoff } from '@/lib/quote-flow';
 import {
   handleIntakeSubmitted,
   handleOnboardingSigned,
@@ -35,7 +37,7 @@ export const dynamic = 'force-dynamic';
  */
 
 interface Body {
-  event?: 'intake_submitted' | 'onboarding_signed' | 'handoff_sent' | 'handoff_signed';
+  event?: 'intake_submitted' | 'onboarding_signed' | 'quote_signed' | 'handoff_sent' | 'handoff_signed';
   responses?: Record<string, string[] | string>;
   driveFolderUrl?: string;
   siteUrl?: string;
@@ -70,6 +72,17 @@ export async function POST(req: NextRequest) {
         if (!result) return NextResponse.json({ error: 'No client matches that email.' }, { status: 404 });
         return NextResponse.json({ ok: true, ...result });
       }
+      case 'quote_signed': {
+        // A signed GAS Quote Authorization Form is the client's quote
+        // confirmation — same effect as their portal Approve on the
+        // "Quote approval" item (Phase 14 gate #1).
+        if (!body.email) return NextResponse.json({ error: 'email is required.' }, { status: 400 });
+        const client = await getClientByEmail(body.email);
+        if (!client) return NextResponse.json({ error: 'No client matches that email.' }, { status: 404 });
+        const result = await confirmQuoteAndKickoff(client.slug);
+        if (!result.ok) return NextResponse.json({ error: result.detail }, { status: 409 });
+        return NextResponse.json({ ok: true, slug: client.slug, detail: result.detail });
+      }
       case 'handoff_sent': {
         const result = await handleHandoffSent({ email: body.email, slug: body.slug });
         if (!result) return NextResponse.json({ error: 'No matching client.' }, { status: 404 });
@@ -82,7 +95,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, ...result });
       }
       default:
-        return NextResponse.json({ error: 'event must be one of: intake_submitted, onboarding_signed, handoff_sent, handoff_signed.' }, { status: 400 });
+        return NextResponse.json({ error: 'event must be one of: intake_submitted, onboarding_signed, quote_signed, handoff_sent, handoff_signed.' }, { status: 400 });
     }
   } catch (err) {
     console.error('[deneb4] intake-webhook failed:', err);

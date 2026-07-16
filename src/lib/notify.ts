@@ -247,6 +247,77 @@ export async function notifyClientOfSignoffRequest(client: Client): Promise<bool
   }
 }
 
+/** Ask the client to confirm their quote (after Ridhi has approved it). */
+export async function notifyClientOfQuote(client: Client, total: string): Promise<boolean> {
+  if (!client.email) return false;
+  try {
+    const subject = `Your quote for ${client.projectName || 'your website'}: ${total}`;
+    const lines = [
+      `Hi ${escapeHtml(client.name)},`,
+      `Your project quote is ready: ${escapeHtml(total)}, half up front and half at handoff. The full line-item breakdown is in your portal.`,
+      'When it looks right, click Approve on the "Quote approval" item and we\'ll send the deposit invoice. Building starts as soon as the deposit clears.',
+      'Questions or changes? Reply in Messages — the quote only moves forward when you approve it.',
+    ];
+    const result = await sendEmail({
+      to: client.email,
+      replyTo: OWNER_EMAIL,
+      subject,
+      html: template({
+        eyebrow: 'Quote approval',
+        heading: `Your quote is ready: ${escapeHtml(total)}`,
+        lines,
+        cta: { label: 'Review & approve the quote', href: `${SITE_URL}/portal` },
+      }),
+    });
+    recordEmailCost(client.slug, result.delivered, 'Quote for approval', {
+      direction: 'to-client',
+      subject,
+      textParts: lines.slice(1),
+    });
+    return result.delivered;
+  } catch (err) {
+    console.error('[deneb4] quote email failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Tell the client their handoff package is ready in the portal. The package
+ * itself (with the rotated admin credential) is NEVER emailed — it is only
+ * served through the authenticated portal download.
+ */
+export async function notifyClientOfHandoffReady(client: Client): Promise<boolean> {
+  if (!client.email) return false;
+  try {
+    const subject = `${client.projectName || 'Your site'}: your handoff package is ready`;
+    const lines = [
+      `Hi ${escapeHtml(client.name)},`,
+      'Everything is paid and your site is officially yours. Your handoff package — fresh admin login, what you own, and a getting-started checklist — is waiting in your portal under Files.',
+      'For security it lives only behind your portal login; it is not attached to this email.',
+    ];
+    const result = await sendEmail({
+      to: client.email,
+      replyTo: OWNER_EMAIL,
+      subject,
+      html: template({
+        eyebrow: 'Handoff',
+        heading: 'Your site is yours — handoff package ready.',
+        lines,
+        cta: { label: 'Open your portal', href: `${SITE_URL}/portal` },
+      }),
+    });
+    recordEmailCost(client.slug, result.delivered, 'Handoff package ready', {
+      direction: 'to-client',
+      subject,
+      textParts: lines.slice(1),
+    });
+    return result.delivered;
+  } catch (err) {
+    console.error('[deneb4] handoff-ready email failed:', err);
+    return false;
+  }
+}
+
 /** Send the client an itemized invoice (only after Ridhi approves the send). */
 export async function notifyClientOfInvoice(
   client: Client,

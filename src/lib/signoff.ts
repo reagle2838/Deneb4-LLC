@@ -3,6 +3,7 @@ import { getAllClients, appendUpdate, setPipelineStage } from './clients';
 import { appendLedger } from './agent-ledger';
 import { getState, setState } from './agent-state';
 import { notifyClientOfSignoffRequest } from './notify';
+import { callGas } from './gas-bridge';
 import type { DutyResult } from './agent-roster';
 
 /**
@@ -51,10 +52,15 @@ export async function signoffRequestDuty(): Promise<DutyResult> {
       });
     }
     const emailed = await notifyClientOfSignoffRequest(client);
+    // Phase 14: also trigger the Apps Script document engine's handoff step
+    // (her Phase 3 — the "Final Approval & Handoff" doc + email) so no human
+    // has to click the sheet menu. Signing THAT form flows back through the
+    // handoff_signed webhook to the same recordClientSignoff below.
+    const gas = await callGas(client.slug, 'send_handoff_doc', { email: client.email, name: client.name });
     appendLedger(client.slug, {
       agent: 'comms',
       kind: 'event',
-      message: `Sign-off requested: "${SIGNOFF_PHASE}" is waiting in the client's portal with an Approve button.${emailed ? ' The client was emailed.' : ' No email went out (email not configured); the portal item is live.'}`,
+      message: `Sign-off requested: "${SIGNOFF_PHASE}" is waiting in the client's portal with an Approve button.${emailed ? ' The client was emailed.' : ' No email went out (email not configured); the portal item is live.'}${gas.ok ? ' Apps Script handoff document triggered.' : ''}`,
       data: { emailed: String(emailed) },
     });
     setState(requestedKey(client.slug), new Date().toISOString());

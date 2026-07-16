@@ -63,3 +63,27 @@
     drafts: "2"
     proposals: "0"
     gated: "1"
+- id: 08099030-1158-4b14-9dcc-60ab65551f92
+  date: "2026-07-16T04:27:05.153Z"
+  agent: concierge
+  kind: event
+  message: |-
+    Daily calendar: 1 upcoming appointment.
+    Thu, Jul 16, 10:00 AM to 10:30 AM: Discovery Call (Ridhi Eagle) (9896572362)
+  data:
+    count: "1"
+    emailed: "true"
+- id: e1b47fa0-ac3d-42ca-8e17-2c0d971cc9b5
+  date: "2026-07-16T04:27:05.437Z"
+  agent: concierge
+  kind: event
+  message: |-
+    Daily worklist.
+    Unread client messages: Acme Fabrication (5), Meridian Tool & Die (3).
+    Draft replies awaiting your approval: Acme Fabrication (1), Meridian Tool & Die (1).
+    Waiting on your gate: Meridian Tool & Die at Handoff.
+  data:
+    unread: "2"
+    drafts: "2"
+    proposals: "0"
+    gated: "1"

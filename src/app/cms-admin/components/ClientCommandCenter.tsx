@@ -8,6 +8,7 @@ import QuickActions from './QuickActions';
 import StagePanel from './StagePanel';
 import PipelinePanel from './PipelinePanel';
 import ChangeProposalsPanel from './ChangeProposalsPanel';
+import QuotePanel from './QuotePanel';
 import BillingPanel from './BillingPanel';
 import HandoffPanel from './HandoffPanel';
 import TimelinePanel from './TimelinePanel';
@@ -79,6 +80,7 @@ export default function ClientCommandCenter({
             initialStage={client.pipeline}
             onChanged={(stage) => onPipelineChange(client.slug, stage)}
           />
+          <QuotePanel slug={client.slug} />
           <ChangeProposalsPanel slug={client.slug} />
           <BillingPanel slug={client.slug} />
           <HandoffPanel slug={client.slug} pipeline={client.pipeline} githubUser={client.githubUser} />

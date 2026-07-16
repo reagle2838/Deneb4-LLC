@@ -15,6 +15,8 @@ import { appendLedger } from './agent-ledger';
 import { notifyOwnerOfAgentAlert } from './notify';
 import { setPipelineStage } from './clients';
 import { recordClientSignoff, SIGNOFF_PHASE } from './signoff';
+import { draftQuote, quoteTotal } from './quotes';
+import { money } from './pricing';
 
 /**
  * The live bridge from Ridhi's Google Workspace automation (a Google Form
@@ -134,6 +136,35 @@ interface StagedIntake {
 }
 
 /** Build + stage a proposed config from raw form answers. Never applies it. */
+/** Split a comma/semicolon/newline list answer into trimmed entries. */
+function splitList(raw: string): string[] {
+  return (raw || '')
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s && !/^(no|n\/a|none)$/i.test(s));
+}
+
+/**
+ * Parse a free-text FAQ answer into {q, a} pairs. Accepts "Q: ... A: ..."
+ * blocks or alternating lines (question line ends with "?"). Anything that
+ * doesn't pair up cleanly is dropped rather than guessed.
+ */
+function parseFaqPairs(raw: string): { q: string; a: string }[] {
+  const text = (raw || '').trim();
+  if (!text) return [];
+  const pairs: { q: string; a: string }[] = [];
+  const qaBlocks = [...text.matchAll(/Q[:.]\s*([^\n]+)\n+\s*A[:.]\s*([^\n]+)/gi)];
+  if (qaBlocks.length) {
+    for (const m of qaBlocks) pairs.push({ q: m[1].trim(), a: m[2].trim() });
+  } else {
+    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    for (let i = 0; i + 1 < lines.length; i += 2) {
+      if (lines[i].endsWith('?')) pairs.push({ q: lines[i], a: lines[i + 1] });
+    }
+  }
+  return pairs.slice(0, 12);
+}
+
 function parseAndStage(responses: Responses, driveFolderUrl: string): StagedIntake {
   const read = makeReader(responses);
   const mapReport: StagedIntake['mapReport'] = [];
@@ -209,6 +240,46 @@ function parseAndStage(responses: Responses, driveFolderUrl: string): StagedInta
     flags.structuralRequest = desc || 'see form';
     notes.push(`⚠ STRUCTURAL REQUEST (needs your review + a quote, never auto-built): ${desc || '(see Q11B)'}`);
   }
+
+  // ── v1.2.0 shell features (Intake Questionnaire spec, 2026-07-15).
+  // Every one of these is optional: a form without the question (or an
+  // empty answer) simply leaves the shell default in place. Keep this
+  // block in sync with scripts/parse-intake.mjs.
+  const primaryAction = r('primaryAction', 'Q6-2', /most important thing.*(do|action)|primary.*action/i);
+  const quoteTopicsRaw = r('quoteTopics', 'Q6-4', /ask.*quote.*about|quote topics/i);
+  const wantsQuote = /quote|estimate|bid/i.test(primaryAction) || Boolean(quoteTopicsRaw);
+  if (primaryAction || quoteTopicsRaw) {
+    // The quote modal defaults ON shell-wide; the intake answer supplies
+    // its topics and tells the notes whether this is a quote-first business.
+    cfg.quote = { enabled: true, topics: splitList(quoteTopicsRaw).slice(0, 5) };
+    if (primaryAction) notes.push(`Primary visitor action: "${primaryAction}"${wantsQuote ? ' — quote-first business; the header CTA leads with Request a quote.' : ''}`);
+  }
+  const announcementText = r('announcement', 'Q6-5', /announce.*banner|time-sensitive/i);
+  if (announcementText && !/^(no|n\/a|none|nothing)$/i.test(announcementText)) {
+    cfg.announcement = { text: announcementText.slice(0, 160) };
+    notes.push(`Announcement bar requested: "${announcementText.slice(0, 80)}" — confirm the link target with the client.`);
+  }
+  const SOCIAL_CODES: [string, string][] = [
+    ['Q14-1', 'LinkedIn'],
+    ['Q14-2', 'Facebook'],
+    ['Q14-3', 'Instagram'],
+    ['Q14-4', 'X'],
+    ['Q14-5', 'YouTube'],
+  ];
+  const socialLinks = SOCIAL_CODES.map(([code, label]) => ({ label, href: r(`social:${label}`, code) }))
+    .filter((s) => looksLikeUrl(s.href));
+  if (socialLinks.length) cfg.socialLinks = socialLinks;
+  const faqRaw = r('faq', 'Q13-5', /questions.*customers.*ask/i);
+  const faqPairs = parseFaqPairs(faqRaw);
+  if (faqPairs.length) cfg.faq = faqPairs;
+  const logosRaw = r('logos', 'Q13-6', /notable clients|partners.*display/i);
+  const logoNames = splitList(logosRaw).slice(0, 16);
+  if (logoNames.length) {
+    cfg.logoWall = { items: logoNames.map((name) => ({ name })) };
+    notes.push('Logo wall from client-named partners; swap in real logo files from their Drive folder when available.');
+  }
+  const billingEmail = r('billingEmail', 'Q4-5', /invoices.*go|billing contact/i);
+  if (looksLikeEmail(billingEmail)) notes.push(`Invoices go to: ${billingEmail} (billing contact, not the project contact).`);
 
   const clientContact = {
     name: r('clientName', 'Q4-1', /what is your name/i),
@@ -292,10 +363,15 @@ export async function handleIntakeSubmitted(input: {
   fs.mkdirSync(INTAKE_DIR, { recursive: true });
   fs.writeFileSync(path.join(INTAKE_DIR, `${slug}.json`), JSON.stringify(staged, null, 2));
 
+  // Phase 14 gate #1: the quote drafts itself from the staged config the
+  // moment intake lands, so Ridhi's first touch is approve/deny — not
+  // "compute a price".
+  const quote = draftQuote(slug, 'agent');
+
   appendLedger(slug, {
     agent: 'concierge',
     kind: 'event',
-    message: `Intake received via the live Google Form. Build config staged for your review (content/admin/intake/${slug}.json). ${staged.unmapped.length ? `Missing: ${staged.unmapped.join(', ')}.` : 'All fields mapped.'} Awaiting the client's onboarding signature.`,
+    message: `Intake received via the live Google Form. Build config staged for your review (content/admin/intake/${slug}.json). ${staged.unmapped.length ? `Missing: ${staged.unmapped.join(', ')}.` : 'All fields mapped.'}${quote ? ` Quote drafted (${money(quoteTotal(quote))}) — approve or deny it on the Quote panel.` : ''} Awaiting the client's onboarding signature.`,
   });
 
   return {

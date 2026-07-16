@@ -89,6 +89,20 @@
 
 Confirmed by Ridhi 2026-07-09: **structural requests and manual overrides route to a supervised Claude Code session against the client's repo, not to an agent.** Anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog are Cowork work. Cowork is interactive and supervised; agents run unattended within these contracts. Manual edits made this way are ordinary commits in the client's repo, and the Builder's change loop is built to respect them.
 
+## Amendment (2026-07-15, Phase 14): maximum agency — agents ARE the logic gates
+
+Ridhi's mandate, superseding the gate tables below where they conflict: human-in-the-loop is exactly **four touchpoints**, everything else agent-driven.
+
+1. **Quote approval (Ridhi, then the client, BEFORE any build).** The quote drafts itself when intake lands. Ridhi approves (it goes to the client) or **denies with instructions** — the agent revises the config/adjustment per her notes and re-proposes (Quote panel). The client confirms via portal Approve or a signed GAS Quote Authorization Form (`quote_signed` webhook).
+2. **Deposit paid (client).** Client confirmation drafts the 50% deposit; once Ridhi sends it and it settles (Wave detection), the pipeline advances to `building` and the Builder starts — payment IS the build trigger.
+3. **Invoice sends (Ridhi).** "Approve & send" on every invoice, unchanged.
+4. **Joint final approval (Ridhi + client).** Ridhi advancing to `approval` is her design sign-off (internal review folded into this gate; the Builder's QA green now goes straight to `client-review`); the client's sign-off advances to payment automatically.
+
+Consequences, all live:
+- **Comms disposes on routine traffic**: a clean batch's reply auto-sends (`COMMS_AUTOSEND=false` restores the draft gate) and a client-requested closed-menu change auto-applies with QA + auto-revert behind it (`CHANGES_AUTOAPPLY=false` restores approval). Urgent / structural / approval / consultation / unclear batches still stop and escalate — nothing auto-fires on those.
+- **Handoff delivery is agentic but credential-safe**: on all-paid, the package (rotated credentials) is exposed as an authenticated portal download (Files section) and the client is notified by a no-secrets email. GitHub repo transfer stays a button on the Handoff panel.
+- **The GAS bridge is bidirectional**: her Apps Script events flow in (Phase 11), and agents now call out (`src/lib/gas-bridge.ts`) to trigger her document engine — including the handoff document that previously needed her sheet-menu click. See `docs/gas-bridge.md`.
+
 ## Amendment (2026-07-12): the gate set narrowed, per Ridhi's instruction
 
 Ridhi's standing human-in-the-loop actions are now exactly: **internal review** (design + copy, unchanged), **approving each invoice before it is sent**, and the physically-unavoidable handoff delivery. Everything else automated:

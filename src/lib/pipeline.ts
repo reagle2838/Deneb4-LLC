@@ -30,23 +30,26 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   {
     id: 'intake-review',
     label: 'Intake review',
-    description: 'Docs are back. The form is parsed into a build config; anything unclear gets escalated.',
+    description:
+      'Docs are back and the quote gate runs here: agent drafts the quote, Ridhi approves (or denies with instructions), the client confirms, the deposit invoice goes out. Deposit PAID starts the build.',
     owner: 'concierge',
     gated: false,
   },
   {
     id: 'building',
     label: 'Building',
-    description: 'Assembling the site from the template per the config. QA runs the harness on every change.',
+    description:
+      'Entered automatically when the deposit settles. Assembling the site from the template per the confirmed config; QA runs the harness and green goes straight to client review.',
     owner: 'builder',
     gated: false,
   },
   {
     id: 'internal-review',
     label: 'Internal review',
-    description: "Ridhi's design and copy review. The client does not see staging until this passes.",
+    description:
+      'Legacy stage (Phase 14 folded it into joint final approval). The Builder now skips it; kept for old client records.',
     owner: 'ridhi',
-    gated: true,
+    gated: false,
   },
   {
     id: 'client-review',
@@ -58,7 +61,8 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   {
     id: 'approval',
     label: 'Final approval',
-    description: 'Sign-off requested from the client. Their portal Approve advances this automatically.',
+    description:
+      'The joint gate: Ridhi advancing a client here IS her final approval; the client signs off via portal Approve or the signed handoff form, which advances to payment automatically.',
     owner: 'comms',
     gated: true,
   },

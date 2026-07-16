@@ -5,7 +5,7 @@
  *
  * FIRST BUILD (no builds/<slug> yet): mirror the d4 repos -> assemble via
  * d4-site-builder -> git init as the client's own repo -> install/build/
- * serve -> QA -> green: ledger summary + advance pipeline to internal-review
+ * serve -> QA -> green: ledger summary + advance pipeline to client-review
  * (Ridhi's gate) and STOP; failure: escalate.
  *
  * CHANGE MODE (builds/<slug> is an existing git repo): the client's build
@@ -97,14 +97,17 @@ async function readStage() {
 }
 
 async function advanceToGate() {
+  // Phase 14: QA green goes straight to client review — Ridhi's design eye
+  // moved to the joint final-approval gate; the QA battery (incl. a11y)
+  // plus staging deploy is the pre-client bar now.
   const res = await fetch(`${reportTo}/api/agents/pipeline`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-agent-key': agentKey },
     body: JSON.stringify({
       client: slug,
-      stage: 'internal-review',
+      stage: 'client-review',
       agent: 'builder',
-      note: 'Assembled from the d4 templates + QA green; ready for design + copy review.',
+      note: 'Assembled from the d4 templates + QA green; staging is the client-review surface (Phase 14: internal review folds into final approval).',
     }),
   });
   return res.json();
@@ -263,7 +266,7 @@ async function firstBuild() {
       });
       const moved = await advanceToGate();
       if (maybeDeployStaging()) console.log('Auto-deploying to staging in the background so you can review it.');
-      console.log(`\nHanded off to internal-review (Ridhi's gate). Pipeline: ${moved.stage || 'internal-review'}.`);
+      console.log(`\nHanded off to client-review (Phase 14: QA is the pre-client bar). Pipeline: ${moved.stage || 'client-review'}.`);
       return 0;
     }
 

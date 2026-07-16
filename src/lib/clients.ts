@@ -343,6 +343,16 @@ export function setDriveFolderIfEmpty(slug: string, url: string): boolean {
   return true;
 }
 
+/** Add a file entry to the client's portal Files section (deduped by name). */
+export function addClientFile(slug: string, file: ClientFile): boolean {
+  const c = parseFile(slug);
+  if (!c) return false;
+  const data = clientToData(c);
+  data.files = [...data.files.filter((f) => f.name !== file.name), file];
+  writeClient(slug, { data, passwordHash: c.passwordHash });
+  return true;
+}
+
 /** Append one update to a client's portal timeline. */
 export function appendUpdate(slug: string, update: ClientUpdate): boolean {
   const c = parseFile(slug);

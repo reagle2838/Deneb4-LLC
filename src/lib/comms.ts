@@ -3,10 +3,11 @@ import path from 'path';
 import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
 import type { Client, ClientFeedback } from './clients';
-import { getAllClients, addDraftReply } from './clients';
+import { getAllClients, addDraftReply, approveDraftReply } from './clients';
 import { appendLedger } from './agent-ledger';
 import { getState, setState } from './agent-state';
-import { notifyOwnerOfAgentAlert } from './notify';
+import { notifyOwnerOfAgentAlert, notifyClientOfReply } from './notify';
+import { spawnBuilder } from './builder-spawn';
 import { recordCost } from './costs';
 import { computeAnthropicCost } from './pricing';
 import { assertSafeSlug } from './agent-auth';
@@ -24,8 +25,15 @@ import type { DutyResult } from './agent-roster';
  *
  * Deterministic by default. When ANTHROPIC_API_KEY is set, an LLM pass
  * takes over classification and reply drafting, but its output is clamped
- * through the same closed-menu validation, and every product still lands
- * behind Ridhi's gates. Server-only (fs).
+ * through the same closed-menu validation. Server-only (fs).
+ *
+ * PHASE 14 (Ridhi's maximum-agency mandate, 2026-07-15): for routine
+ * traffic the agent disposes as well as proposes — a clean batch's reply
+ * AUTO-SENDS (COMMS_AUTOSEND=false restores the draft gate) and a client-
+ * requested closed-menu change AUTO-APPLIES with QA + auto-revert behind it
+ * (CHANGES_AUTOAPPLY=false restores the approval gate). Any batch touching
+ * urgent / structural / approval / consultation / unclear territory still
+ * stops and escalates: the reply stays a draft and nothing auto-applies.
  */
 
 // ── Change proposals: what Comms hands the Builder, behind Ridhi's gate ──
@@ -569,23 +577,55 @@ export async function commsTriageDuty(): Promise<DutyResult> {
     // The LLM path is clamped too, but sanitize once more at the boundary.
     const { patch } = sanitizePatch(triage.patch);
 
-    // 1. Change proposal (Ridhi approves before the config is touched).
+    // A batch is "clean" when nothing in it needs Ridhi — only then may the
+    // Phase 14 auto paths (send the reply, apply the change) engage.
+    const escalationCategories = triage.perMessage.filter((p) =>
+      ['urgent', 'structural', 'approval', 'consultation', 'unclear'].includes(p.category)
+    );
+    const cleanBatch = escalationCategories.length === 0;
+    const autoSend = cleanBatch && process.env.COMMS_AUTOSEND !== 'false';
+    const autoApply = cleanBatch && process.env.CHANGES_AUTOAPPLY !== 'false';
+
+    // 1. Change proposal from the client's own request. Clean batch: apply
+    //    it immediately — QA + auto-revert stand behind every applied
+    //    change, and the client asked for it. Otherwise it waits for Ridhi.
     let proposal: ChangeProposal | null = null;
+    let autoApplied = false;
     if (!patchIsEmpty(patch) && configAvailable) {
       const sourceIds = triage.perMessage.filter((p) => p.category === 'change-request').map((p) => p.id);
       proposal = addProposal(client.slug, { patch, sourceMessageIds: sourceIds, createdBy: 'comms' });
-      if (proposal) proposals++;
+      if (proposal) {
+        proposals++;
+        if (autoApply && ['building', 'client-review'].includes(client.pipeline)) {
+          const applied = applyPatchToBuildConfig(client.slug, proposal.patch);
+          if (applied !== null) {
+            const { note } = spawnBuilder(client.slug, process.env.SITE_URL);
+            resolveProposal(client.slug, proposal.id, 'applied', `Auto-applied (client-requested, clean triage). ${note}`);
+            autoApplied = true;
+          }
+        }
+      }
     }
 
-    // 2. Draft reply (Ridhi approves before the client sees it).
+    // 2. The reply. Clean batch: send it (the mandate's four HITL
+    //    touchpoints don't include routine replies). Anything needing
+    //    Ridhi in the batch: stays a draft behind the copy gate.
+    let replySent = false;
     if (triage.draftReply.trim()) {
       const pages = [...new Set(fresh.map((m) => m.page).filter(Boolean))];
-      addDraftReply(client.slug, {
+      const draft = addDraftReply(client.slug, {
         message: triage.draftReply.trim(),
         page: pages.length === 1 ? pages[0] : '',
         createdBy: 'comms',
       });
       drafts++;
+      if (draft && autoSend) {
+        const approved = approveDraftReply(client.slug, draft.id);
+        if (approved) {
+          await notifyClientOfReply(approved.client, approved.entry);
+          replySent = true;
+        }
+      }
     }
 
     // 3. Triage summary on the client's channel.
@@ -598,15 +638,21 @@ export async function commsTriageDuty(): Promise<DutyResult> {
       kind: 'event',
       message:
         `Triaged ${fresh.length} new client message${fresh.length === 1 ? '' : 's'}.\n${lines.join('\n')}` +
-        (proposal ? `\nProposed change awaiting your approval: ${proposal.summary}.` : '') +
-        (triage.draftReply.trim() ? `\nDraft reply queued for your approval in Messages.` : ''),
+        (proposal
+          ? autoApplied
+            ? `\nClient-requested change auto-applied (QA + auto-revert behind it): ${proposal.summary}.`
+            : `\nProposed change awaiting your approval: ${proposal.summary}.`
+          : '') +
+        (triage.draftReply.trim()
+          ? replySent
+            ? `\nReply sent to the client (clean triage; COMMS_AUTOSEND).`
+            : `\nDraft reply queued for your approval in Messages.`
+          : ''),
       data: { engine: triage.engine, messages: String(fresh.length) },
     });
 
     // 4. Escalations (alert + email; the alert-and-stop rule).
-    const needsRidhi = triage.perMessage.filter((p) =>
-      ['urgent', 'structural', 'approval', 'consultation', 'unclear'].includes(p.category)
-    );
+    const needsRidhi = escalationCategories;
     if (needsRidhi.length > 0) {
       const detail = needsRidhi
         .map((p) => {

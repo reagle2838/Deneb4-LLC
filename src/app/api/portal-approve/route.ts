@@ -4,6 +4,8 @@ import { verifyPortalSession } from '@/lib/portal-auth';
 import { approveUpdate, addFeedback, type ClientFeedback } from '@/lib/clients';
 import { notifyOwnerOfApproval } from '@/lib/notify';
 import { recordClientSignoff } from '@/lib/signoff';
+import { QUOTE_PHASE } from '@/lib/quotes';
+import { confirmQuoteAndKickoff } from '@/lib/quote-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +45,13 @@ export async function POST(req: NextRequest) {
       resolved: false,
     };
     addFeedback(clientSlug, note);
+
+    // The quote-approval item (Phase 14, gate #1): the client's Approve
+    // confirms the quote, applies the confirmed scope as the build config,
+    // and drafts the deposit invoice. The build starts when it's paid.
+    if (body.phase === QUOTE_PHASE) {
+      await confirmQuoteAndKickoff(clientSlug);
+    }
 
     // If this was the final-approval item, record the sign-off: the gate
     // criterion is the client's own action, so this also advances the

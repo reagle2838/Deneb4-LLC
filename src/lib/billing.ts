@@ -3,13 +3,16 @@ import path from 'path';
 import crypto from 'crypto';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
 import type { Client, ClientInvoice } from './clients';
-import { getAllClients, getClientBySlug, setPipelineStage } from './clients';
+import { addClientFile, getAllClients, getClientBySlug, setPipelineStage } from './clients';
 import { appendLedger } from './agent-ledger';
 import { getState, setState } from './agent-state';
-import { notifyOwnerOfAgentAlert, notifyClientOfInvoice } from './notify';
+import { notifyOwnerOfAgentAlert, notifyClientOfInvoice, notifyClientOfHandoffReady } from './notify';
 import { computeQuote, money, type Quote } from './pricing';
 import { hasBuildConfig } from './comms';
 import { generateHandoffPackage } from './handoff';
+import { applyStagedConfig, getQuoteRecord } from './quotes';
+import { spawnBuilder } from './builder-spawn';
+import { callGas } from './gas-bridge';
 import { waveEnabled, ensureCustomer, createInvoice, markInvoiceSent, getInvoiceStatus, isSettled } from './wave';
 import type { DutyResult } from './agent-roster';
 import { assertSafeSlug } from './agent-auth';
@@ -88,20 +91,32 @@ async function marginAlert(client: Client, quote: Quote): Promise<void> {
   setState(key, new Date().toISOString());
 }
 
+/**
+ * The quote-approval adjustment (Ridhi's deny-with-instructions loop can
+ * grant e.g. "$200 off"); applied on top of the price-book quote.
+ */
+function quoteAdjustment(slug: string): number {
+  return getQuoteRecord(slug)?.adjustmentUsd ?? 0;
+}
+
 /** Draft the 50% deposit invoice from the quote. Returns null without a config. */
 export async function proposeDeposit(client: Client): Promise<ProposedInvoice | null> {
   const quote = computeQuote(client.slug);
   if (!quote) return null;
   if (!quote.marginOk) await marginAlert(client, quote);
+  const adj = quoteAdjustment(client.slug);
+  const total = Math.round((quote.total + adj) * 100) / 100;
+  const deposit = Math.round((total / 2) * 100) / 100;
   const proposal: ProposedInvoice = {
     id: crypto.randomUUID(),
     kind: 'deposit',
     description: 'Build deposit (50%)',
-    amount: quote.deposit,
+    amount: deposit,
     dueDate: plusDays(7),
     lines: [
       ...quote.lines.map((l) => ({ label: l.label, amount: money(l.amount) })),
-      { label: `Project total ${money(quote.total)} — 50% deposit due now, balance at handoff`, amount: money(quote.deposit) },
+      ...(adj ? [{ label: 'Adjustment (per quote approval)', amount: money(adj) }] : []),
+      { label: `Project total ${money(total)} — 50% deposit due now, balance at handoff`, amount: money(deposit) },
     ],
     status: 'proposed',
     date: new Date().toISOString(),
@@ -110,7 +125,7 @@ export async function proposeDeposit(client: Client): Promise<ProposedInvoice | 
   appendLedger(client.slug, {
     agent: 'billing',
     kind: 'event',
-    message: `Deposit invoice drafted (${money(quote.deposit)} of ${money(quote.total)} total; cost floor ${money(quote.costFloor)}, ${quote.marginMultiple}x margin). Waiting for your "Approve & send" on the Billing panel.`,
+    message: `Deposit invoice drafted (${money(deposit)} of ${money(total)} total; cost floor ${money(quote.costFloor)}, ${quote.marginMultiple}x margin). Waiting for your "Approve & send" on the Billing panel.`,
   });
   return proposal;
 }
@@ -120,10 +135,12 @@ export async function proposeFinal(client: Client): Promise<ProposedInvoice | nu
   const quote = computeQuote(client.slug);
   if (!quote) return null;
   if (!quote.marginOk) await marginAlert(client, quote);
+  const adj = quoteAdjustment(client.slug);
+  const total = Math.round((quote.total + adj) * 100) / 100;
   // What was already billed as the deposit (sent or proposed) comes off the top.
   const deposit = getProposedInvoices(client.slug).find((p) => p.kind === 'deposit' && p.status === 'sent');
-  const depositAmount = deposit?.amount ?? quote.deposit;
-  const amount = Math.max(0, Math.round((quote.total - depositAmount) * 100) / 100);
+  const depositAmount = deposit?.amount ?? Math.round((total / 2) * 100) / 100;
+  const amount = Math.max(0, Math.round((total - depositAmount) * 100) / 100);
   const proposal: ProposedInvoice = {
     id: crypto.randomUUID(),
     kind: 'final',
@@ -132,7 +149,8 @@ export async function proposeFinal(client: Client): Promise<ProposedInvoice | nu
     dueDate: plusDays(14),
     lines: [
       ...quote.lines.map((l) => ({ label: l.label, amount: money(l.amount) })),
-      { label: `Project total`, amount: money(quote.total) },
+      ...(adj ? [{ label: 'Adjustment (per quote approval)', amount: money(adj) }] : []),
+      { label: `Project total`, amount: money(total) },
       { label: `Less deposit received`, amount: `-${money(depositAmount)}` },
     ],
     status: 'proposed',
@@ -142,7 +160,7 @@ export async function proposeFinal(client: Client): Promise<ProposedInvoice | nu
   appendLedger(client.slug, {
     agent: 'billing',
     kind: 'event',
-    message: `Final invoice drafted (${money(amount)}; total ${money(quote.total)} less deposit ${money(depositAmount)}). Waiting for your "Approve & send" on the Billing panel.`,
+    message: `Final invoice drafted (${money(amount)}; total ${money(total)} less deposit ${money(depositAmount)}). Waiting for your "Approve & send" on the Billing panel.`,
   });
   return proposal;
 }
@@ -282,8 +300,17 @@ export async function billingWatchDuty(): Promise<DutyResult> {
   let advanced = 0;
 
   for (let client of clients.filter((c) => c.active)) {
-    // 1. Deposit drafting: as soon as a build exists to bill for.
-    if (DEPOSIT_STAGES.includes(client.pipeline) && hasBuildConfig(client.slug) && !hasKind(client.slug, 'deposit')) {
+    const quoteRecord = getQuoteRecord(client.slug);
+
+    // 1. Deposit drafting. Phase 14 path: the client confirmed the quote
+    //    (confirmQuoteAndKickoff usually drafts it in the same breath; this
+    //    is the belt-and-suspenders). Legacy path (no quote record, e.g.
+    //    pre-Phase-14 demo clients): once a build config exists at a build
+    //    stage.
+    const quoteConfirmed = quoteRecord?.status === 'confirmed';
+    const legacyDepositDue =
+      !quoteRecord && DEPOSIT_STAGES.includes(client.pipeline) && hasBuildConfig(client.slug);
+    if ((quoteConfirmed || legacyDepositDue) && hasBuildConfig(client.slug) && !hasKind(client.slug, 'deposit')) {
       if (await proposeDeposit(client)) drafted++;
     }
 
@@ -292,6 +319,34 @@ export async function billingWatchDuty(): Promise<DutyResult> {
     if (detected > 0) {
       const fresh = await getClientBySlug(client.slug);
       if (fresh) client = fresh; // the all-paid check below must see the flip
+    }
+
+    // 3. Deposit settled → the build starts. This is the Phase 14 gate
+    //    order: quote confirmed (Ridhi + client) and money in hand BEFORE
+    //    the Builder runs. Advancing to `building` here is what un-gates
+    //    the Builder; the spawn is fire-and-forget and reports itself.
+    if (quoteConfirmed && ['onboarding', 'intake-review'].includes(client.pipeline)) {
+      const sentDeposit = getProposedInvoices(client.slug).find((p) => p.kind === 'deposit' && p.status === 'sent');
+      const depositPaid =
+        sentDeposit && client.invoices.some((i) => i.description === sentDeposit.description && i.status === 'paid');
+      if (depositPaid) {
+        const applied = applyStagedConfig(client.slug); // usually 'already-applied' (confirm did it)
+        if (applied === 'no-staged-config' && !hasBuildConfig(client.slug)) {
+          const msg = `${client.name}: deposit is paid but there is no build config (staged or applied) — the build cannot start. Stage or apply a config.`;
+          appendLedger(client.slug, { agent: 'builder', kind: 'alert', message: msg });
+          await notifyOwnerOfAgentAlert(client.slug, 'builder', msg);
+        } else {
+          setPipelineStage(client.slug, 'building');
+          const { note } = spawnBuilder(client.slug, process.env.SITE_URL);
+          appendLedger(client.slug, {
+            agent: 'builder',
+            kind: 'handoff',
+            message: `Deposit paid — pipeline advanced to Building automatically (Phase 14: quote + deposit are the start gate). ${note}`,
+          });
+          await callGas(client.slug, 'build_started', {});
+          advanced++;
+        }
+      }
     }
 
     if (client.pipeline !== 'payment') continue;
@@ -315,10 +370,22 @@ export async function billingWatchDuty(): Promise<DutyResult> {
       const fresh = await getClientBySlug(client.slug);
       if (fresh) {
         const { rotated } = generateHandoffPackage(fresh);
+        // Phase 14: agentic delivery, but never credentials over email. The
+        // package is exposed as an authenticated portal download (Files
+        // section) and the client gets a no-secrets notification email.
+        addClientFile(client.slug, {
+          name: 'Handoff package',
+          url: '/api/portal-handoff',
+          description:
+            'Your ownership handover: fresh admin login, what you own, and a getting-started checklist. Only available behind your portal login.',
+          date: new Date().toISOString().slice(0, 10),
+        });
+        const emailed = await notifyClientOfHandoffReady(fresh);
+        await callGas(client.slug, 'project_paid', {});
         await notifyOwnerOfAgentAlert(
           client.slug,
           'billing',
-          `${client.name} is fully paid. Advanced to Handoff and generated the handoff package${rotated ? ' (admin password rotated)' : ''} — review it in the Workspace and deliver it to the client.`
+          `${client.name} is fully paid. Advanced to Handoff, generated the handoff package${rotated ? ' (admin password rotated)' : ''}, and delivered it via their portal Files section${emailed ? ' (client notified by email)' : ''}. If they asked for a GitHub transfer, trigger it from the Handoff panel.`
         );
       }
       advanced++;
