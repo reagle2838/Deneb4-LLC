@@ -18,12 +18,17 @@ export default function ApprovalsSection({
   const [busyIndex, setBusyIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [justApproved, setJustApproved] = useState<string[]>([]);
+  const [signatureName, setSignatureName] = useState('');
 
   const pending = updates
     .map((u, index) => ({ u, index }))
     .filter(({ u }) => u.status === 'pending-signoff');
 
   if (pending.length === 0 && justApproved.length === 0) return null;
+
+  // Must match QUOTE_PHASE in src/lib/quotes.ts — the one approval item
+  // that also captures a typed-name signature on the scope agreement.
+  const QUOTE_PHASE = 'Quote approval';
 
   async function approve(index: number, phase: string) {
     setBusyIndex(index);
@@ -32,7 +37,7 @@ export default function ApprovalsSection({
       const res = await fetch('/api/portal-approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ index, phase }),
+        body: JSON.stringify({ index, phase, ...(phase === QUOTE_PHASE ? { signatureName } : {}) }),
       });
       const data = (await res.json()) as { ok?: boolean; updates?: ClientUpdate[]; error?: string };
       if (data.ok && data.updates) {
@@ -69,15 +74,32 @@ export default function ApprovalsSection({
                   <p className="font-spec text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>{formatFriendlyDate(u.date)}</p>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                <button
-                  onClick={() => approve(index, u.phase)}
-                  disabled={busyIndex !== null}
-                  className="btn-primary"
-                >
-                  {busyIndex === index ? 'Approving...' : 'Approve'}
-                </button>
-                <button onClick={askFirst} className="btn-outline text-sm">Ask a question first</button>
+              <div className="flex flex-col gap-2 flex-shrink-0 sm:items-end">
+                {u.phase === QUOTE_PHASE && (
+                  <div className="flex flex-col gap-1 w-full sm:w-64">
+                    <label htmlFor={`sig-${index}`} className="font-spec text-[11px] tracking-widest uppercase" style={{ color: 'var(--text-faint)' }}>
+                      Type your full name to sign
+                    </label>
+                    <input
+                      id={`sig-${index}`}
+                      value={signatureName}
+                      onChange={(e) => setSignatureName(e.target.value)}
+                      placeholder="Full name"
+                      className="px-3 py-2 rounded-sm text-sm outline-none"
+                      style={{ border: '1px solid var(--border-accent)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => approve(index, u.phase)}
+                    disabled={busyIndex !== null || (u.phase === QUOTE_PHASE && !signatureName.trim())}
+                    className="btn-primary"
+                  >
+                    {busyIndex === index ? 'Approving...' : u.phase === QUOTE_PHASE ? 'Sign & approve' : 'Approve'}
+                  </button>
+                  <button onClick={askFirst} className="btn-outline text-sm">Ask a question first</button>
+                </div>
               </div>
             </div>
           </div>

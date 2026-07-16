@@ -21,9 +21,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as { index?: number; phase?: string };
+    const body = (await req.json()) as { index?: number; phase?: string; signatureName?: string };
     if (typeof body.index !== 'number' || !body.phase) {
       return NextResponse.json({ error: 'Missing index or phase.' }, { status: 400 });
+    }
+    if (body.phase === QUOTE_PHASE && !(body.signatureName ?? '').trim()) {
+      return NextResponse.json({ error: 'Type your full name to sign the scope agreement.' }, { status: 400 });
     }
 
     const client = approveUpdate(clientSlug, body.index, body.phase);
@@ -47,10 +50,12 @@ export async function POST(req: NextRequest) {
     addFeedback(clientSlug, note);
 
     // The quote-approval item (Phase 14, gate #1): the client's Approve
-    // confirms the quote, applies the confirmed scope as the build config,
-    // and drafts the deposit invoice. The build starts when it's paid.
+    // confirms the quote, signs the scope agreement (typed name), applies
+    // the confirmed scope as the build config, and drafts the deposit
+    // invoice. The build starts when it's paid.
     if (body.phase === QUOTE_PHASE) {
-      await confirmQuoteAndKickoff(clientSlug);
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+      await confirmQuoteAndKickoff(clientSlug, { typedName: (body.signatureName ?? '').trim(), ip });
     }
 
     // If this was the final-approval item, record the sign-off: the gate
