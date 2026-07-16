@@ -206,7 +206,17 @@ function parseAndStage(responses: Responses, driveFolderUrl: string): StagedInta
   notes.push(...design.notes);
   if (design.brandIngest) flags.brandIngest = true;
 
-  const brandUrl = r('brandUrl', 'Q2A-1', /current website address/i) || Object.values(responses).map(flatten).find(looksLikeUrl) || '';
+  // Fallback scan excludes the social-link codes (Q14-1..5 are URLs too, by
+  // design) so a LinkedIn/Instagram link never gets misread as the brand's
+  // current website.
+  const SOCIAL_CODE_RE = /^Q14-[1-5]/i;
+  const brandUrl =
+    r('brandUrl', 'Q2A-1', /current website address/i) ||
+    Object.entries(responses)
+      .filter(([key]) => !SOCIAL_CODE_RE.test(key))
+      .map(([, v]) => flatten(v))
+      .find(looksLikeUrl) ||
+    '';
   if (looksLikeUrl(brandUrl)) {
     flags.brandUrl = brandUrl;
     notes.push(`Existing site: ${brandUrl} — ${design.brandIngest ? 'run' : 'consider'} brand ingest: npm run brand -- <slug> --url ${brandUrl}`);

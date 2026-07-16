@@ -234,7 +234,13 @@ function stage() {
 
   // Brand-ingest URL: the current-site question (only relevant on the
   // "existing website" branch), or any URL the client dropped in.
-  const brandUrl = read('brandUrl', 'Q2A-1', /current website address/i) || (record.find((v) => looksLikeUrl(v)) ?? '');
+  // Fallback scan excludes the social-link columns (Q14-1..5 are URLs too,
+  // by design) so a LinkedIn/Instagram link never gets misread as the
+  // brand's current website.
+  const socialColIdx = new Set(headers.map((h, i) => (/^Q14-[1-5]/i.test(h) ? i : -1)).filter((i) => i >= 0));
+  const brandUrl =
+    read('brandUrl', 'Q2A-1', /current website address/i) ||
+    (record.find((v, i) => !socialColIdx.has(i) && looksLikeUrl(v)) ?? '');
   if (looksLikeUrl(brandUrl)) {
     flags.brandUrl = String(brandUrl).trim();
     notes.push(`Existing site: ${flags.brandUrl} — ${design.brandIngest ? 'run' : 'consider'} brand ingest: npm run brand -- <slug> --url ${flags.brandUrl}`);

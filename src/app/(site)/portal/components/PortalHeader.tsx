@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PasswordSection from './PasswordSection';
 
 export default function PortalHeader({ name, projectName }: { name: string; projectName: string }) {
   const [busy, setBusy] = useState(false);
@@ -29,9 +30,12 @@ export default function PortalHeader({ name, projectName }: { name: string; proj
           </p>
         )}
       </div>
-      <button onClick={logout} disabled={busy} className="btn-outline text-sm flex-shrink-0">
-        {busy ? 'Signing out...' : 'Log out'}
-      </button>
+      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+        <button onClick={logout} disabled={busy} className="btn-outline text-sm">
+          {busy ? 'Signing out...' : 'Log out'}
+        </button>
+        <PasswordSection />
+      </div>
     </div>
   );
 }

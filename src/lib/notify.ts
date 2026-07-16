@@ -166,6 +166,7 @@ export async function notifyClientCredentials(
             : 'Your old password no longer works.',
           `Sign in with: <strong>${escapeHtml(client.email)}</strong>`,
           `Password: <strong style="font-family:'Courier New',monospace;">${escapeHtml(password)}</strong>`,
+          'This password was generated for you — once you\'re signed in, you can change it any time from your portal, and there\'s a "Forgot your password?" link on the sign-in page if you ever need a new one.',
         ],
         cta: { label: 'Open your portal', href: `${SITE_URL}/login` },
       }),
