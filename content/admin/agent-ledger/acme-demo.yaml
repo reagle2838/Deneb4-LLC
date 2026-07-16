@@ -510,3 +510,49 @@
   kind: event
   message: "Payment received: Build deposit (50%) ($1,800.00) — detected automatically via Wave (status PAID)."
   data: {}
+- id: 6f7e6eba-d6a7-40dd-bd78-0476c3db1c70
+  date: "2026-07-16T19:14:34.346Z"
+  agent: engineer
+  kind: event
+  message: "Work order 4cb0abd4 accepted: \"Dry-run pipeline test: add a marker to the About page. This is an E2E verification order.\". Working on branch engineer/4cb0abd4; QA runs before you see it."
+  data: {}
+- id: 836a7f60-e332-4345-b2b4-846d206f1306
+  date: "2026-07-16T19:16:05.853Z"
+  agent: qa
+  kind: event
+  message: |-
+    Verification passed for http://127.0.0.1:4184.
+    All 8 checks passed.
+  data:
+    target: http://127.0.0.1:4184
+    passed: "true"
+- id: 4cebf6ee-ff2e-4b7f-853d-fb7155682f30
+  date: "2026-07-16T19:16:11.323Z"
+  agent: engineer
+  kind: alert
+  message: "Work order 4cb0abd4 is READY FOR YOUR REVIEW (QA green).  1 file changed, 2 insertions(+). Summary: Dry engine: appended a marker comment to src\\app\\about\\page.tsx. — Approve & merge or Reject on the Engineer panel."
+  data: {}
+- id: 08860008-5fb0-431b-b06a-3457a893b746
+  date: "2026-07-16T19:28:28.528Z"
+  agent: ridhi
+  kind: decision
+  message: "Approved Engineer work order 4cb0abd4 (\"Dry-run pipeline test: add a marker to the About page. This is an E2E verification order.\"). Merged to main (f523f0b). Pushed to deneb4admin/d4-client-acme-demo."
+  data: {}
+- id: c20cc4ad-a753-4c53-bd87-ccb0b957d03b
+  date: "2026-07-16T19:28:59.836Z"
+  agent: engineer
+  kind: event
+  message: "Work order ef3375b4 accepted: \"Guard test: this should fail because the tree is dirty.\". Working on branch engineer/ef3375b4; QA runs before you see it."
+  data: {}
+- id: 9893842e-09ef-49a4-bb17-079c1c05735a
+  date: "2026-07-16T19:29:03.424Z"
+  agent: engineer
+  kind: alert
+  message: "Work order ef3375b4 FAILED: Client repo has uncommitted changes; refusing to start. Partial work is preserved on engineer/ef3375b4."
+  data: {}
+- id: 224bfb3c-40a1-4d91-93be-4f92893283f5
+  date: "2026-07-16T19:29:09.569Z"
+  agent: ridhi
+  kind: decision
+  message: "Rejected Engineer work order ef3375b4. Note: guard drill Branch deleted."
+  data: {}

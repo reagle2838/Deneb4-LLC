@@ -85,9 +85,11 @@
 
 ---
 
-## The Engineer (the escalation path — an agent we build)
+## The Engineer (the escalation path — BUILT v1, 2026-07-16)
 
-Amended by Ridhi 2026-07-16, superseding the 2026-07-09 "Claude Cowork" arrangement: **the escalation path becomes an in-house agent role ("the Engineer"), not a dependency on a third-party interactive product.** Its lane, unchanged from what the escalation path always covered: anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog.
+Amended by Ridhi 2026-07-16 (and re-approved along with the Phase 14 amendment the same day), superseding the 2026-07-09 "Claude Cowork" arrangement: **the escalation path is an in-house agent role ("the Engineer"), not a dependency on a third-party interactive product.** Its lane, unchanged from what the escalation path always covered: anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog.
+
+**v1 implementation (live):** work orders from the Engineer panel on a client's command center → `scripts/engineer.mjs` runs detached: isolated `engineer/<id>` branch, coding via the Claude Agent SDK (our orchestration; `ANTHROPIC_API_KEY` required, `ENGINEER_MODEL` override, cost recorded per order; `--engine dry` for pipeline tests), safety caps (≤40 files, `.env*`/`.git` untouchable), commit, full QA battery on :4184. Green → awaiting Ridhi's **Approve & merge** (the one gate: off-catalog work is the riskiest in the system, and she only reviews green work); red → branch kept with partial work, alert. Verified end-to-end 2026-07-16 including a real merge and GitHub push.
 
 Contract for the Engineer when built (ROADMAP has the build item):
 - Operates ONLY on an explicit work order from Ridhi (a structural request she has reviewed and priced) — never self-tasked from client messages.

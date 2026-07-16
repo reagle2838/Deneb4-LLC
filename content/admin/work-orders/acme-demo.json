@@ -1,0 +1,59 @@
+[
+  {
+    "id": "4cb0abd4",
+    "slug": "acme-demo",
+    "spec": "Dry-run pipeline test: add a marker to the About page. This is an E2E verification order.",
+    "status": "applied",
+    "branch": "engineer/4cb0abd4",
+    "createdAt": "2026-07-16T19:14:34.310Z",
+    "updatedAt": "2026-07-16T19:28:28.526Z",
+    "history": [
+      {
+        "at": "2026-07-16T19:14:34.310Z",
+        "status": "queued"
+      },
+      {
+        "at": "2026-07-16T19:14:37.319Z",
+        "status": "running"
+      },
+      {
+        "at": "2026-07-16T19:16:11.219Z",
+        "status": "review"
+      },
+      {
+        "at": "2026-07-16T19:28:28.526Z",
+        "status": "applied",
+        "note": "Merged as f523f0b. Pushed to deneb4admin/d4-client-acme-demo."
+      }
+    ],
+    "summary": "Dry engine: appended a marker comment to src\\app\\about\\page.tsx.",
+    "diffstat": " 1 file changed, 2 insertions(+)",
+    "note": "Merged as f523f0b. Pushed to deneb4admin/d4-client-acme-demo."
+  },
+  {
+    "id": "ef3375b4",
+    "slug": "acme-demo",
+    "spec": "Guard test: this should fail because the tree is dirty.",
+    "status": "rejected",
+    "branch": "engineer/ef3375b4",
+    "createdAt": "2026-07-16T19:28:59.690Z",
+    "updatedAt": "2026-07-16T19:29:09.567Z",
+    "history": [
+      {
+        "at": "2026-07-16T19:28:59.691Z",
+        "status": "queued"
+      },
+      {
+        "at": "2026-07-16T19:29:03.277Z",
+        "status": "failed",
+        "note": "Client repo has uncommitted changes; refusing to start."
+      },
+      {
+        "at": "2026-07-16T19:29:09.567Z",
+        "status": "rejected",
+        "note": "guard drill"
+      }
+    ],
+    "note": "guard drill"
+  }
+]

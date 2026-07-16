@@ -17,6 +17,7 @@
     "intake": "node scripts/parse-intake.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.211",
     "@keystatic/core": "^0.5.33",
     "@keystatic/next": "^5.0.1",
     "@vercel/blob": "^2.6.1",
