@@ -35,6 +35,14 @@ async function authorized(req: NextRequest): Promise<boolean> {
 const OWNER_TZ = process.env.OWNER_TIMEZONE || 'America/New_York';
 
 export async function GET(req: NextRequest) {
+  // Vercel Cron can only issue GETs; it authenticates with the CRON_SECRET
+  // the platform injects as a Bearer header. When that matches, a GET runs
+  // the heartbeat (production scheduling with zero machine setup).
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret && req.headers.get('authorization') === `Bearer ${cronSecret}`) {
+    const run = await executeHeartbeat('vercel-cron');
+    return NextResponse.json({ ok: true, run });
+  }
   if (!(await authorized(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -159,8 +167,14 @@ export async function POST(req: NextRequest) {
   if (!(await authorized(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const started = Date.now();
   const trigger = (req.nextUrl.searchParams.get('trigger') || 'cron').slice(0, 40);
+  const run = await executeHeartbeat(trigger);
+  return NextResponse.json({ ok: true, run });
+}
+
+/** One full heartbeat: every sensing duty, failure-isolated, recorded, escalated. */
+async function executeHeartbeat(trigger: string) {
+  const started = Date.now();
 
   const duties: DutyResult[] = [
     await runDuty(calendarDuty, 'calendar'),
@@ -188,5 +202,5 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, run });
+  return run;
 }

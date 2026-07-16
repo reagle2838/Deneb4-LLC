@@ -85,9 +85,16 @@
 
 ---
 
-## Claude Cowork (the escalation path, not an agent)
+## The Engineer (the escalation path — an agent we build)
 
-Confirmed by Ridhi 2026-07-09: **structural requests and manual overrides route to a supervised Claude Code session against the client's repo, not to an agent.** Anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog are Cowork work. Cowork is interactive and supervised; agents run unattended within these contracts. Manual edits made this way are ordinary commits in the client's repo, and the Builder's change loop is built to respect them.
+Amended by Ridhi 2026-07-16, superseding the 2026-07-09 "Claude Cowork" arrangement: **the escalation path becomes an in-house agent role ("the Engineer"), not a dependency on a third-party interactive product.** Its lane, unchanged from what the escalation path always covered: anything off the module registry, one-off customizations Ridhi wants, novel bugs QA didn't anticipate, and building new `d4-*` modules for the catalog.
+
+Contract for the Engineer when built (ROADMAP has the build item):
+- Operates ONLY on an explicit work order from Ridhi (a structural request she has reviewed and priced) — never self-tasked from client messages.
+- Every change lands as ordinary commits in the client's repo, runs the full QA battery, and auto-reverts on red — the same doctrine the Builder's change loop already enforces.
+- Anything it cannot complete confidently escalates back to Ridhi with its partial work committed on a branch, never force-finished.
+
+**Interim (until the Engineer exists):** structural work continues as supervised interactive coding sessions against the client's repo, exactly as before — the mechanics are identical, only the long-term ownership changes. Manual edits made either way are ordinary commits the Builder's change loop respects.
 
 ## Amendment (2026-07-15, Phase 14): maximum agency — agents ARE the logic gates
 
@@ -125,4 +132,4 @@ Implementation facts, consistent with the approved contract above:
 
 ---
 
-Core contracts approved by Ridhi on 2026-07-08 (the spec each agent is built against, ROADMAP Phase 5). Cowork role confirmed 2026-07-09; Builder amendment recorded 2026-07-10.
+Core contracts approved by Ridhi on 2026-07-08 (the spec each agent is built against, ROADMAP Phase 5). Cowork role confirmed 2026-07-09, superseded by the in-house Engineer role 2026-07-16; Builder amendment recorded 2026-07-10; Phase 14 maximum-agency amendment 2026-07-15.

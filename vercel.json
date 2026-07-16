@@ -1,0 +1,9 @@
+{
+  "$comment": "Production heartbeat: Vercel Cron fires the agent tick every 30 minutes once the studio app is deployed. Vercel injects CRON_SECRET as a Bearer token; the tick route's GET branch verifies it. Locally, the Agents tab's one-click scheduler (Windows Task Scheduler) covers the same job.",
+  "crons": [
+    {
+      "path": "/api/agents/tick",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   agentLabel,
@@ -58,6 +58,41 @@ export default function AgentSpace({
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState('');
+  const [schedule, setSchedule] = useState<{ supported: boolean; scheduled: boolean } | null>(null);
+  const [schedBusy, setSchedBusy] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/agents/heartbeat-schedule')
+      .then((r) => r.json())
+      .then((d: { supported?: boolean; scheduled?: boolean }) =>
+        setSchedule({ supported: d.supported === true, scheduled: d.scheduled === true })
+      )
+      .catch(() => setSchedule(null));
+  }, []);
+
+  async function toggleSchedule() {
+    if (!schedule) return;
+    setSchedBusy(true);
+    setRunMsg('');
+    try {
+      const res = await fetch('/api/agents/heartbeat-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(schedule.scheduled ? { action: 'remove' } : { action: 'register', intervalMinutes: 30 }),
+      });
+      const data = (await res.json()) as { ok?: boolean; detail?: string; error?: string };
+      if (data.ok) {
+        setSchedule({ supported: true, scheduled: !schedule.scheduled });
+        setRunMsg(schedule.scheduled ? 'Automatic runs disabled.' : 'Scheduled: the heartbeat now fires itself every 30 minutes while you are logged into this machine.');
+      } else {
+        setRunMsg(data.error ?? 'Could not change the schedule.');
+      }
+    } catch {
+      setRunMsg('Server error, try again.');
+    } finally {
+      setSchedBusy(false);
+    }
+  }
 
   async function runHeartbeat() {
     setRunning(true);
@@ -143,9 +178,21 @@ export default function AgentSpace({
               </p>
             </div>
           </div>
-          <button onClick={runHeartbeat} disabled={running} className="btn-outline text-xs flex-shrink-0">
-            {running ? 'Running...' : 'Run heartbeat now'}
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {schedule?.supported && (
+              <button
+                onClick={toggleSchedule}
+                disabled={schedBusy}
+                className={schedule.scheduled ? 'btn-outline text-xs' : 'btn-primary text-xs'}
+                title={schedule.scheduled ? 'Turn off the automatic 30-minute heartbeat' : 'Register a Windows scheduled task that runs the heartbeat every 30 minutes — no PowerShell needed'}
+              >
+                {schedBusy ? 'Working...' : schedule.scheduled ? 'Auto-runs: ON · disable' : 'Enable auto-runs (30 min)'}
+              </button>
+            )}
+            <button onClick={runHeartbeat} disabled={running} className="btn-outline text-xs">
+              {running ? 'Running...' : 'Run heartbeat now'}
+            </button>
+          </div>
         </div>
 
         {lastRun && (
