@@ -113,7 +113,7 @@ Confirmed by Ridhi. Supersedes the earlier DigitalOcean-droplet-plus-local-JSON-
 - [ ] **[Both]** Deploy pipeline DECIDED 2026-07-15: Vercel. Wire the actual deploy command (Vercel CLI/API) into `STAGING_DEPLOY_CMD` once Ridhi's Vercel account/project exists (see 2026-07-15 architecture decision above).
 - [ ] **[Claude]** Production deploy + DNS handover automation
 - [ ] **[Ridhi]** Re-enable CMS auth (delete `CMS_AUTH_DISABLED` from `.env.local`) when testing ends
-- [ ] **[Claude]** Scoped agent credentials, secrets store, rotation policy (Google, Hostinger, Wave, CMS, git)
+- [ ] **[Claude]** Scoped agent credentials, secrets store, rotation policy (Google, Vercel, Wave, CMS, git)
 - [ ] **[Ridhi]** GitHub credential for agents: a token (or GitHub App) that can create/clone/commit/push **per-client repos**. Also decide where those repos live — a dedicated org, or Ridhi's personal account for now (open question from 2026-07-08 chat).
 - [ ] **[Ridhi]** Google Workspace credential for agents/Claude Cowork: read access to the intake Google Form's responses and the supporting Google Docs (Ridhi has Google Workspace; specifics to follow)
 - [ ] **[Both]** Hook up Supabase (noted 2026-07-08 by Ridhi; scope/purpose not yet defined, e.g. replacing flat YAML storage for clients/leads/tasks/ledger, or something else — clarify before building)
@@ -135,7 +135,7 @@ Confirmed by Ridhi. Supersedes the earlier DigitalOcean-droplet-plus-local-JSON-
 
 - [x] **[Claude]** Calendar check endpoint: `/api/agents/calendar-check` (GET preview, POST = email digest + Studio ledger entry; reads the calendar's secret iCal address, no OAuth) (done)
 - [ ] **[Ridhi]** Paste the calendar's "secret address in iCal format" into `GOOGLE_CALENDAR_ICS_URL` in `.env.local` (instructions in the file)
-- [ ] **[Both]** Pick the daily trigger: Hostinger cron hitting the endpoint in production, Windows Task Scheduler locally, or a scheduled cloud agent
+- [ ] **[Both]** Pick the daily trigger: a scheduled cloud job or Vercel Cron hitting the endpoint in production, Windows Task Scheduler locally, or a scheduled cloud agent
 - [x] **[Claude]** Provisioning, part 1: client creation posts a birth record to the ledger, and portal credentials can be emailed to the client on create and on password reset (opt-in checkboxes; falls back to shown-once + manual share until Resend is configured) (done)
 - [ ] **[Claude]** Provisioning, part 2: Drive folder creation + intake doc sharing (needs Google Drive API credentials)
 - [x] **[Claude]** Intake parsing (done + verified E2E 2026-07-12, all the way to a live site): `npm run intake -- --file <google-form-export.csv> [--row N]` maps the form's answers onto a PROPOSED build config with fuzzy header matching (business name/tagline/description/contact fields; theme wording → nearest preset; features answer → modules — and ONLY the features answer, per the fact-slot rule; an existing-site URL becomes a brand-ingest suggestion). Unmapped fields are listed, never invented. Ridhi reviews the staged proposal, `--apply` writes the build config (refuses to clobber an existing one). Verified: two synthetic form responses parsed correctly after two test-caught fixes (a "shop" in an email address must not add the catalog; the theme question must not be double-used as the features answer), then Meridian Tool & Die went CSV row → config → client → **full build, QA green, internal review** untouched by hand.

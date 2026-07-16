@@ -12,7 +12,7 @@ import {
 } from './clients';
 import { generateClientPassword, hashPassword } from './portal-auth';
 import { appendLedger } from './agent-ledger';
-import { notifyOwnerOfAgentAlert } from './notify';
+import { notifyOwnerOfAgentAlert, notifyClientCredentials } from './notify';
 import { setPipelineStage } from './clients';
 import { recordClientSignoff, SIGNOFF_PHASE } from './signoff';
 import { draftQuote, quoteTotal } from './quotes';
@@ -317,6 +317,8 @@ export interface IntakeSubmittedResult {
   password?: string;
   widgetKey: string;
   created: boolean;
+  /** True when Deneb4's own credentials email was sent and delivered. */
+  credentialsEmailed: boolean;
 }
 
 export async function handleIntakeSubmitted(input: {
@@ -331,6 +333,7 @@ export async function handleIntakeSubmitted(input: {
   const slug = staged.slug;
   let password: string | undefined;
   let created = false;
+  let credentialsEmailed = false;
 
   if (!clientExists(slug)) {
     password = generateClientPassword();
@@ -347,10 +350,19 @@ export async function handleIntakeSubmitted(input: {
       },
     });
     created = true;
+    // Send the portal credentials from Deneb4 directly — reliable and
+    // already verified end to end — rather than depending on the Apps
+    // Script side's own welcome email to have included the password. The
+    // client needs portal access well before any decision to proceed: it's
+    // how they read the drafted quote and confirm it (Phase 14 gate #1).
+    const freshClient = await getClientBySlug(slug);
+    if (freshClient) {
+      credentialsEmailed = await notifyClientCredentials(freshClient, password, 'welcome');
+    }
     appendLedger(slug, {
       agent: 'concierge',
       kind: 'event',
-      message: `Client created from the live intake form. Drive folder + build config staged. Pipeline starts at Onboarding.`,
+      message: `Client created from the live intake form. Drive folder + build config staged. Pipeline starts at Onboarding. Portal credentials ${credentialsEmailed ? 'emailed to the client' : 'NOT delivered by email (check RESEND_API_KEY / CONTACT_FROM_EMAIL) — share them manually'}.`,
       data: { email },
     });
   } else if (input.driveFolderUrl) {
@@ -380,6 +392,7 @@ export async function handleIntakeSubmitted(input: {
     password,
     widgetKey: (await getClientBySlug(slug))?.widgetKey ?? '',
     created,
+    credentialsEmailed,
   };
 }
 

@@ -24,6 +24,24 @@ That is the client's quote confirmation: Deneb4 applies the confirmed scope as
 the build config and drafts the deposit invoice. (Clients without the form can
 confirm through their portal instead — both paths run the same code.)
 
+### Portal credentials (fixed 2026-07-16 — read this before touching your welcome email)
+
+`intake_submitted` used to hand the generated password back in the API
+response and rely on your Apps Script's own welcome email to include it —
+an unverifiable dependency: if that email didn't carry the password, the
+client had no way into their portal, and the client NEEDS portal access
+immediately (it's how they read and confirm their quote).
+
+**Deneb4 now sends the portal welcome email itself**, directly, the moment
+the client record is created — a path that's actually tested and confirmed
+delivering. The `intake_submitted` response still includes `password` and
+`credentialsEmailed` (true/false) so your script can log or alert if it
+ever comes back false, but **your own welcome email should not repeat the
+raw password** — two independent emails with the same live credential is a
+real leak surface. Keep your email focused on what's uniquely yours (their
+Drive folder link, the scope document, next steps) and let Deneb4 own
+credential delivery.
+
 ## Direction 2: Deneb4 → GAS (new, Phase 14)
 
 ### One-time setup (you, ~5 minutes)

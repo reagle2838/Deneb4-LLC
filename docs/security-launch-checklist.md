@@ -26,10 +26,11 @@ who closes it. Last audited 2026-07-14.
   `CONTACT_FROM_EMAIL` to a verified address, so client email actually sends
   instead of console-logging.
 - [ ] **Confirm `.env.local` (and any real `.env`) is never committed.** It's
-  gitignored; keep it that way. Production secrets live in the host's env
-  config (Hostinger VPS), not in a file in the repo.
-- [ ] **Serve only over HTTPS in production** (Hostinger VPS + a cert). Session
-  cookies and the agent key must never cross plain HTTP.
+  gitignored; keep it that way. Production secrets live in Vercel's own
+  project environment-variable settings (the decided host as of 2026-07-15),
+  not in a file in the repo.
+- [x] **HTTPS in production.** Solved by hosting choice: Vercel terminates TLS
+  automatically on every deploy, including preview URLs — no cert to manage.
 - [ ] **Confirm the Wave token's scope** the first time a real invoice is
   created end to end. The integration is verified working; just make sure the
   token can read/write invoices for the Deneb4 business (not a read-only or
@@ -75,7 +76,8 @@ who closes it. Last audited 2026-07-14.
 ## Operational, before or at launch
 
 - [ ] Point the heartbeat scheduler at production (`register-heartbeat-task.ps1`
-  locally, or a Hostinger cron against `POST /api/agents/tick` in prod).
+  locally, or a scheduled cloud job / Vercel Cron hitting `POST /api/agents/tick`
+  once the studio app itself is deployed there).
 - [ ] Decide the incident-response plan for a live client's site going down
   (the maintenance uptime watch alerts you; who acts, how fast?).
 - [ ] Run one full dogfood cycle on a throwaway client with real deploy, real
