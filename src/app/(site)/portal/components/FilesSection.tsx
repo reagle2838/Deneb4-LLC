@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import type { ClientFile } from '@/lib/clients';
 import { formatFriendlyDate } from '@/lib/format';
+import UploadWidget from './UploadWidget';
 
 function FolderIcon() {
   return (
@@ -16,8 +20,10 @@ function FolderIcon() {
   );
 }
 
-/** "Your files": always open, folder-styled, with the Drive upload button. */
-export default function FilesSection({ files, driveFolder }: { files: ClientFile[]; driveFolder: string }) {
+/** "Your files": always open, folder-styled, with in-house upload. */
+export default function FilesSection({ files: initialFiles, driveFolder }: { files: ClientFile[]; driveFolder: string }) {
+  const [files, setFiles] = useState(initialFiles);
+
   return (
     <div id="files" className="mb-6 scroll-mt-24">
       {/* Folder tab */}
@@ -50,16 +56,11 @@ export default function FilesSection({ files, driveFolder }: { files: ClientFile
             {files.length === 1 ? '1 file' : `${files.length} files`}
           </span>
         </div>
+        <UploadWidget onUploaded={(file) => setFiles((prev) => [file, ...prev])} />
         {driveFolder && (
-          <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-heading)' }}>Add your files</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                Logos, photos, price lists, anything we should have. They go into our shared folder.
-              </p>
-            </div>
-            <a href={driveFolder} target="_blank" rel="noopener noreferrer" className="btn-primary text-sm flex-shrink-0">
-              Add your files →
+          <div className="px-6 py-3" style={{ borderTop: '1px solid var(--border-accent)' }}>
+            <a href={driveFolder} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: 'var(--accent-light)' }}>
+              Or add files to the shared folder we set up with you →
             </a>
           </div>
         )}
