@@ -279,21 +279,21 @@ Everything else becomes agent-driven: intake config auto-applies after quote+dep
 on deposit payment, the internal-review gate folds into the joint final approval, and the GAS document engine's
 manual steps (e.g. the sheet-menu handoff trigger) become agent-callable.
 
-- [ ] **[Claude]** Deneb4 → GAS direction of the bridge: `src/lib/gas-bridge.ts` + outbound calls from agents
+- [x] **[Claude]** DONE 2026-07-16 — Deneb4 → GAS direction of the bridge: `src/lib/gas-bridge.ts` + outbound calls from agents
       to a GAS Web App endpoint (env: GAS_WEBAPP_URL + GAS_SHARED_SECRET). Lets agents trigger what today needs
       Ridhi's click in the Sheet: send-handoff-document, Matrix row updates, scope-doc actions. GAS → Deneb4
       already exists (the 4-event webhook, Phase 11).
 - [ ] **[Ridhi]** Deploy the Apps Script project as a Web App (doPost handler — code to be supplied when the
       bridge is built) and put the shared secret in Script Properties. Prereq for the direction above.
-- [ ] **[Claude]** Quote gate with feedback loop: quote drafts at intake-review; PENDING_RIDHI → (approve |
+- [x] **[Claude]** DONE 2026-07-16 — Quote gate with feedback loop: quote drafts at intake-review; PENDING_RIDHI → (approve |
       deny+instructions → agent revises → resubmit) → PENDING_CLIENT → client confirms → deposit invoice sends
       (her invoice-send click may be folded into her quote approval — one click, not two; decide at build).
-- [ ] **[Claude]** Deposit-starts-the-build: pipeline reorder so `building` is entered automatically on
+- [x] **[Claude]** DONE 2026-07-16 — Deposit-starts-the-build: pipeline reorder so `building` is entered automatically on
       deposit settlement (Wave detection already live), never before.
-- [ ] **[Claude]** Gate relaxation per the four-touchpoint list: auto-apply staged configs post-quote,
+- [x] **[Claude]** DONE 2026-07-16 — Gate relaxation per the four-touchpoint list: auto-apply staged configs post-quote,
       remove internal-review as a separate human stage, auto-apply QA-green change proposals. Structural
       (off-menu) requests STILL escalate — closed catalog unchanged.
-- [ ] **[Both]** docs/agents.md contract amendment (this mandate supersedes the 2026-07-08 gate table;
+- [x] **[Both]** docs/agents.md amendment WRITTEN 2026-07-16 (Ridhi: re-approve it) (this mandate supersedes the 2026-07-08 gate table;
       re-approve the amended doc).
 - [ ] **[Ridhi — decisions needed before build]** (a) Comms replies: your four-touchpoint list implies drafted
       replies AUTO-SEND without your review — confirm that's intended (urgent/upset/structural still escalate).
@@ -301,11 +301,14 @@ manual steps (e.g. the sheet-menu handoff trigger) become agent-callable.
       the manual delivery step? (c) Client quote confirmation mechanism: portal Approve button, or a GAS
       Authorization Form like your other sign-offs (recommended: GAS form → it e-signs and PDF-locks the quote
       exactly like the scope doc, and the existing webhook reports it back).
-- [ ] **[Claude]** Questionnaire wiring for the v1.1.0 shell (spec = the Intake Questionnaire artifact,
+- [x] **[Claude]** DONE 2026-07-16 — Questionnaire wiring for the shell (spec = the Intake Questionnaire artifact,
       2026-07-15): promote Q6-2 (primary visitor action → header/hero CTA + quote.enabled); add + map quote
       topics, announcement, social links, FAQ pairs, logo list, billing contact, per-module upload prompts.
       Update BOTH mapping copies (parse-intake.mjs + intake-webhook.ts) and the form generator.
-- [ ] **[Claude]** Page seams for FaqAccordion + LogoMarquee (components shipped in v1.1.0; no page renders
+- [x] **[Claude]** DONE 2026-07-16 (template v1.2.0) — Page seams for FaqAccordion + LogoMarquee (components shipped in v1.1.0; no page renders
       them yet) — config/content-driven sections so the new intake questions have somewhere to land.
 - [ ] **[Both]** PREREQ for all of Phase 14 in production: the studio app itself needs a public production
       deploy (Vercel) — GAS can only webhook a public URL, and the E2E bridge verification so far ran locally.
+
+- [x] **[Claude]** Phase 14 core VERIFIED E2E 2026-07-16 (31/31 checks, live dev server): intake → shell-config staging (quote topics/announcement/social/FAQ/logo wall) → auto-quote → deny-with-instructions ("remove the blog and take $200 off" removed the module AND applied -$200) → Ridhi approve → portal Quote-approval item + email → client Approve → config applied + adjustment-aware deposit drafted → send → paid → tick auto-advanced to building → comms auto-sent a clean question's reply while a consultation request stayed a draft → /api/portal-handoff auth (401 anon, 404 pre-package). Engineering decisions made under the mandate, flagged for Ridhi's veto: (a) COMMS_AUTOSEND on with escalation carve-outs, (b) handoff package delivered via authenticated portal download + no-secrets email (credentials never emailed), (c) client quote confirmation = portal Approve AND/OR a future GAS Quote Authorization Form (quote_signed event, snippet in docs/gas-bridge.md).
+- [ ] **[Ridhi]** Phase 14 activation: deploy the Apps Script as a Web App + set GAS_WEBAPP_URL/GAS_SHARED_SECRET (docs/gas-bridge.md, ~5 min); optionally add the Quote Authorization Form (recommended) with a quote_signed call; re-approve docs/agents.md; production deploy of the studio app remains the prerequisite for the bridge outside local testing.
