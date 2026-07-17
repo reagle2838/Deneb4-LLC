@@ -1,0 +1,323 @@
+{
+  "format": "stardrive-field-mapping/v1",
+  "name": "deneb4-intake",
+  "version": "1.0.0",
+  "$comment": "Deneb4's intake questionnaire (the /intake form's stable Q-codes) mapped onto d4-site-builder build-config slots. Consumed by src/lib/intake-webhook.ts (live form + webhook) and scripts/parse-intake.mjs (CSV path) through packages/field-mapping. When the questionnaire changes, edit THIS file — the parsers never change. Field order matters: it is the read order, the note order, and the mapping-report order.",
+  "derived": [
+    {
+      "id": "quoteFirst",
+      "anyOf": [
+        { "field": "primaryAction", "match": "quote|estimate|bid" },
+        { "field": "quoteTopics" }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "id": "comment",
+      "set": [
+        {
+          "target": "config.$comment",
+          "value": "d4-site-builder format. Proposed by the intake field-mapping engine; review before building."
+        }
+      ]
+    },
+    {
+      "id": "siteName",
+      "source": { "code": "Q3-1", "hint": "business name" },
+      "target": "config.siteName",
+      "required": true
+    },
+    {
+      "id": "tagline",
+      "source": { "code": "Q3-2", "hint": "tagline" },
+      "skipIf": "^(no|n/a|none)$",
+      "target": "config.tagline"
+    },
+    {
+      "id": "description",
+      "source": { "code": "Q3-3", "hint": "what does your business do" },
+      "target": "config.description",
+      "required": true
+    },
+    {
+      "id": "contactEmail",
+      "source": { "code": "Q3-7", "hint": "public email" },
+      "fallback": { "scan": "values", "validate": "email", "trigger": "invalid" },
+      "validate": "email",
+      "target": "config.contactEmail",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "source": { "code": "Q3-8", "hint": "public phone" },
+      "target": "config.phone",
+      "required": true
+    },
+    {
+      "id": "address",
+      "source": { "code": "Q3-9", "hint": "business address" },
+      "target": "config.address",
+      "required": true
+    },
+    {
+      "id": "theme",
+      "source": { "code": "Q5-1", "hint": "visual direction" }
+    },
+    {
+      "id": "siteWords",
+      "source": { "code": "Q5-2", "hint": "words.*describe" }
+    },
+    {
+      "id": "designChain",
+      "chain": {
+        "input": "theme",
+        "rules": [
+          {
+            "match": "match.*(existing )?brand",
+            "set": [{ "target": "flags.brandIngest", "value": true }],
+            "note": "Client chose \"match existing brand\" — run brand ingest on their current site; until then the pairing's own palette applies."
+          },
+          {
+            "match": "teal|slate|cool",
+            "set": [{ "target": "config.themePreset", "value": "slate-teal" }]
+          },
+          {
+            "match": "sand|warm|earth|ground",
+            "set": [{ "target": "config.themePreset", "value": "warm-sand" }]
+          },
+          {
+            "match": "ink|indigo",
+            "set": [{ "target": "config.themePreset", "value": "ink-indigo" }]
+          }
+        ]
+      }
+    },
+    {
+      "id": "pairing",
+      "table": {
+        "inputs": ["theme", "siteWords"],
+        "target": "config.pairing",
+        "rules": [
+          { "value": "playful-bright", "match": "playful|fun\\b|bubbly|bright|whimsical|cheerful|energetic|kid|family.?friendly" },
+          { "value": "calm-wellness", "match": "calm|wellness|sooth|serene|gentle|spa\\b|holistic|peaceful|tranquil|yoga|therap" },
+          { "value": "quiet-luxury", "match": "luxur|elegant|premium|upscale|refined|sophisticat|high.?end|minimal" },
+          { "value": "editorial-voice", "match": "editorial|magazine|journal|literary|publish|newsroom" },
+          { "value": "industrial-confidence", "match": "industrial|technical|rugged|manufactur|engineer|machin|construction|welding|trades?\\b" },
+          { "value": "bold-authority", "match": "bold|authorit|corporate|finance|insurance|banking|law\\b|legal" },
+          { "value": "warm-craft", "match": "warm|earthy?|craft|handmade|rustic|artisan|farm|homey|local" },
+          { "value": "modern-signal", "match": "modern|clean|sleek|crisp|fresh|tech|startup|professional|cool" }
+        ],
+        "default": "modern-signal",
+        "noteOnMatch": "Design pairing proposed: {result} (from visual direction \"{in0|n/a}\"{?in1: + site words \"{in1}\"}).",
+        "noteOnDefault": "No pairing keywords matched{?in0: for \"{in0}\"}{!in0: (no visual direction given)}; defaulted to modern-signal."
+      }
+    },
+    {
+      "id": "brandUrl",
+      "source": { "code": "Q2A-1", "hint": "current website address" },
+      "fallback": { "scan": "values", "validate": "url", "trigger": "empty", "excludeCodes": "^Q14-[1-5]" },
+      "validate": "url",
+      "target": "flags.brandUrl",
+      "notes": [
+        {
+          "when": "written",
+          "text": "Existing site: {value} — {?out.flags.brandIngest:run}{!out.flags.brandIngest:consider} brand ingest: npm run brand -- <slug> --url {value}"
+        }
+      ]
+    },
+    {
+      "id": "module:catalog",
+      "source": { "code": "Q7A-1", "hint": "catalog|product|equipment" },
+      "set": [{ "append": "config.modules", "value": "d4-catalog", "when": "yes" }],
+      "notes": [{ "when": "unsure", "text": "catalog module: \"not sure\" — left OFF, confirm before billing it." }]
+    },
+    {
+      "id": "module:careers",
+      "source": { "code": "Q8A-1", "hint": "careers?|job.?opening" },
+      "set": [{ "append": "config.modules", "value": "d4-careers-portal", "when": "yes" }],
+      "notes": [{ "when": "unsure", "text": "careers module: \"not sure\" — left OFF, confirm before billing it." }]
+    },
+    {
+      "id": "module:blog",
+      "source": { "code": "Q9A-1", "hint": "blog|news|insights" },
+      "set": [{ "append": "config.modules", "value": "d4-insights-blog", "when": "yes" }],
+      "notes": [{ "when": "unsure", "text": "blog module: \"not sure\" — left OFF, confirm before billing it." }]
+    },
+    {
+      "id": "module:gallery",
+      "source": { "code": "Q10A-1", "hint": "gallery|portfolio|case.?stud" },
+      "set": [{ "append": "config.modules", "value": "d4-gallery-editor", "when": "yes" }],
+      "notes": [{ "when": "unsure", "text": "gallery module: \"not sure\" — left OFF, confirm before billing it." }]
+    },
+    {
+      "id": "modulesPolicy",
+      "array": {
+        "path": "config.modules",
+        "prependIfAny": ["d4-cms-core"],
+        "writeEmpty": true,
+        "noteIfAny": "Modules requested: {items} (+ d4-cms-core).",
+        "noteIfEmpty": "No feature modules requested — a core brochure site."
+      }
+    },
+    {
+      "id": "catalogSize",
+      "when": { "outputIncludes": { "path": "config.modules", "value": "d4-catalog" } },
+      "source": { "code": "Q7B-1", "hint": "how many products" },
+      "set": [{ "target": "flags.catalogUpcharge", "value": "{value}", "when": { "match": "51|150|more than" } }],
+      "notes": [
+        {
+          "when": { "match": "51|150|more than" },
+          "text": "Catalog size \"{value}\" is beyond the included 50 items — price the seeding upcharge."
+        }
+      ]
+    },
+    {
+      "id": "customFunc",
+      "source": { "code": "Q11A-1", "hint": "functionality that has not" }
+    },
+    {
+      "id": "customFuncDesc",
+      "when": { "fieldYes": "customFunc" },
+      "source": { "code": "Q11B-1", "hint": "describe the functionality" },
+      "set": [{ "target": "flags.structuralRequest", "value": "{value|see form}" }],
+      "notes": [{ "text": "⚠ STRUCTURAL REQUEST (needs your review + a quote, never auto-built): {value|(see Q11B)}" }]
+    },
+    {
+      "id": "primaryAction",
+      "source": { "code": "Q6-2", "hint": "most important thing.*(do|action)|primary.*action" }
+    },
+    {
+      "id": "quoteTopics",
+      "source": { "code": "Q6-4", "hint": "ask.*quote.*about|quote topics" },
+      "transform": ["splitList", "limit:5"],
+      "target": "config.quote.topics",
+      "writeEmpty": true,
+      "writeWhen": { "anyFieldPresent": ["primaryAction", "quoteTopics"] },
+      "set": [
+        {
+          "target": "config.quote.enabled",
+          "value": true,
+          "when": { "anyFieldPresent": ["primaryAction", "quoteTopics"] }
+        }
+      ],
+      "notes": [
+        {
+          "when": { "fieldPresent": "primaryAction" },
+          "text": "Primary visitor action: \"{fields.primaryAction}\"{?quoteFirst: — quote-first business; the header CTA leads with Request a quote.}"
+        }
+      ]
+    },
+    {
+      "id": "announcement",
+      "source": { "code": "Q6-5", "hint": "announce.*banner|time-sensitive" },
+      "skipIf": "^(no|n/a|none|nothing)$",
+      "transform": ["truncate:160"],
+      "target": "config.announcement.text",
+      "notes": [
+        {
+          "when": "written",
+          "text": "Announcement bar requested: \"{value#80}\" — confirm the link target with the client."
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "links": {
+        "validate": "url",
+        "target": "config.socialLinks",
+        "items": [
+          { "code": "Q14-1", "label": "LinkedIn" },
+          { "code": "Q14-2", "label": "Facebook" },
+          { "code": "Q14-3", "label": "Instagram" },
+          { "code": "Q14-4", "label": "X" },
+          { "code": "Q14-5", "label": "YouTube" }
+        ]
+      }
+    },
+    {
+      "id": "faq",
+      "source": { "code": "Q13-5", "hint": "questions.*customers.*ask" },
+      "transform": ["faqPairs"],
+      "target": "config.faq"
+    },
+    {
+      "id": "logos",
+      "source": { "code": "Q13-6", "hint": "notable clients|partners.*display" },
+      "transform": ["splitList", "limit:16", "asNames"],
+      "target": "config.logoWall.items",
+      "notes": [
+        {
+          "when": "written",
+          "text": "Logo wall from client-named partners; swap in real logo files from their Drive folder when available."
+        }
+      ]
+    },
+    {
+      "id": "billingEmail",
+      "source": { "code": "Q4-5", "hint": "invoices.*go|billing contact" },
+      "validate": "email",
+      "notes": [{ "when": "present", "text": "Invoices go to: {value} (billing contact, not the project contact)." }]
+    },
+    {
+      "id": "clientName",
+      "source": { "code": "Q4-1", "hint": "what is your name" },
+      "target": "contact.name",
+      "writeEmpty": true
+    },
+    {
+      "id": "clientEmail",
+      "source": { "code": "Q4-3", "hint": "receive project updates" },
+      "target": "contact.email",
+      "writeEmpty": true
+    },
+    {
+      "id": "clientPhone",
+      "source": { "code": "Q4-4", "hint": "direct phone" },
+      "target": "contact.phone",
+      "writeEmpty": true
+    },
+    {
+      "id": "githubWanted",
+      "source": { "code": "Q17A-1", "hint": "transferred to your own github" }
+    },
+    {
+      "id": "githubUser",
+      "when": { "fieldYes": "githubWanted" },
+      "source": { "code": "Q17B-1", "hint": "github username" },
+      "set": [{ "target": "flags.githubUser", "value": "{value}" }],
+      "notes": [{ "text": "Client wants the repo transferred at handoff." }]
+    },
+    {
+      "id": "discoveryCall",
+      "source": { "code": "Q16A-1", "hint": "discovery call" },
+      "set": [{ "target": "flags.discoveryCall", "value": true, "when": "yes" }],
+      "notes": [{ "when": "yes", "text": "Client requested a discovery call." }]
+    }
+  ],
+  "context": [
+    { "code": "Q3-4", "label": "Key products/services to promote" },
+    { "code": "Q3-5", "label": "Primary customers" },
+    { "code": "Q3-6", "label": "Geographic areas served" },
+    { "code": "Q5-2", "label": "Words to describe the site" },
+    { "code": "Q5-3", "label": "Colors/fonts/styles to use or avoid" },
+    { "code": "Q5-4", "label": "Competitor/industry sites to review" },
+    { "code": "Q6-1", "label": "What the site should accomplish" },
+    { "code": "Q6-2", "label": "Primary visitor action" },
+    { "code": "Q6-3", "label": "Standard pages expected" },
+    { "code": "Q7B-2", "label": "Catalog categories" },
+    { "code": "Q7B-3", "label": "Where product info lives now" },
+    { "code": "Q9B-4", "label": "Blog categories" },
+    { "code": "Q10B-1", "label": "Gallery: what to showcase" },
+    { "code": "Q12-3", "label": "Content readiness" },
+    { "code": "Q12-2", "label": "Who approves content" },
+    { "code": "Q13-1", "label": "Business story" },
+    { "code": "Q13-2", "label": "What makes them different" },
+    { "code": "Q13-3", "label": "What a prospect should know" },
+    { "code": "Q13-4", "label": "Trust signals to include" },
+    { "code": "Q15-3", "label": "Launch tied to an event?" },
+    { "code": "Q15-4", "label": "Scheduling/approval constraints" },
+    { "code": "Q18-1", "label": "Anything else about the project" },
+    { "code": "Q18-2", "label": "How they heard about Deneb4" }
+  ]
+}

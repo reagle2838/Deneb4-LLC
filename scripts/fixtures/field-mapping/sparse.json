@@ -1,0 +1,6 @@
+{
+  "$comment": "Sparse intake fixture: exercises fuzzy-hint matching (no Q-code on the name key), the unmapped list, the email fallback scan, the no-modules note, and the default design pairing.",
+  "What is your business name?": "Sparse Co",
+  "Q3-3": "Does things quietly.",
+  "Q4-3": "owner@sparse.example"
+}

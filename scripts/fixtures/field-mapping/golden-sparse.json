@@ -1,0 +1,178 @@
+{
+  "slug": "sparse-co",
+  "config": {
+    "$comment": "d4-site-builder format. Proposed via the live Google Form webhook; review before building.",
+    "siteName": "Sparse Co",
+    "description": "Does things quietly.",
+    "contactEmail": "owner@sparse.example",
+    "pairing": "modern-signal",
+    "modules": []
+  },
+  "clientContact": {
+    "name": "",
+    "email": "owner@sparse.example",
+    "phone": ""
+  },
+  "flags": {},
+  "unmapped": [
+    "phone (Q3-8)",
+    "address (Q3-9)"
+  ],
+  "notes": [
+    "No pairing keywords matched (no visual direction given); defaulted to modern-signal.",
+    "No feature modules requested — a core brochure site."
+  ],
+  "context": {},
+  "mapReport": [
+    {
+      "field": "siteName",
+      "code": "Q3-1",
+      "how": "fuzzy"
+    },
+    {
+      "field": "tagline",
+      "code": "Q3-2",
+      "how": "none"
+    },
+    {
+      "field": "description",
+      "code": "Q3-3",
+      "how": "code"
+    },
+    {
+      "field": "contactEmail",
+      "code": "Q3-7",
+      "how": "none"
+    },
+    {
+      "field": "phone",
+      "code": "Q3-8",
+      "how": "none"
+    },
+    {
+      "field": "address",
+      "code": "Q3-9",
+      "how": "none"
+    },
+    {
+      "field": "theme",
+      "code": "Q5-1",
+      "how": "none"
+    },
+    {
+      "field": "siteWords",
+      "code": "Q5-2",
+      "how": "none"
+    },
+    {
+      "field": "brandUrl",
+      "code": "Q2A-1",
+      "how": "none"
+    },
+    {
+      "field": "module:catalog",
+      "code": "Q7A-1",
+      "how": "none"
+    },
+    {
+      "field": "module:careers",
+      "code": "Q8A-1",
+      "how": "none"
+    },
+    {
+      "field": "module:blog",
+      "code": "Q9A-1",
+      "how": "none"
+    },
+    {
+      "field": "module:gallery",
+      "code": "Q10A-1",
+      "how": "none"
+    },
+    {
+      "field": "customFunc",
+      "code": "Q11A-1",
+      "how": "none"
+    },
+    {
+      "field": "primaryAction",
+      "code": "Q6-2",
+      "how": "none"
+    },
+    {
+      "field": "quoteTopics",
+      "code": "Q6-4",
+      "how": "none"
+    },
+    {
+      "field": "announcement",
+      "code": "Q6-5",
+      "how": "none"
+    },
+    {
+      "field": "social:LinkedIn",
+      "code": "Q14-1",
+      "how": "none"
+    },
+    {
+      "field": "social:Facebook",
+      "code": "Q14-2",
+      "how": "none"
+    },
+    {
+      "field": "social:Instagram",
+      "code": "Q14-3",
+      "how": "none"
+    },
+    {
+      "field": "social:X",
+      "code": "Q14-4",
+      "how": "none"
+    },
+    {
+      "field": "social:YouTube",
+      "code": "Q14-5",
+      "how": "none"
+    },
+    {
+      "field": "faq",
+      "code": "Q13-5",
+      "how": "none"
+    },
+    {
+      "field": "logos",
+      "code": "Q13-6",
+      "how": "none"
+    },
+    {
+      "field": "billingEmail",
+      "code": "Q4-5",
+      "how": "none"
+    },
+    {
+      "field": "clientName",
+      "code": "Q4-1",
+      "how": "none"
+    },
+    {
+      "field": "clientEmail",
+      "code": "Q4-3",
+      "how": "code"
+    },
+    {
+      "field": "clientPhone",
+      "code": "Q4-4",
+      "how": "none"
+    },
+    {
+      "field": "githubWanted",
+      "code": "Q17A-1",
+      "how": "none"
+    },
+    {
+      "field": "discoveryCall",
+      "code": "Q16A-1",
+      "how": "none"
+    }
+  ]
+}

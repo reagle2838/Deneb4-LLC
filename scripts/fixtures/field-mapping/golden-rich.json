@@ -1,0 +1,278 @@
+{
+  "slug": "acme-fixture-works",
+  "config": {
+    "$comment": "d4-site-builder format. Proposed via the live Google Form webhook; review before building.",
+    "siteName": "Acme Fixture Works",
+    "description": "Custom fixtures and jigs for furniture makers.",
+    "contactEmail": "hello@acmefixture.example",
+    "phone": "555-0100",
+    "address": "12 Shop Lane, Portland, OR",
+    "pairing": "warm-craft",
+    "modules": [
+      "d4-cms-core",
+      "d4-catalog",
+      "d4-gallery-editor"
+    ],
+    "quote": {
+      "enabled": true,
+      "topics": [
+        "Custom jigs",
+        "CNC work",
+        "Repairs",
+        "Rush orders"
+      ]
+    },
+    "announcement": {
+      "text": "Now booking summer projects"
+    },
+    "socialLinks": [
+      {
+        "label": "LinkedIn",
+        "href": "https://linkedin.com/company/acmefixture"
+      },
+      {
+        "label": "Instagram",
+        "href": "www.instagram.com/acmefixture"
+      }
+    ],
+    "faq": [
+      {
+        "q": "Do you ship?",
+        "a": "Yes, nationwide."
+      },
+      {
+        "q": "Turnaround?",
+        "a": "Two weeks."
+      }
+    ],
+    "logoWall": {
+      "items": [
+        {
+          "name": "Oak & Iron Co"
+        },
+        {
+          "name": "Grain Guild"
+        }
+      ]
+    }
+  },
+  "clientContact": {
+    "name": "Dana Fixture",
+    "email": "delivered@resend.dev",
+    "phone": "555-0101"
+  },
+  "flags": {
+    "brandIngest": true,
+    "brandUrl": "https://woodshopexample.com",
+    "catalogUpcharge": "51-150 items",
+    "structuralRequest": "A live CNC job-status tracker",
+    "githubUser": "acmefixture",
+    "discoveryCall": true
+  },
+  "unmapped": [],
+  "notes": [
+    "Client chose \"match existing brand\" — run brand ingest on their current site; until then the pairing's own palette applies.",
+    "Design pairing proposed: warm-craft (from visual direction \"Match our existing brand\" + site words \"warm, handmade, craft\").",
+    "Existing site: https://woodshopexample.com — run brand ingest: npm run brand -- <slug> --url https://woodshopexample.com",
+    "careers module: \"not sure\" — left OFF, confirm before billing it.",
+    "Modules requested: d4-catalog, d4-gallery-editor (+ d4-cms-core).",
+    "Catalog size \"51-150 items\" is beyond the included 50 items — price the seeding upcharge.",
+    "⚠ STRUCTURAL REQUEST (needs your review + a quote, never auto-built): A live CNC job-status tracker",
+    "Primary visitor action: \"Request a quote\" — quote-first business; the header CTA leads with Request a quote.",
+    "Announcement bar requested: \"Now booking summer projects\" — confirm the link target with the client.",
+    "Logo wall from client-named partners; swap in real logo files from their Drive folder when available.",
+    "Invoices go to: billing@acmefixture.example (billing contact, not the project contact).",
+    "Client wants the repo transferred at handoff.",
+    "Client requested a discovery call."
+  ],
+  "context": {
+    "Key products/services to promote": "Jigs, fixtures, CNC templates",
+    "Primary customers": "Small furniture shops",
+    "Geographic areas served": "Pacific Northwest",
+    "Words to describe the site": "warm, handmade, craft",
+    "Competitor/industry sites to review": "https://woodshopexample.com",
+    "What the site should accomplish": "Get more quote requests",
+    "Primary visitor action": "Request a quote",
+    "Standard pages expected": "Home, About, Contact",
+    "Catalog categories": "Jigs, Templates",
+    "Where product info lives now": "A spreadsheet",
+    "Gallery: what to showcase": "Finished fixture installs",
+    "Content readiness": "Mostly ready",
+    "Who approves content": "Dana",
+    "Business story": "Started in a garage in 2015.",
+    "What makes them different": "Tolerances nobody else will chase.",
+    "What a prospect should know": "We ship nationwide.",
+    "Trust signals to include": "ISO 9001, 200+ shops served",
+    "Launch tied to an event?": "Fall trade show",
+    "Scheduling/approval constraints": "Closed Fridays",
+    "Anything else about the project": "Excited to start.",
+    "How they heard about Deneb4": "A friend"
+  },
+  "mapReport": [
+    {
+      "field": "siteName",
+      "code": "Q3-1",
+      "how": "code"
+    },
+    {
+      "field": "tagline",
+      "code": "Q3-2",
+      "how": "code"
+    },
+    {
+      "field": "description",
+      "code": "Q3-3",
+      "how": "code"
+    },
+    {
+      "field": "contactEmail",
+      "code": "Q3-7",
+      "how": "code"
+    },
+    {
+      "field": "phone",
+      "code": "Q3-8",
+      "how": "code"
+    },
+    {
+      "field": "address",
+      "code": "Q3-9",
+      "how": "code"
+    },
+    {
+      "field": "theme",
+      "code": "Q5-1",
+      "how": "code"
+    },
+    {
+      "field": "siteWords",
+      "code": "Q5-2",
+      "how": "code"
+    },
+    {
+      "field": "brandUrl",
+      "code": "Q2A-1",
+      "how": "code"
+    },
+    {
+      "field": "module:catalog",
+      "code": "Q7A-1",
+      "how": "code"
+    },
+    {
+      "field": "module:careers",
+      "code": "Q8A-1",
+      "how": "code"
+    },
+    {
+      "field": "module:blog",
+      "code": "Q9A-1",
+      "how": "code"
+    },
+    {
+      "field": "module:gallery",
+      "code": "Q10A-1",
+      "how": "code"
+    },
+    {
+      "field": "catalogSize",
+      "code": "Q7B-1",
+      "how": "code"
+    },
+    {
+      "field": "customFunc",
+      "code": "Q11A-1",
+      "how": "code"
+    },
+    {
+      "field": "customFuncDesc",
+      "code": "Q11B-1",
+      "how": "code"
+    },
+    {
+      "field": "primaryAction",
+      "code": "Q6-2",
+      "how": "code"
+    },
+    {
+      "field": "quoteTopics",
+      "code": "Q6-4",
+      "how": "code"
+    },
+    {
+      "field": "announcement",
+      "code": "Q6-5",
+      "how": "code"
+    },
+    {
+      "field": "social:LinkedIn",
+      "code": "Q14-1",
+      "how": "code"
+    },
+    {
+      "field": "social:Facebook",
+      "code": "Q14-2",
+      "how": "code"
+    },
+    {
+      "field": "social:Instagram",
+      "code": "Q14-3",
+      "how": "code"
+    },
+    {
+      "field": "social:X",
+      "code": "Q14-4",
+      "how": "code"
+    },
+    {
+      "field": "social:YouTube",
+      "code": "Q14-5",
+      "how": "code"
+    },
+    {
+      "field": "faq",
+      "code": "Q13-5",
+      "how": "code"
+    },
+    {
+      "field": "logos",
+      "code": "Q13-6",
+      "how": "code"
+    },
+    {
+      "field": "billingEmail",
+      "code": "Q4-5",
+      "how": "code"
+    },
+    {
+      "field": "clientName",
+      "code": "Q4-1",
+      "how": "code"
+    },
+    {
+      "field": "clientEmail",
+      "code": "Q4-3",
+      "how": "code"
+    },
+    {
+      "field": "clientPhone",
+      "code": "Q4-4",
+      "how": "code"
+    },
+    {
+      "field": "githubWanted",
+      "code": "Q17A-1",
+      "how": "code"
+    },
+    {
+      "field": "githubUser",
+      "code": "Q17B-1",
+      "how": "code"
+    },
+    {
+      "field": "discoveryCall",
+      "code": "Q16A-1",
+      "how": "code"
+    }
+  ]
+}
