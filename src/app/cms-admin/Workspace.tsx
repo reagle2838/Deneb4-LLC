@@ -10,14 +10,15 @@ import Link from 'next/link';
 import LeadsTab from './LeadsTab';
 import TasksTab from './TasksTab';
 import NotesTab from './NotesTab';
+import TemplatesTab from './TemplatesTab';
 import QuickLinksBar from './QuickLinksBar';
 import ClientsView from './components/ClientsView';
 import ClientCommandCenter from './components/ClientCommandCenter';
 import MessagesView from './components/MessagesView';
 import AgentSpace from './components/AgentSpace';
 
-type Tab = 'clients' | 'messages' | 'agents' | 'leads' | 'tasks' | 'notes';
-const TABS: Tab[] = ['clients', 'messages', 'agents', 'leads', 'tasks', 'notes'];
+type Tab = 'clients' | 'messages' | 'agents' | 'templates' | 'leads' | 'tasks' | 'notes';
+const TABS: Tab[] = ['clients', 'messages', 'agents', 'templates', 'leads', 'tasks', 'notes'];
 
 /**
  * The Workspace shell. `initialTab`/`initialClient` come from the URL
@@ -92,6 +93,7 @@ export default function Workspace({
     { key: 'clients', label: 'Clients', count: clients.length },
     { key: 'messages', label: 'Messages', count: unreadMessages || undefined, alert: unreadMessages > 0 },
     { key: 'agents', label: 'Agents' },
+    { key: 'templates', label: 'Templates' },
     { key: 'leads', label: 'Leads', count: newLeads || undefined, alert: newLeads > 0 },
     { key: 'tasks', label: 'Tasks', count: openTasks || undefined },
     { key: 'notes', label: 'Notes' },
@@ -184,6 +186,7 @@ export default function Workspace({
       )}
       {tab === 'messages' && <MessagesView clients={clients} onOpenClient={openCommandCenter} />}
       {tab === 'agents' && <AgentSpace initialLedgers={agentLedgers} clients={clientList} runs={agentRuns} readiness={agentReadiness} />}
+      {tab === 'templates' && <TemplatesTab />}
       {tab === 'leads' && <LeadsTab initialLeads={leads} />}
       {tab === 'tasks' && <TasksTab tasks={tasks} onChange={setTasks} clients={clientList} />}
       {tab === 'notes' && <NotesTab initialNotes={notes} />}
