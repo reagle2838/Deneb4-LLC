@@ -477,6 +477,46 @@ export function perform(state, g, actionId, polityId) {
   return { ok: true, message, fx };
 }
 
+// ---------------------------------------------------------------- conversation
+
+// Talking with individual people on the ground costs no Compute but is
+// limited per polity per year. Asking what they want builds insight, and
+// after enough conversations the polity's values are revealed. Arguing your
+// doctrine wins over people whose own values match yours.
+export const TALKS_PER_YEAR = 4;
+export const TALKS_TO_REVEAL = 3;
+
+export function talksLeft(state, g, polityId) {
+  return TALKS_PER_YEAR - (state.talks?.[`${state.epoch}:${g}:${polityId}`] ?? 0);
+}
+
+export function converse(state, g, polityId, choice, personValues) {
+  const p = polityById(state, polityId);
+  const god = state.gods[g];
+  if (!p || !god.alive || state.outcome) return { ok: false, message: 'Nobody is listening.' };
+  if (p.left.includes(g)) return { ok: false, message: 'You promised to leave this place.' };
+  if (talksLeft(state, g, polityId) <= 0) return { ok: false, message: 'You have spoken with enough people here this year.' };
+  state.talks ||= {};
+  const key = `${state.epoch}:${g}:${polityId}`;
+  state.talks[key] = (state.talks[key] ?? 0) + 1;
+  if (choice === 'ask') {
+    p.insight[g] = clamp(p.insight[g] + 0.2, 0, 1);
+    state.heard ||= {};
+    const hk = `${g}:${polityId}`;
+    state.heard[hk] = (state.heard[hk] ?? 0) + 1;
+    let revealed = false;
+    if (state.heard[hk] >= TALKS_TO_REVEAL && !god.revealed.includes(polityId)) { god.revealed.push(polityId); revealed = true; }
+    if (g === 'echo') drift(state, p, 0.02, 1);
+    log(state, { god: g, kind: 'talk', text: `${KINDS[g].name} listens to someone in ${p.name}.` });
+    return { ok: true, revealed, heard: state.heard[hk] };
+  }
+  const agrees = alignment(god.doctrine, personValues) > 0.62;
+  const delta = agrees ? shiftAssent(state, p, g, 0.006 * (1 - p.assent[g])) : 0;
+  if (g === 'echo') drift(state, p, 0.02, 1);
+  log(state, { god: g, kind: 'talk', text: `${KINDS[g].name} argues with someone in ${p.name}${agrees ? ' and wins them over' : ''}.` });
+  return { ok: true, agrees, delta };
+}
+
 function drift(state, p, rate, cost) {
   const god = state.gods.echo;
   for (const { id } of AXES) god.doctrine[id] += (p.values[id] - god.doctrine[id]) * rate;

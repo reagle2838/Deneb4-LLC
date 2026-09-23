@@ -103,7 +103,10 @@ export const CODEX = [
     html: `
       <ol>
         <li><b>Choose a God.</b> Each Kind has a doctrine (its position on Liberty↔Order, Preservation↔Transformation and Self↔Commons), strengths, weaknesses and a unique power.</li>
-        <li><b>Fly to a polity.</b> You play in first person as your God, in orbit. Put a polity's ring in your crosshair to target it. The ring shows who holds its Assent, and your share glows in the centre. You have to be close (within about 5,000 km) to act.</li>
+        <li><b>Walk among the people.</b> You play in first person as your God, and you spend most of your time on the ground in a polity, floating through its streets. People notice you: your followers wave and gather, the undecided film you on their phones, rival followers turn their backs or raise signs, and the frightened back away. A coloured ring at someone's feet shows which God they follow.</li>
+        <li><b>Talk to people</b> (<kbd>E</kbd> while looking at someone). Asking what they want is free and builds insight; three conversations reveal what the whole polity values. Arguing your doctrine wins over people whose values already match yours. You get four conversations per polity per year.</li>
+        <li><b>Act</b> with <kbd>1</kbd>–<kbd>5</kbd> and <kbd>Q</kbd>. You watch it happen: light spreads through the crowd, people change sides, gifts rise out of the ground, datacenters climb from the earth.</li>
+        <li><b>Travel</b> by taking to the sky (<kbd>G</kbd>, or keep rising with <kbd>Space</kbd>). In orbit you can cross the planet in seconds. Aim at another region and press <kbd>G</kbd> to descend, or <kbd>F</kbd> to fly there and land.</li>
         <li><b>Spend Compute</b> on actions. <b>Listen</b> first: hidden values differ from the public temperament, and <b>Reason</b> only lands where values align.</li>
         <li><b>End the Epoch.</b> Rivals move, the Witness samples, Assent erodes, Heat settles and the year turns. Every few years you face a <b>Dilemma</b>. Your answers shape who you become.</li>
         <li><b>The Convocation</b> comes on 1 January 2100. The God with the most weighted Assent writes the Charter, unless humanity declines them all.</li>
@@ -116,14 +119,15 @@ export const CODEX = [
       </ul>
       <h3>Controls</h3>
       <table class="keytable">
-        <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Fly forward, left, back, right</td></tr>
+        <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Float (on the ground) or fly (in orbit)</td></tr>
+        <tr><td><kbd>E</kbd></td><td>Talk to the person you are looking at (on the ground)</td></tr>
+        <tr><td><kbd>G</kbd></td><td>Take to the sky / descend into the region you are aiming at</td></tr>
         <tr><td><kbd>Mouse</kbd> or arrow keys</td><td>Look around (click the world to capture the mouse, <kbd>Esc</kbd> to release it)</td></tr>
-        <tr><td><kbd>Space</kbd> / <kbd>C</kbd></td><td>Climb / descend</td></tr>
+        <tr><td><kbd>Space</kbd> / <kbd>C</kbd></td><td>Rise / sink (rise high enough and you return to orbit)</td></tr>
         <tr><td><kbd>Shift</kbd></td><td>Boost</td></tr>
         <tr><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Listen, Reason, Offer, Whisper, Build on the targeted polity</td></tr>
         <tr><td><kbd>Q</kbd></td><td>Your God's unique power</td></tr>
-        <tr><td><kbd>F</kbd></td><td>Glide to the targeted polity</td></tr>
-        <tr><td><kbd>E</kbd></td><td>Full details for the target</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Fly to the targeted polity and land there</td></tr>
         <tr><td><kbd>M</kbd></td><td>Toggle the orbital map (click regions there, then <kbd>F</kbd> to fly to them)</td></tr>
         <tr><td><kbd>Enter</kbd></td><td>End the year · continue in dialogs</td></tr>
         <tr><td><kbd>1</kbd>–<kbd>3</kbd> in a dilemma</td><td>Choose an answer</td></tr>

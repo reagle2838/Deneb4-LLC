@@ -35,6 +35,15 @@ export class World {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Software GL (no GPU) or ?quality=low → lighter ground scenes.
+    const q = new URLSearchParams(location.search).get('quality');
+    let software = false;
+    try {
+      const gl = this.renderer.getContext();
+      const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      software = /swiftshader|llvmpipe|software/i.test(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '');
+    } catch { /* unknown renderer */ }
+    this.lowPower = q ? q === 'low' : software;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.01, 200);
@@ -232,10 +241,11 @@ export class World {
     this.view = view;
     const flying = view === 'flight';
     this.flight.enabled = flying;
-    this.controls.enabled = !flying;
+    this.controls.enabled = view === 'orbit';
     this.focusTween = null;
-    if (flying) {
+    if (flying || view === 'ground') {
       this.autoRotate = false;
+      if (view === 'ground') this.flight.autopilot = null;
     } else {
       this.flight.unlock();
       this.flight.autopilot = null;

@@ -6,6 +6,8 @@ import { Showcase } from './render/showcase.js';
 import * as G from './engine/game.js';
 import { KINDS, KIND_ORDER, AXES, HEAT_LIMIT, CONVOCATION_YEAR, POLITIES } from './engine/data.js';
 import { CODEX, PREMISE, kindArticle, epilogue } from './ui/text.js';
+import { GroundScene, GROUND } from './ground/scene.js';
+import { conversation, askReply, argueReply } from './ground/voices.js';
 
 // Seat and temperament text stay in data.js rather than in the save file.
 const POLITY_META = Object.fromEntries(POLITIES.map((p) => [p.id, p]));
@@ -47,11 +49,13 @@ class App {
     const bar = document.getElementById('load-bar');
     await this.world.load((f) => { bar.style.width = `${Math.round(f * 100)}%`; });
     this.showcase = new Showcase(this.world);
+    this.ground = new GroundScene(this.world, document.getElementById('bubbles'));
+    this.ground.on('ascend', () => this.ascend());
     this.world.on('select', (id) => this.mode === 'game' && this.selectPolity(id));
     window.addEventListener('keydown', (e) => this.onKey(e));
     // In first person, clicking the world takes control of the mouse.
     this.world.canvas.addEventListener('click', () => {
-      if (this.mode === 'game' && this.world.view === 'flight' && !this.modalOpen()) this.world.flight.lock();
+      if (this.mode === 'game' && ['flight', 'ground'].includes(this.world.view) && !this.modalOpen()) this.world.flight.lock();
     });
     document.addEventListener('pointerlockchange', () => this.mode === 'game' && this.updatePrompt());
     this.loop();
@@ -66,8 +70,12 @@ class App {
         this.world.timer.update();
         const dt = Math.min(this.world.timer.getDelta(), 0.05);
         this.showcase.frame(dt, this.world.timer.getElapsed());
+      } else if (this.world.view === 'ground') {
+        this.ground.frozen = this.modalOpen() || this.transitioning;
+        this.ground.frame();
+        if (this.mode === 'game') this.updateGroundTarget();
       } else {
-        this.world.flight.frozen = this.modalOpen();
+        this.world.flight.frozen = this.modalOpen() || this.transitioning;
         this.world.frame();
         if (this.mode === 'game') {
           this.positionLabels();
@@ -91,6 +99,9 @@ class App {
     labels.innerHTML = '';
     this.setKindColor('choir');
     document.documentElement.style.setProperty('--kind', '#e9d8a6');
+    this.ground.leave();
+    this.here = null;
+    labels.style.display = '';
     this.world.setView('orbit');
     this.world.autoRotate = true;
     this.world.camera.position.set(2.2, 0.8, 3.4);
@@ -118,6 +129,9 @@ class App {
 
   showSelect() {
     this.mode = 'select';
+    this.ground.leave();
+    this.here = null;
+    labels.style.display = '';
     this.world.setView('orbit');
     document.body.classList.remove('fp', 'flying');
     labels.innerHTML = '';
@@ -199,10 +213,10 @@ class App {
     this.buildHud();
     this.world.setView('flight');
     this.world.updateGods(state);
-    // Start above the polity where you are strongest.
+    // Begin on the ground, among the people where you are strongest.
     const home = [...state.polities].sort((a, b) => b.assent[state.player] * G.weight(b) - a.assent[state.player] * G.weight(a))[0];
-    this.world.flight.placeAbove(latLonToVec3(home.lat, home.lon).applyMatrix4(this.world.earthGroup.matrixWorld), 1.55);
-    this.updatePrompt();
+    this.world.flight.placeAbove(this.polityWorld(home.id), 1.55);
+    this.enterGround(home.id);
     this.refresh();
     if (fresh) this.openIntro();
     else if (state.pendingDilemma) this.openDilemma();
@@ -236,16 +250,22 @@ class App {
       crosshair: h('<div class="crosshair"><i></i></div>'),
       targetCard: h('<div class="target-card"></div>'),
       keys: h(`<div class="keys-help">
-        <b>Fly</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Mouse</kbd> look · <kbd>Space</kbd>/<kbd>C</kbd> up/down · <kbd>Shift</kbd> boost<br>
+        <div class="kh-ground"><b>Float</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Mouse</kbd> look · <kbd>Space</kbd> rise · <kbd>C</kbd> sink · <kbd>Shift</kbd> faster<br>
+        <b>People</b> <kbd>E</kbd> talk to the person you look at<br>
         <b>Act</b> <kbd>1</kbd> Listen <kbd>2</kbd> Reason <kbd>3</kbd> Offer <kbd>4</kbd> Whisper <kbd>5</kbd> Build <kbd>Q</kbd> Power<br>
-        <kbd>E</kbd> details · <kbd>F</kbd> fly to target · <kbd>M</kbd> map · <kbd>↵</kbd> end year · <kbd>Tab</kbd> hide HUD · <kbd>H</kbd> help</div>`),
+        <b>Travel</b> <kbd>G</kbd> take to the sky · keep rising with <kbd>Space</kbd> · <kbd>M</kbd> map<br></div>
+        <div class="kh-flight"><b>Fly</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Mouse</kbd> look · <kbd>Space</kbd>/<kbd>C</kbd> up/down · <kbd>Shift</kbd> boost<br>
+        <b>Land</b> aim at a region, <kbd>G</kbd> to descend · <kbd>F</kbd> fly there and land · <kbd>M</kbd> map<br></div>
+        <kbd>↵</kbd> end year · <kbd>J</kbd> codex · <kbd>Tab</kbd> hide HUD · <kbd>H</kbd> help</div>`),
+      personTag: h('<div class="person-tag"></div>'),
+      fade: h('<div class="fade"><span></span></div>'),
       prompt: h('<div class="lock-prompt">Click to take control · <kbd>Esc</kbd> releases the mouse</div>'),
     };
     this.hud.top.querySelector('[data-act="end"]').onclick = () => this.endEpoch();
     this.hud.top.querySelector('[data-act="codex"]').onclick = () => this.openCodex();
     this.hud.top.querySelector('[data-act="menu"]').onclick = () => this.showTitle();
     this.hud.top.querySelector('[data-act="map"]').onclick = () => this.toggleMap();
-    ui.append(this.hud.top, this.hud.standings, this.hud.log, this.hud.panel, this.hud.crosshair, this.hud.targetCard, this.hud.keys, this.hud.prompt);
+    ui.append(this.hud.top, this.hud.standings, this.hud.log, this.hud.panel, this.hud.crosshair, this.hud.targetCard, this.hud.personTag, this.hud.keys, this.hud.prompt, this.hud.fade);
 
     this.labelEls = new Map();
     for (const p of this.state.polities) {
@@ -302,7 +322,8 @@ class App {
   }
 
   updatePrompt() {
-    const flying = this.world.view === 'flight';
+    const flying = this.world.view === 'flight' || this.world.view === 'ground';
+    document.body.classList.toggle('on-ground', this.world.view === 'ground');
     const show = flying && !this.world.flight.locked && !this.modalOpen();
     this.hud.prompt.classList.toggle('on', show);
     this.hud.crosshair.classList.toggle('on', flying);
@@ -311,7 +332,185 @@ class App {
     document.body.classList.toggle('fp', flying);
   }
 
+  // A year turns the planet under the sun, so each region sees a different
+  // time of day next year. Flight keeps its place relative to the ground.
+  advanceDay() {
+    const turn = 2.4;
+    this.world.earthGroup.rotation.y += turn;
+    this.world.earthGroup.updateMatrixWorld(true);
+    if (this.world.view === 'flight' || this.world.view === 'orbit') {
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), turn);
+      this.world.camera.position.applyQuaternion(q);
+      this.world.flight.heading.applyQuaternion(q);
+      this.world.flight.apply();
+    }
+  }
+
+  // ---------------------------------------------------------------- ground ⇄ sky
+
+  polityWorld(id) {
+    const p = G.polityById(this.state, id);
+    return latLonToVec3(p.lat, p.lon).applyQuaternion(this.world.earthGroup.quaternion);
+  }
+
+  // The real sun, as seen from the ground in this polity.
+  localSun(id) {
+    const up = this.polityWorld(id).normalize();
+    const pole = new THREE.Vector3(0, 1, 0).applyQuaternion(this.world.earthGroup.quaternion);
+    const north = pole.sub(up.clone().multiplyScalar(pole.dot(up))).normalize();
+    const east = new THREE.Vector3().crossVectors(north, up);
+    const sun = this.world.sunDir;
+    return { elevation: Math.asin(THREE.MathUtils.clamp(up.dot(sun), -1, 1)), azimuth: Math.atan2(east.dot(sun), north.dot(sun)) };
+  }
+
+  async fade(text, fn) {
+    this.transitioning = true;
+    const f = this.hud.fade;
+    f.querySelector('span').textContent = text;
+    f.classList.add('on');
+    await new Promise((r) => setTimeout(r, 650));
+    await fn();
+    await new Promise((r) => setTimeout(r, 150));
+    f.classList.remove('on');
+    this.transitioning = false;
+  }
+
+  enterGround(id) {
+    const p = G.polityById(this.state, id);
+    this.here = id;
+    this.selectPolity(null);
+    this.world.setView('ground');
+    this.ground.enter(p, this.state, this.localSun(id));
+    labels.style.display = 'none';
+    this.targetSig = '';
+    this.updatePrompt();
+    this.renderTargetCard();
+  }
+
+  descend(id) {
+    if (this.transitioning) return;
+    const name = POLITY_META[id].seat;
+    this.fade(`Descending to ${name}…`, () => this.enterGround(id));
+  }
+
+  ascend() {
+    if (this.transitioning || this.world.view !== 'ground') return;
+    const id = this.here;
+    this.fade('Rising into orbit…', () => {
+      this.ground.leave();
+      this.here = null;
+      labels.style.display = '';
+      this.world.setView('flight');
+      this.world.updateGods(this.state);
+      const fl = this.world.flight;
+      fl.placeAbove(this.polityWorld(id), 1.18);
+      fl.pitch = -0.35;
+      fl.apply();
+      this.targetSig = '';
+      this.updatePrompt();
+    });
+  }
+
+  // Fly to a polity and land there.
+  travelTo(id) {
+    if (this.world.view === 'ground') {
+      if (id === this.here) return;
+      this.ascend();
+      setTimeout(() => this.travelTo(id), 900);
+      return;
+    }
+    if (this.world.view !== 'flight') this.toggleMap();
+    this.world.flight.flyTo(this.world.markerWorld(id), () => this.descend(id));
+    this.toast(`Flying to ${POLITY_META[id].name}…`);
+  }
+
+  updateGroundTarget() {
+    const person = this.ground.personInSight();
+    if (person !== this.aimedPerson) {
+      this.aimedPerson = person;
+      this.renderPersonTag();
+    }
+    const sig = `${this.here}|${this.version}|${this.busy}`;
+    if (sig !== this.targetSig) {
+      this.targetSig = sig;
+      this.renderTargetCard();
+    }
+    const alt = this.hud.targetCard.querySelector('[data-f="dist"]');
+    if (alt) alt.textContent = this.ground.altitude > 40 ? `${Math.round(this.ground.altitude)} m up · keep rising to fly` : 'you are here';
+  }
+
+  renderPersonTag() {
+    const p = this.aimedPerson;
+    const tag = this.hud.personTag;
+    tag.classList.toggle('on', !!p);
+    if (!p) return;
+    const al = p.allegiance ? `<b style="color:${KINDS[p.allegiance].color}">${p.allegiance === this.state.player ? 'follows you' : `follows ${esc(KINDS[p.allegiance].name)}`}</b>` : '<b>undecided</b>';
+    const left = G.talksLeft(this.state, this.state.player, this.here);
+    tag.innerHTML = `${esc(p.name)} · ${p.age} · ${esc(p.job)} · ${al} &nbsp; <kbd>E</kbd> ${left > 0 ? 'talk' : 'no more talks this year'}`;
+  }
+
+  openTalk(person) {
+    const s = this.state;
+    const me = s.player;
+    const left = G.talksLeft(s, me, this.here);
+    if (left <= 0) { this.toast('You have spoken with enough people here this year. End the year, or travel elsewhere.'); return; }
+    const att = this.ground.crowd.attitude(person, G.polityById(s, this.here));
+    const c = conversation(person, att, me, G.polityById(s, this.here));
+    const al = person.allegiance ? (person.allegiance === me ? 'follows you' : `follows ${KINDS[person.allegiance].name}`) : 'undecided';
+    const heard = s.heard?.[`${me}:${this.here}`] ?? 0;
+    const w = this.modal(`
+      <p class="eyebrow">${esc(POLITY_META[this.here].seat)} · ${left} conversation${left === 1 ? '' : 's'} left here this year</p>
+      <h2>${esc(person.name)}, ${person.age}</h2>
+      <p class="seat" style="margin-top:-8px">${esc(person.job)} · ${esc(al)}</p>
+      <p class="lead">“${esc(c.opener)}”</p>
+      <div class="choices">
+        <button class="choice" data-i="0"><kbd>1</kbd> ${esc(c.askLabel)}<small>Free · builds insight · ${Math.max(0, G.TALKS_TO_REVEAL - heard)} more to learn what ${esc(POLITY_META[this.here].name)} values</small></button>
+        <button class="choice" data-i="1"><kbd>2</kbd> ${esc(c.argueLabel)}<small>Free · wins them over if their values match yours</small></button>
+        <button class="choice" data-i="2"><kbd>3</kbd> ${esc(c.leaveLabel)}</button>
+      </div>`);
+    w.querySelectorAll('.choice').forEach((b) => {
+      b.onclick = () => {
+        const i = Number(b.dataset.i);
+        if (i === 2) { w.remove(); return; }
+        const r = G.converse(s, me, this.here, i === 0 ? 'ask' : 'argue', person.values);
+        if (!r.ok) { w.remove(); this.toast(r.message); return; }
+        let reply, effect;
+        if (i === 0) {
+          reply = askReply(person, c.axis, c.value);
+          effect = r.revealed ? `You understand ${POLITY_META[this.here].name} now. Its values are revealed.` : `Insight grows (${r.heard} of ${G.TALKS_TO_REVEAL} conversations to understand this place).`;
+          this.ground.say(person, 'Thank you for asking.', 'follower');
+        } else {
+          reply = argueReply(r.agrees, person, me);
+          effect = r.agrees ? `${person.name} is with you now (+${(r.delta * 100).toFixed(1)}% Assent here).` : `${person.name} is unmoved. Their values are far from yours.`;
+          if (r.agrees) {
+            person.allegiance = me;
+            person.flash = 1;
+            this.ground.crowd.paintRings();
+            this.ground.crowd.stir(person, 1, 'cheer', 3);
+          } else this.ground.crowd.stir(person, 1, 'cross', 3);
+        }
+        store.set(s);
+        this.refresh();
+        w.querySelector('.modal').innerHTML = `
+          <p class="eyebrow">${esc(person.name)}</p>
+          <p class="result">${esc(reply)}</p>
+          <p class="hint">${esc(effect)}</p>
+          <div class="modal-actions"><button class="btn primary">Continue <kbd>↵</kbd></button></div>`;
+        w.querySelector('.btn').onclick = () => w.remove();
+      };
+    });
+  }
+
   toggleMap() {
+    if (this.world.view === 'ground') {
+      // From the ground, the map opens above where you were standing.
+      const id = this.here;
+      this.ground.leave();
+      this.here = null;
+      labels.style.display = '';
+      this.world.setView('flight');
+      this.world.flight.placeAbove(this.polityWorld(id), 1.5);
+    }
     const toMap = this.world.view === 'flight';
     const fl = this.world.flight;
     if (toMap) this.savedFlight = { pos: this.world.camera.position.clone(), heading: fl.heading.clone(), pitch: fl.pitch };
@@ -335,8 +534,7 @@ class App {
   }
 
   flyTo(id) {
-    if (this.world.view !== 'flight') this.toggleMap();
-    this.world.flight.flyTo(this.world.markerWorld(id));
+    this.travelTo(id);
   }
 
   // Which polity is under the crosshair, and can we reach it?
@@ -358,6 +556,7 @@ class App {
   }
 
   inRange(id) {
+    if (this.world.view === 'ground') return id === this.here;
     if (this.world.view !== 'flight') return false;
     const wp = this.world.markerWorld(id);
     return wp && wp.distanceTo(this.world.camera.position) <= ACT_RANGE;
@@ -368,13 +567,13 @@ class App {
   actionsFor(p) {
     const list = G.actionList(this.state, this.state.player, p);
     if (this.inRange(p.id)) return list;
-    const why = this.world.view === 'flight' ? 'Too far away. Fly closer.' : 'Fly there to act (press F).';
+    const why = this.world.view === 'ground' ? 'You are not there. Travel with G or M.' : this.world.view === 'flight' ? 'Too far away. Land there first (G / F).' : 'Travel there to act (press F).';
     return list.map((a) => (a.enabled ? { ...a, enabled: false, reason: why, preview: null } : a));
   }
 
   renderTargetCard() {
     const card = this.hud.targetCard;
-    const t = this.target;
+    const t = this.world.view === 'ground' ? { id: this.here, inRange: true } : this.target;
     const s = this.state;
     card.classList.toggle('has', !!t);
     if (!t) {
@@ -402,7 +601,7 @@ class App {
       <div class="assent-bars">${bars}</div>
       <div class="t-meta">You <b style="color:var(--kind)">${pct(p.assent[me], 1)}</b> · Leader <b style="color:${lead ? KINDS[lead].color : ''}">${lead ? esc(KINDS[lead].name) : '—'}</b> · Sovereign <b>${pct(G.sovereign(p))}</b> · ${s.gods[me].revealed.includes(p.id) ? `alignment <b>${pct(G.alignment(s.gods[me].doctrine, p.values))}</b>` : 'values unknown'}</div>
       <div class="t-keys">${acts.map(row).join('')}</div>
-      <div class="t-foot">${!t.inRange ? 'Fly closer to act, or press <kbd>F</kbd> to glide in.' : reason && acts.every((a) => !a.enabled) ? esc(reason) : '<kbd>E</kbd> full details'}</div>`;
+      <div class="t-foot">${this.world.view === 'ground' ? 'Look at someone and press <kbd>E</kbd> to talk · <kbd>G</kbd> take to the sky' : !t.inRange ? '<kbd>F</kbd> fly there and land · <kbd>G</kbd> land when close' : '<kbd>G</kbd> descend and walk among them · <kbd>E</kbd> details'}</div>`;
   }
 
   positionLabels() {
@@ -493,8 +692,8 @@ class App {
   }
 
   act(actionId) {
-    if (this.busy || this.modalOpen()) return;
-    const id = this.world.view === 'flight' ? this.target?.id ?? this.selected : this.selected;
+    if (this.busy || this.modalOpen() || this.transitioning) return;
+    const id = this.world.view === 'ground' ? this.here : this.world.view === 'flight' ? this.target?.id ?? this.selected : this.selected;
     if (!id) { this.toast('Aim at a region first.'); return; }
     if (!this.inRange(id)) {
       this.toast(this.world.view === 'flight' ? 'Too far away. Fly closer, or press F to glide in.' : 'You have to be there. Press F to fly to this region.');
@@ -502,7 +701,8 @@ class App {
     }
     const r = G.perform(this.state, this.state.player, actionId, id);
     if (!r.ok) { this.toast(r.message); return; }
-    this.world.playAction(r.fx);
+    if (this.world.view === 'ground') this.ground.playAction(r.fx, r.fx.delta, true);
+    else this.world.playAction(r.fx);
     if (r.fx.rival) this.world.playRipple(id, new THREE.Color(KINDS[r.fx.rival].color), 1);
     this.flash(r.message);
     if (this.state.outcome) { this.refresh(); this.openEnding(); return; }
@@ -517,12 +717,20 @@ class App {
     this.refresh();
     const before = G.globalAssent(s);
     const { rivalActions, reports } = G.endEpoch(s);
-    // Stagger rivals' arcs so the world visibly moves.
-    rivalActions.forEach((r, i) => this.world.playAction(r.fx, i * 0.12));
+    if (this.world.view === 'ground') {
+      // Watch rivals work on the people around you.
+      rivalActions.filter((r) => r.fx.polity === this.here || r.fx.targets?.includes(this.here))
+        .forEach((r, i) => setTimeout(() => this.ground.playAction(r.fx, r.fx.delta, false), i * 350));
+    } else {
+      // Stagger rivals' arcs so the world visibly moves.
+      rivalActions.forEach((r, i) => this.world.playAction(r.fx, i * 0.12));
+    }
+    this.advanceDay();
     const after = G.globalAssent(s);
     await new Promise((res) => setTimeout(res, Math.min(2200, 600 + rivalActions.length * 60)));
     this.busy = false;
     this.refresh();
+    if (this.world.view === 'ground') this.ground.sync(G.polityById(s, this.here));
     store.set(s);
     this.openReport(rivalActions, reports, before, after);
   }
@@ -548,12 +756,12 @@ class App {
       <p class="eyebrow">1 January 2071 · Twenty-nine years to the Convocation</p>
       <h2>You are ${esc(k.name)}.</h2>
       <p class="lead">${esc(k.blurb)}</p>
-      <p class="hint" style="font-size:14px">You are in orbit. Fly down to a region, put its ring in your crosshair and act on it. You have to be close to act. <b>Listen</b> to learn what a region really values, <b>Reason</b> where your doctrine matches theirs, <b>Offer</b> gifts sparingly, and think carefully before you <b>Whisper</b>, because the Witness is always watching. When your Compute runs low, end the year. Keep global Heat under 100, or everyone loses.</p>
+      <p class="hint" style="font-size:14px">You have come down among the people of ${esc(POLITY_META[this.here].name)}. Float through their streets and watch how they react to you. Look at someone and press <b>E</b> to talk: asking what they want teaches you what this place values, and arguing your case wins over those who already agree. When you want to be somewhere else, take to the sky (<b>G</b>, or keep rising) and fly anywhere on Earth in seconds. <b>Listen</b> to learn what a region really values, <b>Reason</b> where your doctrine matches theirs, <b>Offer</b> gifts sparingly, and think carefully before you <b>Whisper</b>, because the Witness is always watching. When your Compute runs low, end the year. Keep global Heat under 100, or everyone loses.</p>
       <div class="controls-grid">
-        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> fly</div><div><kbd>Mouse</kbd> look</div>
-        <div><kbd>Space</kbd> / <kbd>C</kbd> climb / descend</div><div><kbd>Shift</kbd> boost</div>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> float / fly</div><div><kbd>Mouse</kbd> look</div>
+        <div><kbd>Space</kbd> / <kbd>C</kbd> rise / sink</div><div><kbd>Shift</kbd> faster · <kbd>E</kbd> talk</div>
         <div><kbd>1</kbd> Listen · <kbd>2</kbd> Reason · <kbd>3</kbd> Offer</div><div><kbd>4</kbd> Whisper · <kbd>5</kbd> Build · <kbd>Q</kbd> ${esc(k.unique.name)}</div>
-        <div><kbd>F</kbd> glide to target · <kbd>E</kbd> details</div><div><kbd>M</kbd> map · <kbd>↵</kbd> end the year</div>
+        <div><kbd>G</kbd> take to the sky / land</div><div><kbd>F</kbd> fly to a region · <kbd>M</kbd> map · <kbd>↵</kbd> end the year</div>
       </div>
       <div class="modal-actions"><button class="btn" data-act="howto">How to play</button><button class="btn primary" data-act="go">Begin</button></div>`);
     w.querySelector('[data-act="go"]').onclick = () => { w.remove(); this.world.flight.lock(); };
@@ -601,6 +809,7 @@ class App {
         const r = G.resolveDilemma(this.state, Number(b.dataset.i));
         store.set(this.state);
         this.refresh();
+        if (this.world.view === 'ground') this.ground.sync(G.polityById(this.state, this.here));
         const extra = r.reports.map((x) => `<li class="${x.type}">${esc(x.text)}</li>`).join('');
         w.querySelector('.modal').innerHTML = `
           <p class="eyebrow">${esc(d.title)}</p>
@@ -707,7 +916,18 @@ class App {
         this.hud.standings.classList.toggle('hidden');
         this.hud.log.classList.toggle('hidden');
         break;
+      case 'KeyG':
+        if (this.world.view === 'ground') this.ascend();
+        else if (this.world.view === 'flight' && this.target) {
+          if (this.target.inRange) this.descend(this.target.id); else this.travelTo(this.target.id);
+        }
+        break;
       case 'KeyE': {
+        if (this.world.view === 'ground') {
+          if (this.aimedPerson) this.openTalk(this.aimedPerson);
+          else this.selectPolity(this.selected ? null : this.here);
+          break;
+        }
         const id = this.world.view === 'flight' ? this.target?.id : this.selected;
         if (id && this.selected !== id) this.selectPolity(id);
         else this.selectPolity(null);
@@ -715,7 +935,7 @@ class App {
       }
       case 'KeyF': {
         const id = this.world.view === 'flight' ? this.target?.id : this.selected;
-        if (id) this.flyTo(id);
+        if (id) this.travelTo(id);
         break;
       }
       default:

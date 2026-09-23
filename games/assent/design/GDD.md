@@ -29,8 +29,46 @@ Epoch start ─► you spend Compute on actions in polities
 
 ## Playing in first person
 
-You *are* your God. The default view is first-person flight around Earth
-(`web/src/render/flight.js`). **Up** is always away from the planet's
+You *are* your God, and you play at two scales.
+
+### On the ground (most of the game)
+
+Each polity is a generated place (`web/src/ground/`): terrain, streets and
+buildings whose windows light up at night, trees, water, landmarks (a
+cathedral spire, a temple, a torii, a sea wall, stilt villages, solar
+fields, wind turbines) and a glowing datacenter for every God with
+Substrate there. The sky and sun match the real sun position over that
+polity, and a year turns the planet, so times of day change year to year.
+
+Hundreds of people walk, idle and chat. Each has a name, age, job,
+personal values (the polity's values plus noise) and an **allegiance**,
+sampled so the crowd matches the polity's Assent shares. A coloured ring at
+their feet shows it. Within about 28 m they notice you and react by attitude:
+
+| Attitude | Close up | Further away |
+|---|---|---|
+| Your follower | waves | watches |
+| Devoted (your dependence > 40%) | kneels | approaches you |
+| Rival's follower | turns away, or raises a sign in their God's colour | watches |
+| Accuser (your suspicion > 25%) | folds arms, shouts | watches |
+| Wary | backs away | watches |
+| Curious | films you on their phone | watches |
+
+Speech bubbles carry lines chosen by attitude, values and your God.
+**Actions play out in the crowd**: Reason sends light through the square
+and converts the nearest people in proportion to the Assent gained. Offer
+raises a gift pod out of the ground, Build raises a datacenter, and rivals'
+actions in this polity play out around you when the year ends.
+
+**Conversation** (E): free, four per polity per year. *Ask* builds insight
+(+0.2), and three asks reveal the polity's values without spending
+Compute. *Argue* wins the person over (+0.6% Assent) if their personal
+values align with your doctrine (alignment > 0.62).
+
+### In orbit (fast travel)
+
+Rise past 140 m (or press G) to return to orbit. Flight
+(`web/src/render/flight.js`) keeps **up** pointing away from the planet's
 centre, so the horizon stays level anywhere on the globe.
 
 - **Movement:** WASD, mouse look (pointer lock) or arrow keys, Space/C to
@@ -39,9 +77,9 @@ centre, so the horizon stays level anywhere on the globe.
 - **Targeting:** the polity nearest the crosshair (within a few degrees,
   wider when close) is the target. The card at the bottom shows its Assent,
   your options, costs and previews.
-- **Presence rule:** you can only act on a polity within 0.8 planet radii
-  (about 5,100 km) of you, so where you fly matters. F glides you to the
-  target.
+- **Presence rule:** from orbit you can act on a polity within 0.8 planet
+  radii (about 5,100 km); on the ground you act on the polity you're in.
+  G descends into the target and F flies there and lands.
 - **Keys:** 1–5 Listen, Reason, Offer, Whisper, Build · Q unique power ·
   E details · M orbital map (inspect only; F from there flies you in) ·
   Enter ends the year · 1–3 answers dilemmas.

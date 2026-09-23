@@ -65,14 +65,14 @@ export class Flight {
   }
 
   // Glide to hover over a world-space point, looking down at it.
-  flyTo(point) {
+  flyTo(point, onArrive = null) {
     const up = point.clone().normalize();
     const to = up.clone().multiplyScalar(1.42);
     // Back off along our current heading so the target sits ahead of us.
     const back = this.heading.clone().sub(up.clone().multiplyScalar(this.heading.dot(up))).normalize();
     if (back.lengthSq() > 1e-6) to.addScaledVector(back, -0.22);
     to.setLength(1.42);
-    this.autopilot = { from: this.camera.position.clone(), to, target: point.clone(), t: 0 };
+    this.autopilot = { from: this.camera.position.clone(), to, target: point.clone(), t: 0, onArrive };
   }
 
   turn(dx, dy) {
@@ -98,7 +98,7 @@ export class Flight {
       const dir = a.from.clone().normalize().lerp(a.to.clone().normalize(), e).normalize();
       cam.position.copy(dir.multiplyScalar(THREE.MathUtils.lerp(a.from.length(), a.to.length(), e)));
       this.aimAt(a.target, Math.min(1, dt * 4));
-      if (a.t >= 1 || this.moving()) this.autopilot = null;
+      if (a.t >= 1) { this.autopilot = null; a.onArrive?.(); } else if (this.moving()) this.autopilot = null;
     }
 
     // Arrow keys look around too, for trackpads and when pointer lock is refused.

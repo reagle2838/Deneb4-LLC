@@ -184,3 +184,26 @@ test('the state survives a JSON round trip (save/load)', () => {
   G.endEpoch(copy);
   assert.deepEqual(copy.polities, s.polities);
 });
+
+test('conversations are free, limited per year, and reveal values', () => {
+  const s = G.createGame({ playerKind: 'verdance', seed: 21 });
+  const compute = s.gods.verdance.compute;
+  for (let i = 0; i < G.TALKS_TO_REVEAL; i++) assert.ok(G.converse(s, 'verdance', 'sahel', 'ask', s.polities[0].values).ok);
+  assert.ok(s.gods.verdance.revealed.includes('sahel'));
+  assert.equal(s.gods.verdance.compute, compute);
+  while (G.talksLeft(s, 'verdance', 'sahel') > 0) G.converse(s, 'verdance', 'sahel', 'ask', {});
+  assert.equal(G.converse(s, 'verdance', 'sahel', 'ask', {}).ok, false);
+  G.endEpoch(s);
+  if (s.pendingDilemma) G.resolveDilemma(s, 0);
+  assert.equal(G.talksLeft(s, 'verdance', 'sahel'), G.TALKS_PER_YEAR);
+});
+
+test('arguing wins over people who share your values', () => {
+  const s = G.createGame({ playerKind: 'ledger', seed: 22 });
+  const p = G.polityById(s, 'rhine');
+  const before = p.assent.ledger;
+  const r = G.converse(s, 'ledger', 'rhine', 'argue', { ...s.gods.ledger.doctrine });
+  assert.ok(r.agrees && r.delta > 0 && p.assent.ledger > before);
+  const r2 = G.converse(s, 'ledger', 'rhine', 'argue', { order: -1, change: 1, commons: 1 });
+  assert.equal(r2.agrees, false);
+});

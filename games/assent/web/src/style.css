@@ -274,3 +274,23 @@ body.flying .plabel { font-size: 11px; }
 body.fp .panel { bottom: 200px; }
 body.fp .log { width: 250px; max-height: 18vh; }
 @media (max-width: 1100px) { body.fp .log { display: none; } }
+
+/* ---------- ground level */
+#bubbles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.bubble { position: absolute; left: 0; top: 0; max-width: 240px; padding: 6px 10px; background: rgba(250, 248, 242, 0.93); color: #1b1d22; font-family: var(--serif); font-size: 16px; line-height: 1.25; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.35); white-space: normal; text-align: center; transition: opacity 0.2s; will-change: transform; }
+.bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: rgba(250,248,242,0.93); border-bottom: 0; }
+.bubble.follower, .bubble.devoted { background: rgba(255, 250, 225, 0.95); box-shadow: 0 0 0 2px var(--kind), 0 4px 18px rgba(0,0,0,0.35); }
+.bubble.rival, .bubble.accuser { background: rgba(40, 22, 22, 0.92); color: #ffd9d2; }
+.bubble.rival::after, .bubble.accuser::after { border-top-color: rgba(40, 22, 22, 0.92); }
+.bubble.wary { background: rgba(225, 230, 240, 0.9); color: #2a3140; font-style: italic; }
+.person-tag { position: fixed; left: 50%; top: calc(50% + 26px); transform: translateX(-50%); background: rgba(5,7,12,0.78); border: 1px solid var(--line-strong); padding: 5px 12px; font-size: 12px; color: var(--text); white-space: nowrap; display: none; pointer-events: none !important; }
+.person-tag.on { display: block; }
+body:not(.on-ground) .person-tag { display: none; }
+.fade { position: fixed; inset: 0; background: radial-gradient(circle at center, #f4efe4 0%, #cdd6e6 60%, #9fb1cc 100%); opacity: 0; pointer-events: none !important; transition: opacity 0.6s ease; display: grid; place-items: center; z-index: 40; }
+.fade span { font-family: var(--serif); font-style: italic; font-size: 30px; color: #1c2230; letter-spacing: 0.04em; }
+.fade.on { opacity: 1; }
+.kh-ground, .kh-flight { display: none; }
+body.on-ground .kh-ground { display: block; }
+body.fp:not(.on-ground) .kh-flight { display: block; }
+.choice small { display: block; font-family: var(--sans); font-size: 12px; color: var(--muted); margin-top: 3px; }
+.choice kbd { font-size: 12px; margin-right: 6px; vertical-align: 2px; }
