@@ -122,8 +122,17 @@ export class Crowd {
     for (const p of PARTS) if (this.meshes[p].instanceColor) this.meshes[p].instanceColor.needsUpdate = true;
   }
 
-  randomSpot() {
+  // Somewhere to walk: a nearby point on a street you can reach in a
+  // straight line, or (when placing people) anywhere along the streets.
+  randomSpot(from = null) {
     const nav = this.env.navPoints;
+    if (from) {
+      for (let k = 0; k < 14; k++) {
+        const n = nav[Math.floor(this.rand() * nav.length)];
+        const d = Math.hypot(n.x - from.x, n.y - from.z);
+        if (d > 6 && d < 90 && this.env.lineClear(from.x, from.z, n.x, n.y)) return new THREE.Vector2(n.x, n.y);
+      }
+    }
     for (let k = 0; k < 30; k++) {
       const n = nav[Math.floor(this.rand() * nav.length)];
       const x = n.x + this.rand.range(-9, 9), z = n.y + this.rand.range(-9, 9);
@@ -247,11 +256,11 @@ export class Crowd {
       if (react === 'none') {
         p.timer -= dt;
         if (p.mode === 'walk') {
-          if (!p.goal || Math.hypot(p.goal.x - p.x, p.goal.y - p.z) < 1.5) p.goal = this.randomSpot();
+          if (!p.goal || Math.hypot(p.goal.x - p.x, p.goal.y - p.z) < 1.5) p.goal = this.randomSpot(p);
           p.targetHeading = Math.atan2(p.goal.x - p.x, p.goal.y - p.z);
           moveSpeed = p.speed;
           if (p.timer < 0) { p.mode = 'idle'; p.timer = this.rand.range(3, 9); }
-        } else if (p.timer < 0) { p.mode = 'walk'; p.timer = this.rand.range(8, 22); p.goal = this.randomSpot(); }
+        } else if (p.timer < 0) { p.mode = 'walk'; p.timer = this.rand.range(8, 22); p.goal = this.randomSpot(p); }
       } else if (react === 'approach') {
         p.targetHeading = toGod; moveSpeed = dist > 5 ? 1.2 : 0;
       } else if (react === 'retreat') {
@@ -266,8 +275,8 @@ export class Crowd {
       if (moveSpeed > 0) {
         const nx = p.x + Math.sin(p.heading) * moveSpeed * dt;
         const nz = p.z + Math.cos(p.heading) * moveSpeed * dt;
-        if (!env.blocked(nx, nz, 0.5) && !env.isWater(nx, nz) && Math.hypot(nx, nz) < 330) { p.x = nx; p.z = nz; }
-        else p.goal = this.randomSpot();
+        if (!env.blocked(nx, nz, 0.5) && !env.isWater(nx, nz) && Math.hypot(nx, nz) < env.playRadius + 30) { p.x = nx; p.z = nz; }
+        else p.goal = this.randomSpot(p);
         p.phase += dt * moveSpeed * 5.2;
       }
       p.moving = moveSpeed > 0;

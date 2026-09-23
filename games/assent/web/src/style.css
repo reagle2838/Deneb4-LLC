@@ -294,3 +294,7 @@ body.on-ground .kh-ground { display: block; }
 body.fp:not(.on-ground) .kh-flight { display: block; }
 .choice small { display: block; font-family: var(--sans); font-size: 12px; color: var(--muted); margin-top: 3px; }
 .choice kbd { font-size: 12px; margin-right: 6px; vertical-align: 2px; }
+
+.map-attrib { position: fixed; right: 16px; bottom: 6px; font-size: 10.5px; color: rgba(230,236,245,0.75); text-shadow: 0 0 4px #000; display: none; font-family: var(--mono); }
+.map-attrib a { color: inherit; }
+body.on-ground .map-attrib { display: block; }

@@ -33,7 +33,13 @@ You *are* your God, and you play at two scales.
 
 ### On the ground (most of the game)
 
-Each polity is a generated place (`web/src/ground/`): terrain, streets and
+Each polity is centred on a real spot and built from **OpenStreetMap**
+(`web/src/osm/`, `web/src/ground/osmEnv.js`): the actual streets (ribbons
+by road class, centre lines, bridges over water), building footprints
+extruded to their tagged heights or levels, parks, woods, lakes, rivers and
+coastline (flood-filled from the coastline's water side), and mapped trees,
+within 600 m. A generated skyline and landscape continue to the horizon.
+Without map data the place is fully generated: terrain, streets and
 buildings whose windows light up at night, trees, water, landmarks (a
 cathedral spire, a temple, a torii, a sea wall, stilt villages, solar
 fields, wind turbines) and a glowing datacenter for every God with

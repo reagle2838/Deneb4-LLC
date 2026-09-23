@@ -6,6 +6,7 @@ import { Water } from 'three/addons/objects/Water.js';
 import { fbm, seeded, hashString, smoothstep } from './noise.js';
 import { place } from './places.js';
 import { KINDS } from '../engine/data.js';
+import { buildOsmEnvironment } from './osmEnv.js';
 
 export const PLAY_RADIUS = 300;
 const WORLD = 1800;
@@ -43,14 +44,14 @@ function tileNoise(u, v, scale, seed, oct = 4) {
 }
 
 let _detail, _waterNormals;
-function detailTexture() {
+export function detailTexture() {
   return (_detail ||= noiseCanvasTexture(256, (u, v) => {
     const n = 0.72 + tileNoise(u, v, 6, 3) * 0.5 + tileNoise(u, v, 24, 7, 2) * 0.25;
     return [n, n, n];
   }, 1));
 }
 
-function waterNormals() {
+export function waterNormals() {
   if (_waterNormals) return _waterNormals;
   const h = (u, v) => tileNoise(u, v, 5, 11, 4) + tileNoise(u, v, 14, 21, 3) * 0.4;
   _waterNormals = noiseCanvasTexture(256, (u, v) => {
@@ -67,7 +68,7 @@ function waterNormals() {
 
 // Windows are computed from world position, so any box of any size gets a
 // believable facade: floors every 3.4 m, lit at random when it is dark.
-function facadeMaterial({ color, glass, metalness = 0.1, roughness = 0.8, winW = 2.6, floorH = 3.4, glassMix = 0.85, litFrac = 0.55, warm = [1, 0.78, 0.45] }) {
+export function facadeMaterial({ color, glass, metalness = 0.1, roughness = 0.8, winW = 2.6, floorH = 3.4, glassMix = 0.85, litFrac = 0.55, warm = [1, 0.78, 0.45] }) {
   const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
   mat.userData.night = { value: 0 };
   mat.onBeforeCompile = (shader) => {
@@ -110,7 +111,7 @@ function facadeMaterial({ color, glass, metalness = 0.1, roughness = 0.8, winW =
   return mat;
 }
 
-const STYLES = {
+export const STYLES = {
   glass: { color: 0x9aa7b4, glass: [0.12, 0.2, 0.28], metalness: 0.4, roughness: 0.35, winW: 1.8, floorH: 3.6, glassMix: 0.95, warm: [0.85, 0.9, 1.0] },
   concrete: { color: 0xb8b2a6, glass: [0.1, 0.13, 0.16], roughness: 0.85 },
   mixed: { color: 0xa9a49a, glass: [0.12, 0.17, 0.22], roughness: 0.7, metalness: 0.2 },
@@ -121,7 +122,15 @@ const STYLES = {
 
 // ---------------------------------------------------------------- builder
 
-export function buildEnvironment(polity, state, { night = 0, low = false } = {}) {
+export function buildEnvironment(polity, state, { night = 0, low = false, osm = null } = {}) {
+  // Real streets and buildings from OpenStreetMap when we have them.
+  if (osm) {
+    try {
+      return buildOsmEnvironment(polity, state, { night, low }, osm);
+    } catch (e) {
+      console.warn('OSM scene failed, using the generated one instead', e);
+    }
+  }
   const P = place(polity.id);
   const rand = seeded(hashString(polity.id) ^ 0x51f15);
   const seed = hashString(polity.id) % 1000;
@@ -482,18 +491,29 @@ export function buildEnvironment(polity, state, { night = 0, low = false } = {})
   const setNight = (v) => { for (const fn of nightHooks) fn(v); };
   setNight(night);
 
-  return {
+  const env = {
     group, heightAt, isWater, obstacles, navPoints, water, turbines, lights, godSites, setNight, place: P,
+    playRadius: PLAY_RADIUS,
+    spawn: { x: 0, z: 55 },
     blocked(x, z, pad = 0.6) {
       for (const o of obstacles) if (Math.abs(o.x - x) < o.hx + pad && Math.abs(o.z - z) < o.hz + pad) return o;
       return null;
     },
   };
+  env.lineClear = (x0, z0, x1, z1) => {
+    const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 2);
+    for (let s = 1; s <= n; s++) {
+      const x = x0 + ((x1 - x0) * s) / n, z = z0 + ((z1 - z0) * s) / n;
+      if (env.isWater(x, z) || env.blocked(x, z, 0.4)) return false;
+    }
+    return true;
+  };
+  return env;
 }
 
 // ---------------------------------------------------------------- trees
 
-function addTrees(group, kind, spots, rand) {
+export function addTrees(group, kind, spots, rand) {
   if (!spots.length) return;
   const bark = new THREE.MeshStandardMaterial({ color: kind === 'birch' ? 0xd9d4c8 : kind === 'eucalyptus' ? 0xb9ab95 : 0x4a3524, roughness: 0.95 });
   const leafColor = { conifer: 0x1f3a24, broadleaf: 0x3d5e2a, jungle: 0x2a5220, palm: 0x4d6f2c, baobab: 0x5b6d2e, birch: 0x6c8a3a, acacia: 0x5b6f2f, eucalyptus: 0x6d7f5a }[kind];
@@ -608,7 +628,7 @@ function landmarkTorii(y, x, z) {
   return g;
 }
 
-function datacenter(god, x, y, z) {
+export function datacenter(god, x, y, z) {
   const g = new THREE.Group();
   const color = new THREE.Color(KINDS[god].color);
   const shell = new THREE.MeshStandardMaterial({ color: god === 'verdance' ? 0x2c4a2e : 0x16181c, roughness: 0.35, metalness: 0.5 });

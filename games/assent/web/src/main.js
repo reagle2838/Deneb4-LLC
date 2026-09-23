@@ -8,6 +8,8 @@ import { KINDS, KIND_ORDER, AXES, HEAT_LIMIT, CONVOCATION_YEAR, POLITIES } from 
 import { CODEX, PREMISE, kindArticle, epilogue } from './ui/text.js';
 import { GroundScene, GROUND } from './ground/scene.js';
 import { conversation, askReply, argueReply } from './ground/voices.js';
+import { loadOsm } from './osm/load.js';
+import { SPOTS } from './osm/convert.js';
 
 // Seat and temperament text stay in data.js rather than in the save file.
 const POLITY_META = Object.fromEntries(POLITIES.map((p) => [p.id, p]));
@@ -122,7 +124,7 @@ class App {
     el.querySelector('[data-act="codex"]').onclick = () => this.openCodex();
     el.querySelector('[data-act="continue"]')?.addEventListener('click', () => this.beginGame(save));
     ui.append(el);
-    ui.append(h(`<div class="title-foot">Earth: NASA Blue Marble &amp; NOAA ETOPO1 (public domain), processed in Blender<br>Gods, clouds, starfield and key art built procedurally in Blender · three.js</div>`));
+    ui.append(h(`<div class="title-foot">Earth: NASA Blue Marble &amp; NOAA ETOPO1 (public domain), processed in Blender · Streets: © OpenStreetMap contributors (ODbL)<br>Gods, clouds, starfield and key art built procedurally in Blender · three.js</div>`));
   }
 
   // ---------------------------------------------------------------- select
@@ -216,7 +218,8 @@ class App {
     // Begin on the ground, among the people where you are strongest.
     const home = [...state.polities].sort((a, b) => b.assent[state.player] * G.weight(b) - a.assent[state.player] * G.weight(a))[0];
     this.world.flight.placeAbove(this.polityWorld(home.id), 1.55);
-    this.enterGround(home.id);
+    this.here = home.id;
+    this.fade(`Descending to ${SPOTS[home.id]?.name ?? POLITY_META[home.id].seat}…`, () => this.enterGround(home.id));
     this.refresh();
     if (fresh) this.openIntro();
     else if (state.pendingDilemma) this.openDilemma();
@@ -258,6 +261,7 @@ class App {
         <b>Land</b> aim at a region, <kbd>G</kbd> to descend · <kbd>F</kbd> fly there and land · <kbd>M</kbd> map<br></div>
         <kbd>↵</kbd> end year · <kbd>J</kbd> codex · <kbd>Tab</kbd> hide HUD · <kbd>H</kbd> help</div>`),
       personTag: h('<div class="person-tag"></div>'),
+      attrib: h('<div class="map-attrib"></div>'),
       fade: h('<div class="fade"><span></span></div>'),
       prompt: h('<div class="lock-prompt">Click to take control · <kbd>Esc</kbd> releases the mouse</div>'),
     };
@@ -265,7 +269,7 @@ class App {
     this.hud.top.querySelector('[data-act="codex"]').onclick = () => this.openCodex();
     this.hud.top.querySelector('[data-act="menu"]').onclick = () => this.showTitle();
     this.hud.top.querySelector('[data-act="map"]').onclick = () => this.toggleMap();
-    ui.append(this.hud.top, this.hud.standings, this.hud.log, this.hud.panel, this.hud.crosshair, this.hud.targetCard, this.hud.personTag, this.hud.keys, this.hud.prompt, this.hud.fade);
+    ui.append(this.hud.top, this.hud.standings, this.hud.log, this.hud.panel, this.hud.crosshair, this.hud.targetCard, this.hud.personTag, this.hud.keys, this.hud.prompt, this.hud.attrib, this.hud.fade);
 
     this.labelEls = new Map();
     for (const p of this.state.polities) {
@@ -375,12 +379,23 @@ class App {
     this.transitioning = false;
   }
 
-  enterGround(id) {
+  async enterGround(id) {
     const p = G.polityById(this.state, id);
     this.here = id;
     this.selectPolity(null);
+    // Real streets from OpenStreetMap if we can get them (pre-baked, cached
+    // or live); otherwise the generated place.
+    const osm = await loadOsm(id, {
+      base: import.meta.env.BASE_URL,
+      onStatus: (msg) => { this.hud.fade.querySelector('span').textContent = msg; },
+    });
+    if (this.mode !== 'game' || this.here !== id) return;
     this.world.setView('ground');
-    this.ground.enter(p, this.state, this.localSun(id));
+    this.ground.enter(p, this.state, this.localSun(id), osm);
+    const env = this.ground.env;
+    this.hud.attrib.innerHTML = env.osm
+      ? `<b>${esc(env.osm.name)}</b> · real streets and buildings · ${esc(env.osm.attribution).replace('OpenStreetMap', '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>')}`
+      : `${esc(POLITY_META[id].seat)} · generated scenery (no map data)`;
     labels.style.display = 'none';
     this.targetSig = '';
     this.updatePrompt();
@@ -389,7 +404,7 @@ class App {
 
   descend(id) {
     if (this.transitioning) return;
-    const name = POLITY_META[id].seat;
+    const name = SPOTS[id]?.name ?? POLITY_META[id].seat;
     this.fade(`Descending to ${name}…`, () => this.enterGround(id));
   }
 

@@ -8,7 +8,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildEnvironment, PLAY_RADIUS } from './env.js';
+import { buildEnvironment } from './env.js';
 import { Crowd } from './crowd.js';
 import { shout } from './voices.js';
 import { smoothstep } from './noise.js';
@@ -108,14 +108,14 @@ export class GroundScene {
   // ------------------------------------------------------------ enter / leave
 
   // sun: { elevation, azimuth } in radians, from the real sun direction.
-  enter(polity, state, sun) {
+  enter(polity, state, sun, osm = null) {
     this.leave();
     this.polity = polity;
     this.state = state;
     this.player = state.player;
     const night = smoothstep(0.06, -0.14, Math.sin(sun.elevation));
     this.night = night;
-    this.env = buildEnvironment(polity, state, { night, low: this.low });
+    this.env = buildEnvironment(polity, state, { night, low: this.low, osm });
     this.scene.add(this.env.group);
     this.crowd = new Crowd(this.env, polity, state, 1, this.low ? 0.5 : 1);
     this.scene.add(this.crowd.group);
@@ -170,10 +170,10 @@ export class GroundScene {
 
     this.placeWatchers(polity);
 
-    // Arrive above the plaza's edge, looking in.
-    const start = new THREE.Vector3(0, 0, 55);
+    // Arrive from the sky at the heart of the place.
+    const start = this.env.spawn;
     this.camera.position.set(start.x, this.env.heightAt(start.x, start.z) + 26, start.z);
-    this.yaw = 0;
+    this.yaw = this.env.osm ? Math.atan2(start.x, start.z) + Math.PI : 0;
     this.pitch = -0.28;
     this.descending = 1;
     this.active = true;
@@ -385,7 +385,7 @@ export class GroundScene {
         const o = this.env.blocked(x, z, 1.2);
         return !o || cam.position.y > (o.top ?? 1e9) + 1;
       };
-      if (Math.hypot(nx, nz) < PLAY_RADIUS + 60) {
+      if (Math.hypot(nx, nz) < this.env.playRadius + 60) {
         if (tryMove(nx, cam.position.z)) cam.position.x = nx;
         if (tryMove(cam.position.x, nz)) cam.position.z = nz;
       }
