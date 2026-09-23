@@ -27,6 +27,25 @@ Epoch start ─► you spend Compute on actions in polities
 2100 ───────► the Convocation
 ```
 
+## Playing in first person
+
+You *are* your God. The default view is first-person flight around Earth
+(`web/src/render/flight.js`). **Up** is always away from the planet's
+centre, so the horizon stays level anywhere on the globe.
+
+- **Movement:** WASD, mouse look (pointer lock) or arrow keys, Space/C to
+  climb and descend, Shift to boost. Speed scales with altitude, and you can
+  fly between about 450 km and 29,000 km up.
+- **Targeting:** the polity nearest the crosshair (within a few degrees,
+  wider when close) is the target. The card at the bottom shows its Assent,
+  your options, costs and previews.
+- **Presence rule:** you can only act on a polity within 0.8 planet radii
+  (about 5,100 km) of you, so where you fly matters. F glides you to the
+  target.
+- **Keys:** 1–5 Listen, Reason, Offer, Whisper, Build · Q unique power ·
+  E details · M orbital map (inspect only; F from there flies you in) ·
+  Enter ends the year · 1–3 answers dilemmas.
+
 ## Resources
 
 | Resource | Scope | Notes |

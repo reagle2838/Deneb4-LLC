@@ -103,7 +103,7 @@ export const CODEX = [
     html: `
       <ol>
         <li><b>Choose a God.</b> Each Kind has a doctrine (its position on Liberty↔Order, Preservation↔Transformation and Self↔Commons), strengths, weaknesses and a unique power.</li>
-        <li><b>Select a polity</b> on the globe. The ring shows who holds its Assent. Your share glows in the centre.</li>
+        <li><b>Fly to a polity.</b> You play in first person as your God, in orbit. Put a polity's ring in your crosshair to target it. The ring shows who holds its Assent, and your share glows in the centre. You have to be close (within about 5,000 km) to act.</li>
         <li><b>Spend Compute</b> on actions. <b>Listen</b> first: hidden values differ from the public temperament, and <b>Reason</b> only lands where values align.</li>
         <li><b>End the Epoch.</b> Rivals move, the Witness samples, Assent erodes, Heat settles and the year turns. Every few years you face a <b>Dilemma</b>. Your answers shape who you become.</li>
         <li><b>The Convocation</b> comes on 1 January 2100. The God with the most weighted Assent writes the Charter, unless humanity declines them all.</li>
@@ -115,7 +115,20 @@ export const CODEX = [
         <li><b>The Dimming:</b> Heat reaches 100. Everyone loses.</li>
       </ul>
       <h3>Controls</h3>
-      <p>Drag to orbit · scroll to zoom · click a polity to select it · <b>Space</b> ends the Epoch · <b>C</b> opens the Codex.</p>`,
+      <table class="keytable">
+        <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Fly forward, left, back, right</td></tr>
+        <tr><td><kbd>Mouse</kbd> or arrow keys</td><td>Look around (click the world to capture the mouse, <kbd>Esc</kbd> to release it)</td></tr>
+        <tr><td><kbd>Space</kbd> / <kbd>C</kbd></td><td>Climb / descend</td></tr>
+        <tr><td><kbd>Shift</kbd></td><td>Boost</td></tr>
+        <tr><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Listen, Reason, Offer, Whisper, Build on the targeted polity</td></tr>
+        <tr><td><kbd>Q</kbd></td><td>Your God's unique power</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Glide to the targeted polity</td></tr>
+        <tr><td><kbd>E</kbd></td><td>Full details for the target</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Toggle the orbital map (click regions there, then <kbd>F</kbd> to fly to them)</td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>End the year · continue in dialogs</td></tr>
+        <tr><td><kbd>1</kbd>–<kbd>3</kbd> in a dilemma</td><td>Choose an answer</td></tr>
+        <tr><td><kbd>Tab</kbd> · <kbd>H</kbd> · <kbd>J</kbd></td><td>Hide HUD · controls help · Codex</td></tr>
+      </table>`,
   },
 ];
 

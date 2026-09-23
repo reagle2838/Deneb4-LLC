@@ -12,6 +12,10 @@ import {
   earthVertex, earthFragment, cloudVertex, cloudFragment, atmosphereVertex, atmosphereFragment,
 } from './shaders.js';
 import { KINDS, KIND_ORDER } from '../engine/data.js';
+import { Flight } from './flight.js';
+
+// How close (in planet radii) you must be to a polity to act on it.
+export const ACT_RANGE = 0.8;
 
 const ASSET = (p) => `${import.meta.env.BASE_URL}assets/${p}`;
 
@@ -44,6 +48,9 @@ export class World {
     this.controls.maxDistance = 9;
     this.controls.rotateSpeed = 0.5;
     this.controls.zoomSpeed = 0.7;
+    this.flight = new Flight(this.camera, canvas);
+    this.view = 'orbit';
+    this.playerKind = null;
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -71,6 +78,8 @@ export class World {
     canvas.addEventListener('pointermove', (e) => this.onPointer(e));
     canvas.addEventListener('pointerdown', (e) => { this.downAt = [e.clientX, e.clientY]; this.autoRotate = false; });
     canvas.addEventListener('pointerup', (e) => this.onClick(e));
+    this.camera.far = 400;
+    this.camera.updateProjectionMatrix();
   }
 
   buildComposer() {
@@ -191,6 +200,7 @@ export class World {
       const group = new THREE.Group();
       const model = this.avatar(k);
       const player = k === state.player;
+      this.playerKind = state.player;
       model.scale.setScalar(player ? 0.085 : 0.065);
       group.add(model);
       const glow = new THREE.PointLight(new THREE.Color(KINDS[k].color), player ? 0.6 : 0.3, 0.8, 2);
@@ -211,8 +221,56 @@ export class World {
   updateGods(state) {
     for (const [k, a] of this.avatars) {
       a.alive = state.gods[k].alive;
-      a.group.visible = a.alive;
+      // In first person you are your God, so your own avatar is hidden.
+      a.group.visible = a.alive && !(this.view === 'flight' && k === this.playerKind);
     }
+  }
+
+  // ------------------------------------------------------------ views
+
+  setView(view) {
+    this.view = view;
+    const flying = view === 'flight';
+    this.flight.enabled = flying;
+    this.controls.enabled = !flying;
+    this.focusTween = null;
+    if (flying) {
+      this.autoRotate = false;
+    } else {
+      this.flight.unlock();
+      this.flight.autopilot = null;
+      this.camera.up.set(0, 1, 0);
+      this.camera.position.setLength(Math.max(3.2, this.camera.position.length()));
+      this.controls.target.set(0, 0, 0);
+      this.camera.lookAt(0, 0, 0);
+    }
+    for (const [k, a] of this.avatars) a.group.visible = a.alive && !(flying && k === this.playerKind);
+    this.canvas.style.cursor = flying ? 'crosshair' : 'grab';
+  }
+
+  markerWorld(id) {
+    const m = this.markers.get(id);
+    return m ? m.sprite.getWorldPosition(new THREE.Vector3()) : null;
+  }
+
+  // The polity under the crosshair: the visible marker closest to the centre
+  // of view, within a few degrees. Returns { id, distance, inRange }.
+  aimTarget() {
+    const cam = this.camera;
+    const fwd = cam.getWorldDirection(new THREE.Vector3());
+    let best = null, bestAngle = THREE.MathUtils.degToRad(7);
+    for (const [id, m] of this.markers) {
+      const wp = m.sprite.getWorldPosition(new THREE.Vector3());
+      const to = wp.clone().sub(cam.position);
+      const dist = to.length();
+      // Hidden behind the planet?
+      if (wp.clone().normalize().dot(to.clone().negate().normalize()) < 0.02) continue;
+      // Wider cone when close, so nearby regions are easy to pick.
+      const angle = fwd.angleTo(to);
+      const cone = bestAngle + Math.atan2(m.size * 0.6, dist);
+      if (angle < cone && (!best || angle < best.angle)) best = { id, angle, distance: dist, inRange: dist <= ACT_RANGE };
+    }
+    return best;
   }
 
   godPosition(kind, t = this.timer.getElapsed()) {
@@ -354,7 +412,7 @@ export class World {
   }
 
   onClick(e) {
-    if (!this.downAt) return;
+    if (!this.downAt || this.view === 'flight') { this.downAt = null; return; }
     const moved = Math.hypot(e.clientX - this.downAt[0], e.clientY - this.downAt[1]);
     this.downAt = null;
     if (moved > 5) return;
@@ -379,11 +437,15 @@ export class World {
     const m = this.markers.get(fx.polity);
     if (!m) return;
     const color = new THREE.Color(KINDS[fx.god].color);
-    const start = this.godPosition(fx.god, this.timer.getElapsed() + delay);
+    // Your own influence pours out of you, just below the crosshair.
+    const fromMe = this.view === 'flight' && fx.god === this.playerKind;
+    const start = fromMe
+      ? this.camera.position.clone().addScaledVector(this.camera.getWorldDirection(new THREE.Vector3()), 0.12).addScaledVector(this.camera.up, -0.05)
+      : this.godPosition(fx.god, this.timer.getElapsed() + delay);
     const end = m.pos.clone().applyMatrix4(this.earthGroup.matrixWorld);
-    const mid = start.clone().add(end).multiplyScalar(0.5).normalize().multiplyScalar(Math.max(start.length(), 1.6) * 1.05);
+    const mid = start.clone().add(end).multiplyScalar(0.5).normalize().multiplyScalar(Math.max(start.length(), 1.02 + start.distanceTo(end) * 0.35) * 1.02);
     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
-    const tube = new THREE.TubeGeometry(curve, 64, fx.action === 'whisper' ? 0.0025 : 0.005, 6, false);
+    const tube = new THREE.TubeGeometry(curve, 64, (fx.action === 'whisper' ? 0.0025 : 0.005) * (fromMe ? 0.35 : 1), 6, false);
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: fx.action === 'whisper' ? 0.45 : 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
     const mesh = new THREE.Mesh(tube, mat);
     mesh.geometry.setDrawRange(0, 0);
@@ -461,7 +523,23 @@ export class World {
       if (f.t >= 1) this.focusTween = null;
     }
     this.tickFx(dt);
-    this.controls.update();
+    if (this.view === 'flight') {
+      this.flight.update(dt);
+      // Keep markers readable up close instead of filling the screen.
+      const cam = this.camera.position;
+      for (const [, m] of this.markers) {
+        const d = m.sprite.getWorldPosition(this._tmp ||= new THREE.Vector3()).distanceTo(cam);
+        const k = THREE.MathUtils.clamp(d / 1.4, 0.18, 1);
+        m.sprite.scale.set(m.size * k, m.size * k, 1);
+        m.ring.scale.setScalar(m.size * 0.8 * k);
+      }
+    } else {
+      if (this._scaled) {
+        for (const [, m] of this.markers) { m.sprite.scale.set(m.size, m.size, 1); m.ring.scale.setScalar(m.size * 0.8); }
+      }
+      this.controls.update();
+    }
+    this._scaled = this.view === 'flight';
     this.composer.render();
   }
 }

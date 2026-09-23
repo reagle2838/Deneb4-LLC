@@ -22,9 +22,26 @@ npm run dev        # http://localhost:5173
 `npm run build` produces a static site in `web/dist/` that runs from any
 folder or static host. `npm test` runs the rules-engine tests.
 
-**Controls:** drag to orbit, scroll to zoom, click a polity to select it.
-<kbd>Space</kbd> ends the Epoch, <kbd>C</kbd> opens the Codex and
-<kbd>Esc</kbd> closes panels. The game autosaves after every action.
+You play in **first person** as your God, flying around Earth. Fly to a
+region, put its ring in your crosshair and act on it. You have to be close
+to act.
+
+| Keys | Action |
+|---|---|
+| <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> | Fly |
+| Mouse (click to capture) or arrow keys | Look |
+| <kbd>Space</kbd> / <kbd>C</kbd> | Climb / descend |
+| <kbd>Shift</kbd> | Boost |
+| <kbd>1</kbd> Listen · <kbd>2</kbd> Reason · <kbd>3</kbd> Offer · <kbd>4</kbd> Whisper · <kbd>5</kbd> Build | Act on the targeted region |
+| <kbd>Q</kbd> | Your God's unique power |
+| <kbd>F</kbd> | Glide to the target |
+| <kbd>E</kbd> | Target details |
+| <kbd>M</kbd> | Orbital map view |
+| <kbd>Enter</kbd> | End the year / continue |
+| <kbd>1</kbd>–<kbd>3</kbd> | Answer a dilemma |
+| <kbd>J</kbd> · <kbd>Tab</kbd> · <kbd>H</kbd> · <kbd>Esc</kbd> | Codex · hide HUD · help · release mouse |
+
+The game autosaves after every action.
 
 ## The six Gods
 
